@@ -23,6 +23,7 @@
 
 <script src="<!-- LocalResource:three.min.js -->"></script>
 <script src="<!-- LocalResource:OrbitControls.js -->"></script>
+<script src="<!-- LocalResource:tween.js -->"></script>
 <script>
 
 function createGrid(scene) {
@@ -101,7 +102,7 @@ function createGizmo() {
   gizmoRenderer.domElement.style.position = 'absolute';
   gizmoRenderer.domElement.style.top = '10px';
   gizmoRenderer.domElement.style.right = '10px';
-  gizmoRenderer.setPixelRatio(window.devicePixelRatio);
+  gizmoRenderer.setPixelRatio(1.2);
   gizmoRenderer.gammaFactor = 2.2; 
   gizmoRenderer.gammaOutput = true;
 
@@ -175,9 +176,10 @@ function animate() {
   
   controls.update(); // Add this line to update the controls
   
+  TweenUpdate();
+
   renderer.clear();
   renderer.render(scene, camera);
-  
 
   gizmoCube.quaternion.copy(camera.quaternion).invert()
   gizmoCubeEdges.quaternion.copy(gizmoCube.quaternion)
@@ -245,20 +247,31 @@ document.getElementById("perspectiveToggle").addEventListener("change", function
     camera.lookAt(scene.position); 
 });
 function switchCameraBasedOnFace(materialIndex) {
-    if (materialIndex === 0) {
-        camera.position.set(10, 0, 0); // Right
-    } else if (materialIndex === 1) {
-        camera.position.set(-10, 0, 0); // Left
-    } else if (materialIndex === 2) {
-        camera.position.set(0, 10, 0); // Top
-    } else if (materialIndex === 3) {
-        camera.position.set(0, -10, 0); // Bottom
-    } else if (materialIndex === 4) {
-        camera.position.set(0, 0, 10); // Front
-    } else if (materialIndex === 5) {
-        camera.position.set(0, 0, -10); // Back
-    }
-    camera.lookAt(scene.position);
+  targetCameraPosition = new THREE.Vector3();
+  if (materialIndex === 0) {
+      targetCameraPosition.set(10, 0, 0); // Right
+  } else if (materialIndex === 1) {
+      targetCameraPosition.set(-10, 0, 0); // Left
+  } else if (materialIndex === 2) {
+      targetCameraPosition.set(0, 10, 0); // Top
+  } else if (materialIndex === 3) {
+      targetCameraPosition.set(0, -10, 0); // Bottom
+  } else if (materialIndex === 4) {
+      targetCameraPosition.set(0, 0, 10); // Front
+  } else if (materialIndex === 5) {
+      targetCameraPosition.set(0, 0, -10); // Back
+  }
+  camera.lookAt(scene.position);
+
+  // Create a new tween for the camera
+  new Tween(camera.position)
+    .to(targetCameraPosition, 300)
+    .easing(Easing.Quadratic.Out)
+    .onUpdate(function() {
+      camera.up.set(0, 1, 0)
+      camera.lookAt(scene.position);
+    })
+    .start();
 }
 
 function onGizmoClick(event) {
@@ -271,7 +284,7 @@ function onGizmoClick(event) {
   raycaster.setFromCamera(mouse, gizmoCamera);
 
   const intersects = raycaster.intersectObject(gizmoCube, true);
-  console.log('>>> onGizmoClick', intersects, intersects[0])
+  //console.log('>>> onGizmoClick', intersects, intersects[0])
 
   if (intersects.length > 0 && intersects[0].face) {
     switchCameraBasedOnFace(intersects[0].face.materialIndex);
