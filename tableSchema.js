@@ -196,6 +196,19 @@ function process(vehicle, processSlotsTable, omitWarnings) {
       }
     }
   }
+
+  // now custom, advanced processing ...
+  if (vehicle.hasOwnProperty('nodes')) {
+    for (let nodeId in vehicle.nodes) {
+      let node = vehicle.nodes[nodeId];
+      try {
+        node.pos = [node.posX, node.posY, node.posZ]
+      } catch (e) {
+      }
+      //console.log(node)
+    }
+  }
+
   return true;
 }
 
