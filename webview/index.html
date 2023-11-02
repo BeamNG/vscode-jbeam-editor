@@ -113,7 +113,7 @@ function createGizmo() {
   gizmoRenderer.domElement.style.top = '10px';
   gizmoRenderer.domElement.style.right = '10px';
   //gizmoRenderer.domElement.style.border = '1px solid red';
-  gizmoRenderer.setPixelRatio(1.2);
+  gizmoRenderer.setPixelRatio(window.devicePixelRatio * 1.2);
   gizmoRenderer.gammaFactor = 2.2; 
   gizmoRenderer.gammaOutput = true;
 
@@ -156,9 +156,20 @@ let scene = new THREE.Scene();
 let cameraPersp = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
 cameraPersp.position.z = 5;
 cameraPersp.position.y = 0;
-let orthoCamera = new THREE.OrthographicCamera( window.innerWidth / - 16, window.innerWidth / 16, window.innerHeight / 16, window.innerHeight / - 16, 0.1, 1000 );
-orthoCamera.position.z = 5;
-orthoCamera.position.y = 0;
+let orthoCamera = new THREE.OrthographicCamera( window.innerWidth / - 16, window.innerWidth / 16, window.innerHeight / 16, window.innerHeight / - 16, 0.1, 60000 );
+{
+  let aspect = window.innerWidth / window.innerHeight;
+  let height = window.innerHeight / 16;  // adjust based on your requirements
+  let width = height * aspect;
+
+  orthoCamera.left = -width / 2;
+  orthoCamera.right = width / 2;
+  orthoCamera.top = height / 2;
+  orthoCamera.bottom = -height / 2;
+  orthoCamera.updateProjectionMatrix();
+  orthoCamera.position.z = 5;
+  orthoCamera.position.y = 0;
+}
 
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
@@ -170,7 +181,7 @@ document.body.appendChild(renderer.domElement);
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.domElement.style.width = '100%';  
 renderer.domElement.style.height = '100%';
-renderer.setPixelRatio(1);
+renderer.setPixelRatio(window.devicePixelRatio);
 renderer.gammaFactor = 2.2; 
 renderer.gammaOutput = true;
 
@@ -220,15 +231,27 @@ window.addEventListener('message', event => {
       break;
   }
 });
+
 window.addEventListener('resize', function() {
-  console.log('RESIZE', camera.aspect)
-  // Update camera's aspect ratio
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
+  cameraPersp.aspect = window.innerWidth / window.innerHeight;
+  cameraPersp.updateProjectionMatrix();
+
+  // For the orthographic camera
+  let aspect = window.innerWidth / window.innerHeight;
+  let height = window.innerHeight / 16;  // adjust based on your requirements
+  let width = height * aspect;
+
+  orthoCamera.left = -width / 2;
+  orthoCamera.right = width / 2;
+  orthoCamera.top = height / 2;
+  orthoCamera.bottom = -height / 2;
+  orthoCamera.updateProjectionMatrix();
 
   // Update the renderer's size
   renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(window.devicePixelRatio);
 });
+
 document.getElementById("viewSelector").addEventListener("change", function() {
   switch (this.value) {
     case 'top':
@@ -332,11 +355,13 @@ gizmoRenderer.domElement.addEventListener('click', onGizmoClick);
 #perspectiveToggleDiv {
 	position: absolute;
 	top: 0;
-	right:400px;
+	right:200px;
 	text-align: right;
 	z-index: 100;
+  vertical-align:middle;
 }
 body, html, canvas {
+  user-select: none;
   margin: 0;
   padding: 0;
   width: 100%;
