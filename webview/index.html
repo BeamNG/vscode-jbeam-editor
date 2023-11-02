@@ -48,6 +48,7 @@ let gizmoRenderer
 let gizmoScene
 let gizmoCamera
 let gizmoCube
+let gizmoCubeEdges
 const faceColors = {
     Top: 0xff0000,     // Red
     Bottom: 0x0000ff,  // Blue
@@ -121,18 +122,21 @@ function createGizmo() {
     new THREE.MeshBasicMaterial({ map: createTextTexture('Back', faceColors.Back) }),
   ];
 
+  let cubeSize = 0.5;
+  let cubeEdgesSize = 0.7;
   gizmoCube = new THREE.Mesh(gizmoCubeGeometry, materials);
 
   const edges = new THREE.EdgesGeometry(gizmoCube.geometry);
-  const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xaaaaaa }));
-  gizmoCube.add(line);
+  gizmoCubeEdges = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xaaaaaa }));
+  gizmoCubeEdges.position.set(0, 0, 0);
+  gizmoCubeEdges.scale.set(cubeEdgesSize, cubeEdgesSize, cubeEdgesSize);
 
   //let gizmoCubeMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true });
   //gizmoCube = new THREE.Mesh(gizmoCubeGeometry, gizmoCubeMaterial);
   gizmoCube.position.set(0, 0, 0);
-  let cubeSize = 0.5;
   gizmoCube.scale.set(cubeSize, cubeSize, cubeSize);
   gizmoScene.add(gizmoCube);
+  gizmoScene.add(gizmoCubeEdges);
   
 }
 
@@ -140,7 +144,8 @@ let scene = new THREE.Scene();
 let cameraPersp = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
 let orthoCamera = new THREE.OrthographicCamera( window.innerWidth / - 16, window.innerWidth / 16, window.innerHeight / 16, window.innerHeight / - 16, 0.1, 1000 );
 
-
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
 
 let camera = cameraPersp;
 
@@ -174,7 +179,8 @@ function animate() {
   renderer.render(scene, camera);
   
 
-  gizmoCube.quaternion.copy(camera.quaternion).invert();
+  gizmoCube.quaternion.copy(camera.quaternion).invert()
+  gizmoCubeEdges.quaternion.copy(gizmoCube.quaternion)
   gizmoRenderer.render(gizmoScene, gizmoCamera);
   requestAnimationFrame(animate);
 }
@@ -238,6 +244,40 @@ document.getElementById("perspectiveToggle").addEventListener("change", function
     camera.position.y = 0;
     camera.lookAt(scene.position); 
 });
+function switchCameraBasedOnFace(materialIndex) {
+    if (materialIndex === 0) {
+        camera.position.set(10, 0, 0); // Right
+    } else if (materialIndex === 1) {
+        camera.position.set(-10, 0, 0); // Left
+    } else if (materialIndex === 2) {
+        camera.position.set(0, 10, 0); // Top
+    } else if (materialIndex === 3) {
+        camera.position.set(0, -10, 0); // Bottom
+    } else if (materialIndex === 4) {
+        camera.position.set(0, 0, 10); // Front
+    } else if (materialIndex === 5) {
+        camera.position.set(0, 0, -10); // Back
+    }
+    camera.lookAt(scene.position);
+}
+
+function onGizmoClick(event) {
+  event.preventDefault();
+
+  const rect = gizmoRenderer.domElement.getBoundingClientRect();
+  mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+  raycaster.setFromCamera(mouse, gizmoCamera);
+
+  const intersects = raycaster.intersectObject(gizmoCube, true);
+  console.log('>>> onGizmoClick', intersects, intersects[0])
+
+  if (intersects.length > 0 && intersects[0].face) {
+    switchCameraBasedOnFace(intersects[0].face.materialIndex);
+  }
+}
+gizmoRenderer.domElement.addEventListener('click', onGizmoClick);
 
 </script>
 </body>
