@@ -852,5 +852,5 @@ var exports = {
     removeAll: removeAll,
     add: add,
     remove: remove,
-    update: update,
+    update: TweenUpdate,
 };

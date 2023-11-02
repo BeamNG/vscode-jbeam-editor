@@ -15,6 +15,7 @@
   <option value="right">Right</option>
   <option value="front">Front</option>
   <option value="back">Back</option>
+  <option value="iso">Iso</option>
 </select>
 <div id="perspectiveToggleDiv">
   <input type="checkbox" id="perspectiveToggle" checked>
@@ -25,22 +26,45 @@
 <script src="<!-- LocalResource:OrbitControls.js -->"></script>
 <script src="<!-- LocalResource:tween.js -->"></script>
 <script>
+const faceColors = {
+    Top: 0xff0000,     // Red
+    Bottom: 0x0000ff,  // Blue
+    Left: 0x00ff00,    // Green
+    Right: 0xffff00,   // Yellow
+    Front: 0xff00ff,   // Magenta
+    Back: 0x00ffff     // Cyan
+};
+function interpolateColor(color1, color2, factor) {
+  return color1.lerp(color2, factor);
+}
 
 function createGrid(scene) {
-  let size = 10; // 10x10 grid
+  let size = 20; // 20x20 grid
   let divisions = 20;
 
-  // Grid for the XZ plane
-  let gridXZ = new THREE.GridHelper(size, divisions, new THREE.Color(0xff0000), new THREE.Color(0x550000));
+  // Grid for the XZ plane (Right-Left)
+  let fadedFront = interpolateColor(new THREE.Color(faceColors.Right), new THREE.Color(0x808080), 0.1);
+  let fadedBack = interpolateColor(new THREE.Color(faceColors.Left), new THREE.Color(0x808080), 0.6);
+  let gridXZ = new THREE.GridHelper(size, divisions, fadedFront, fadedBack);
   gridXZ.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);  // Rotate around the X-axis to lay it flat
+  gridXZ.material.opacity = 0.5;
+  gridXZ.material.transparent = true;
   scene.add(gridXZ);
 
-  // Grid for the XY plane
-  let gridXY = new THREE.GridHelper(size, divisions, new THREE.Color(0x00ff00), new THREE.Color(0x005500));
+  // Grid for the XY plane (Top-Bottom)
+  fadedFront = interpolateColor(new THREE.Color(faceColors.Top), new THREE.Color(0x808080), 0.1);
+  fadedBack = interpolateColor(new THREE.Color(faceColors.Bottom), new THREE.Color(0x808080), 0.6);
+  let gridXY = new THREE.GridHelper(size, divisions, fadedFront, fadedBack);
+  gridXY.material.opacity = 0.5;
+  gridXY.material.transparent = true;
   scene.add(gridXY);
 
-  // Grid for the YZ plane
-  let gridYZ = new THREE.GridHelper(size, divisions, new THREE.Color(0x0000ff), new THREE.Color(0x000055));
+  // Grid for the YZ plane (Front-Back)
+  fadedFront = interpolateColor(new THREE.Color(faceColors.Front), new THREE.Color(0x808080), 0.1);
+  fadedBack = interpolateColor(new THREE.Color(faceColors.Back), new THREE.Color(0x808080), 0.6);
+  let gridYZ = new THREE.GridHelper(size, divisions, fadedFront, fadedBack);
+  gridYZ.material.opacity = 0.5;
+  gridYZ.material.transparent = true;
   gridYZ.rotateOnAxis(new THREE.Vector3(0, 0, 1), Math.PI / 2);  // Rotate around the Z-axis to make it vertical
   scene.add(gridYZ);
 }
@@ -50,25 +74,11 @@ let gizmoScene
 let gizmoCamera
 let gizmoCube
 let gizmoCubeEdges
-const faceColors = {
-    Top: 0xff0000,     // Red
-    Bottom: 0x0000ff,  // Blue
-    Left: 0x00ff00,    // Green
-    Right: 0xffff00,   // Yellow
-    Front: 0xff00ff,   // Magenta
-    Back: 0x00ffff     // Cyan
-};
-
 function getContrastingColor(hexcolor) {
-    // Convert hex to RGB values
     const r = parseInt(hexcolor.slice(1, 3), 16);
     const g = parseInt(hexcolor.slice(3, 5), 16);
     const b = parseInt(hexcolor.slice(5, 7), 16);
-    
-    // Get YIQ ratio
     const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
-
-    // Determine text color
     return (yiq >= 128) ? 'black' : 'white';
 }
 
@@ -95,21 +105,22 @@ function createTextTexture(text, bgColor) {
 function createGizmo() {
   gizmoScene = new THREE.Scene();
   gizmoRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: true }); // set alpha to true for transparent background
-  gizmoRenderer.setSize(150, 150); // you can adjust the size as needed
+  gizmoRenderer.setSize(100, 100); // you can adjust the size as needed
   gizmoRenderer.setClearColor(0x000000, 0); // ensures a transparent background
   document.body.appendChild(gizmoRenderer.domElement);
   // Position the gizmoRenderer's canvas in the top right corner
   gizmoRenderer.domElement.style.position = 'absolute';
   gizmoRenderer.domElement.style.top = '10px';
   gizmoRenderer.domElement.style.right = '10px';
+  //gizmoRenderer.domElement.style.border = '1px solid red';
   gizmoRenderer.setPixelRatio(1.2);
   gizmoRenderer.gammaFactor = 2.2; 
   gizmoRenderer.gammaOutput = true;
 
-  let gizmoAspect = window.innerWidth / window.innerHeight;
+  let gizmoAspect = 1; //window.innerWidth / window.innerHeight;
   let gizmoFrustumSize = 2; // can be adjusted
   gizmoCamera = new THREE.OrthographicCamera(gizmoFrustumSize * gizmoAspect / -2, gizmoFrustumSize * gizmoAspect / 2, gizmoFrustumSize / 2, gizmoFrustumSize / -2, 1, 1000);
-  gizmoCamera.position.set(0, 0, 5); // Adjust as needed
+  gizmoCamera.position.set(0, 0, 2); // Adjust as needed
   gizmoCamera.lookAt(0, 0, 0);
 
   let gizmoCubeGeometry = new THREE.BoxGeometry(1, 1, 1);
@@ -123,8 +134,8 @@ function createGizmo() {
     new THREE.MeshBasicMaterial({ map: createTextTexture('Back', faceColors.Back) }),
   ];
 
-  let cubeSize = 0.5;
-  let cubeEdgesSize = 0.7;
+  let cubeSize = 0.8;
+  let cubeEdgesSize = 1.0;
   gizmoCube = new THREE.Mesh(gizmoCubeGeometry, materials);
 
   const edges = new THREE.EdgesGeometry(gizmoCube.geometry);
@@ -143,7 +154,11 @@ function createGizmo() {
 
 let scene = new THREE.Scene();
 let cameraPersp = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+cameraPersp.position.z = 5;
+cameraPersp.position.y = 0;
 let orthoCamera = new THREE.OrthographicCamera( window.innerWidth / - 16, window.innerWidth / 16, window.innerHeight / 16, window.innerHeight / - 16, 0.1, 1000 );
+orthoCamera.position.z = 5;
+orthoCamera.position.y = 0;
 
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
@@ -155,6 +170,9 @@ document.body.appendChild(renderer.domElement);
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.domElement.style.width = '100%';  
 renderer.domElement.style.height = '100%';
+renderer.setPixelRatio(1);
+renderer.gammaFactor = 2.2; 
+renderer.gammaOutput = true;
 
 const controls = new OrbitControls(camera, renderer.domElement);
 //controls.enableRotate = false;
@@ -167,8 +185,7 @@ scene.add(cube);
 createGrid(scene)
 createGizmo()
 
-camera.position.z = 5;
-camera.position.y = 0;
+
 
 function animate() {
   cube.rotation.x += 0.01;
@@ -204,62 +221,66 @@ window.addEventListener('message', event => {
   }
 });
 window.addEventListener('resize', function() {
-    // Update camera's aspect ratio
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
+  console.log('RESIZE', camera.aspect)
+  // Update camera's aspect ratio
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
 
-    // Update the renderer's size
-    renderer.setSize(window.innerWidth, window.innerHeight);
+  // Update the renderer's size
+  renderer.setSize(window.innerWidth, window.innerHeight);
 });
 document.getElementById("viewSelector").addEventListener("change", function() {
-    switch (this.value) {
-        case 'top':
-            camera.position.set(0, 10, 0);
-            break;
-        case 'bottom':
-            camera.position.set(0, -10, 0);
-            break;
-        case 'left':
-            camera.position.set(-10, 0, 0);
-            break;
-        case 'right':
-            camera.position.set(10, 0, 0);
-            break;
-        case 'front':
-            camera.position.set(0, 0, 10);
-            break;
-        case 'back':
-            camera.position.set(0, 0, -10);
-            break;
-    }
-    camera.lookAt(scene.position); // Make the camera look at the center of the scene
+  switch (this.value) {
+    case 'top':
+      camera.position.set(0, 10, 0);
+      break;
+    case 'bottom':
+      camera.position.set(0, -10, 0);
+      break;
+    case 'left':
+      camera.position.set(-10, 0, 0);
+      break;
+    case 'right':
+      camera.position.set(10, 0, 0);
+      break;
+    case 'front':
+      camera.position.set(0, 0, 10);
+      break;
+    case 'back':
+      camera.position.set(0, 0, -10);
+      break;
+    case 'iso':
+      camera.position.set(10, 10, 10);
+      break;
+  }
+  camera.lookAt(scene.position); // Make the camera look at the center of the scene
 });
 
 document.getElementById("perspectiveToggle").addEventListener("change", function() {
-    if (this.checked) {
-        camera = cameraPersp;
-    } else {
-        camera = orthoCamera;
-    }
-    controls.object = camera;  // Update controls to new camera
-    camera.position.z = 5;
-    camera.position.y = 0;
-    camera.lookAt(scene.position); 
+  if (this.checked) {
+    camera = cameraPersp;
+  } else {
+    camera = orthoCamera;
+  }
+  controls.object = camera;  // Update controls to new camera
+  camera.position.z = 5;
+  camera.position.y = 0;
+  camera.lookAt(scene.position); 
 });
 function switchCameraBasedOnFace(materialIndex) {
   targetCameraPosition = new THREE.Vector3();
   if (materialIndex === 0) {
-      targetCameraPosition.set(10, 0, 0); // Right
+    targetCameraPosition.set(10, 0, 0); // Right
   } else if (materialIndex === 1) {
-      targetCameraPosition.set(-10, 0, 0); // Left
+    targetCameraPosition.set(-10, 0, 0); // Left
   } else if (materialIndex === 2) {
-      targetCameraPosition.set(0, 10, 0); // Top
+    targetCameraPosition.set(0, 10, 0); // Top
   } else if (materialIndex === 3) {
-      targetCameraPosition.set(0, -10, 0); // Bottom
+    targetCameraPosition.set(0, -10, 0); // Bottom
   } else if (materialIndex === 4) {
-      targetCameraPosition.set(0, 0, 10); // Front
+    targetCameraPosition.set(0, 0, 10); // Front
   } else if (materialIndex === 5) {
-      targetCameraPosition.set(0, 0, -10); // Back
+    targetCameraPosition.set(0, 0, -10); // Back
   }
   camera.lookAt(scene.position);
 
@@ -284,7 +305,7 @@ function onGizmoClick(event) {
   raycaster.setFromCamera(mouse, gizmoCamera);
 
   const intersects = raycaster.intersectObject(gizmoCube, true);
-  //console.log('>>> onGizmoClick', intersects, intersects[0])
+  console.log('>>> onGizmoClick', intersects, intersects[0])
 
   if (intersects.length > 0 && intersects[0].face) {
     switchCameraBasedOnFace(intersects[0].face.materialIndex);
