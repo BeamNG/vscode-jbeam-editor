@@ -221,13 +221,9 @@ window.addEventListener('message', event => {
   const message = event.data; // The JSON data our extension sent
 
   switch (message.command) {
-    case 'update':
-      // Handle the 'update' message
-      const text = message.text;
-      // Display the text in some HTML element, or use it as you wish
-      console.log(text);
-      document.getElementById('info').textContent = text;
-
+    case 'jbeamData':
+      const data = message.text;
+      console.log(data);
       break;
   }
 });
@@ -328,7 +324,7 @@ function onGizmoClick(event) {
   raycaster.setFromCamera(mouse, gizmoCamera);
 
   const intersects = raycaster.intersectObject(gizmoCube, true);
-  console.log('>>> onGizmoClick', intersects, intersects[0])
+  //console.log('>>> onGizmoClick', intersects, intersects[0])
 
   if (intersects.length > 0 && intersects[0].face) {
     switchCameraBasedOnFace(intersects[0].face.materialIndex);

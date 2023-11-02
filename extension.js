@@ -2,6 +2,8 @@ const vscode = require('vscode');
 const fs = require('fs');
 const path = require('path');
 const sjsonParser = require('./sjsonParser');
+const tableSchema = require('./tableSchema');
+
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -30,26 +32,6 @@ function activate(context) {
 
   let webPanel
   let disposable2 = vscode.commands.registerCommand('jbeam-editor.show2DScene', function () {
-    // Get the active editor
-    let editor = vscode.window.activeTextEditor;
-    if (!editor) {
-      vscode.window.showInformationMessage('No document is open');
-      return;
-    }
-    // Get the document text
-    const documentText = editor.document.getText();
-
-    // Now, parse the document text as SJSON
-    try {
-      let parsedData = sjsonParser.decodeSJSON(documentText);
-      // Do something with the parsed data, like show it in an information message
-      vscode.window.showInformationMessage('Document parsed successfully. Check the console for the data.');
-      console.log(parsedData);
-    } catch (e) {
-      // If there's an error in parsing, show it to the user
-      vscode.window.showErrorMessage(`Error parsing SJSON: ${e.message}`);
-    }
-
     // Create and show a new webview
     webPanel = vscode.window.createWebviewPanel(
       'sceneView', // Identifies the type of the webview
@@ -64,6 +46,44 @@ function activate(context) {
 
     // And set its HTML content
     webPanel.webview.html = getWebviewContent(webPanel);
+
+    // Get the active editor
+    let editor = vscode.window.activeTextEditor;
+    if (!editor) {
+      vscode.window.showInformationMessage('No document is open');
+      return;
+    }
+    // Get the document text
+    const documentText = editor.document.getText();
+
+    // Now, parse the document text as SJSON
+    try {
+      let parsedData = sjsonParser.decodeSJSON(documentText);
+      console.log("PARSED:", parsedData);
+
+      for (let keyEntry in parsedData) {
+        if (!parsedData.hasOwnProperty(keyEntry)) continue;
+        let entry = parsedData[keyEntry];
+        let result = tableSchema.process(entry, false, false);
+          
+        if (result !== true) {
+          console.error("An error occurred while processing the data.");
+        } else {
+          console.log("Processed data:", entry);
+        }
+        parsedData[keyEntry] = entry
+      }
+      // Do something with the parsed data, like show it in an information message
+      vscode.window.showInformationMessage('Document parsed successfully. Check the console for the data.');
+      console.log("table expanded:", parsedData);
+      webPanel.webview.postMessage({
+        command: 'jbeamData',
+        text: parsedData
+      });
+    } catch (e) {
+      // If there's an error in parsing, show it to the user
+      vscode.window.showErrorMessage(`Error parsing SJSON: ${e.message}`);
+    }
   });
 
   context.subscriptions.push(disposable2);
