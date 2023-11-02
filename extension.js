@@ -66,13 +66,9 @@ function getWebviewContent(webPanel) {
   const webviewPath = path.join(__dirname, 'webview', 'index.html');
   let content = fs.readFileSync(webviewPath, 'utf8');
   
-  // Convert the paths for your scripts (or any other resources) to webview URIs
-  const threeJsPath = webPanel.webview.asWebviewUri(vscode.Uri.file(path.join(__dirname, 'webview', 'three.min.js')));
-  const orbitControlsPath = webPanel.webview.asWebviewUri(vscode.Uri.file(path.join(__dirname, 'webview', 'OrbitControls.js')));
-
-  // Replace the paths in the HTML content
-  content = content.replace('<!-- threeJsPath -->', threeJsPath);
-  content = content.replace('<!-- OrbitJsPath -->', orbitControlsPath);
+  content = content.replace(/<!-- LocalResource:(.*?) -->/g, (match, resourceName) => {
+    return webPanel.webview.asWebviewUri(vscode.Uri.file(path.join(__dirname, 'webview', resourceName)));
+  });
 
   return content;
 }
