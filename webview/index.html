@@ -8,12 +8,48 @@
 </head>
 <body>
 <div id="info">Description</div>
+<select id="viewSelector">
+  <option value="top">Top</option>
+  <option value="bottom">Bottom</option>
+  <option value="left">Left</option>
+  <option value="right">Right</option>
+  <option value="front">Front</option>
+  <option value="back">Back</option>
+</select>
+<div id="perspectiveToggleDiv">
+  <input type="checkbox" id="perspectiveToggle" checked>
+  <label for="perspectiveToggle">Perspective</label>
+</div>
+
 <script src="<!-- LocalResource:three.min.js -->"></script>
 <script src="<!-- LocalResource:OrbitControls.js -->"></script>
-<script src="<!-- LocalResource:utils.js -->"></script>
 <script>
+
+function createGrid(scene) {
+  let size = 10; // 10x10 grid
+  let divisions = 20;
+
+  // Grid for the XZ plane
+  let gridXZ = new THREE.GridHelper(size, divisions, new THREE.Color(0xff0000), new THREE.Color(0x550000));
+  gridXZ.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);  // Rotate around the X-axis to lay it flat
+  scene.add(gridXZ);
+
+  // Grid for the XY plane
+  let gridXY = new THREE.GridHelper(size, divisions, new THREE.Color(0x00ff00), new THREE.Color(0x005500));
+  scene.add(gridXY);
+
+  // Grid for the YZ plane
+  let gridYZ = new THREE.GridHelper(size, divisions, new THREE.Color(0x0000ff), new THREE.Color(0x000055));
+  gridYZ.rotateOnAxis(new THREE.Vector3(0, 0, 1), Math.PI / 2);  // Rotate around the Z-axis to make it vertical
+  scene.add(gridYZ);
+}
+
+
 let scene = new THREE.Scene();
-let camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+let cameraPersp = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+let orthoCamera = new THREE.OrthographicCamera( window.innerWidth / - 16, window.innerWidth / 16, window.innerHeight / 16, window.innerHeight / - 16, 0.1, 1000 );
+let camera = cameraPersp;
+
 let renderer = new THREE.WebGLRenderer();
 document.body.appendChild(renderer.domElement);
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -28,14 +64,7 @@ let material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
 let cube = new THREE.Mesh(geometry, material);
 scene.add(cube);
 
-let size = 10; // 10x10 grid
-let divisions = 20;
-let centerLineColor = new THREE.Color(0xffffff); // red for the center line
-let gridColor = new THREE.Color(0x888888); // green for the grid lines
-let gridHelper = new THREE.GridHelper(size, divisions, centerLineColor, gridColor);
-gridHelper.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);
-
-scene.add(gridHelper);
+createGrid(scene)
 
 camera.position.z = 5;
 camera.position.y = 0;
@@ -72,17 +101,64 @@ window.addEventListener('resize', function() {
     // Update the renderer's size
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
+document.getElementById("viewSelector").addEventListener("change", function() {
+    switch (this.value) {
+        case 'top':
+            camera.position.set(0, 10, 0);
+            break;
+        case 'bottom':
+            camera.position.set(0, -10, 0);
+            break;
+        case 'left':
+            camera.position.set(-10, 0, 0);
+            break;
+        case 'right':
+            camera.position.set(10, 0, 0);
+            break;
+        case 'front':
+            camera.position.set(0, 0, 10);
+            break;
+        case 'back':
+            camera.position.set(0, 0, -10);
+            break;
+    }
+    camera.lookAt(scene.position); // Make the camera look at the center of the scene
+});
+
+document.getElementById("perspectiveToggle").addEventListener("change", function() {
+    if (this.checked) {
+        camera = cameraPersp;
+    } else {
+        camera = orthoCamera;
+    }
+    controls.object = camera;  // Update controls to new camera
+    camera.position.z = 5;
+    camera.position.y = 0;
+    camera.lookAt(scene.position); 
+});
 
 </script>
 </body>
 <style>
 #info {
 	position: absolute;
-	top: 10px;
-	width: 100%;
-	text-align: center;
+	top: 0;
+  left:0;
 	z-index: 100;
-	display:block;
+}
+#viewSelector {
+	position: absolute;
+	top:0;
+	width: 80px;
+  right:0;
+	z-index: 100;
+}
+#perspectiveToggleDiv {
+	position: absolute;
+	top: 0;
+	right:400px;
+	text-align: right;
+	z-index: 100;
 }
 body, html, canvas {
   margin: 0;
