@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://cdnjs.cloudflare.com/;">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Scene</title>
+</head>
+<body>
+  <div id="editor-text"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    let scene = new THREE.Scene();
+    let camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    let renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    let geometry = new THREE.BoxGeometry();
+    let material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    let cube = new THREE.Mesh(geometry, material);
+    scene.add(cube);
+
+    camera.position.z = 5;
+
+    function animate() {
+      requestAnimationFrame(animate);
+      cube.rotation.x += 0.01;
+      cube.rotation.y += 0.01;
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    window.addEventListener('message', event => {
+      const message = event.data; // The JSON data our extension sent
+    
+      switch (message.command) {
+        case 'update':
+          // Handle the 'update' message
+          const text = message.text;
+          // Display the text in some HTML element, or use it as you wish
+          console.log(text);
+          document.getElementById('editor-text').textContent = text;
+
+          break;
+      }
+    });
+  </script>
+</body>
+<style>
+  #editor-text {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-size: 24px;
+    color: white;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 10px;
+    border-radius: 5px;
+  }
+</style>
+</html>
