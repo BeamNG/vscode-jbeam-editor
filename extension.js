@@ -59,23 +59,23 @@ function activate(context) {
     // Now, parse the document text as SJSON
     try {
       let parsedData = sjsonParser.decodeSJSON(documentText);
-      console.log("PARSED:", parsedData);
-
-      for (let keyEntry in parsedData) {
-        if (!parsedData.hasOwnProperty(keyEntry)) continue;
-        let entry = parsedData[keyEntry];
-        let result = tableSchema.process(entry, false, false);
+      //console.log("PARSED:", parsedData);
+      let tableInterpretedData = {}
+      for (let partName in parsedData) {
+        if (!parsedData.hasOwnProperty(partName)) continue;
+        let part = parsedData[partName];
+        let result = tableSchema.process(part, false, false);
           
         if (result !== true) {
           console.error("An error occurred while processing the data.");
         } else {
-          console.log("Processed data:", entry);
+          console.log("Processed data:", part);
         }
-        parsedData[keyEntry] = entry
+        tableInterpretedData[partName] = part
       }
       // Do something with the parsed data, like show it in an information message
       vscode.window.showInformationMessage('Document parsed successfully. Check the console for the data.');
-      console.log("table expanded:", parsedData);
+      //console.log("table expanded:", parsedData);
       webPanel.webview.postMessage({
         command: 'jbeamData',
         text: parsedData

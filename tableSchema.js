@@ -83,7 +83,7 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, omitWarning
   jbeamTable.shift();
 
   // Walk the list entries
-  for (let rowValue of jbeamTable) {
+  for (let [rowKey, rowValue] of jbeamTable.entries()) {
     if (typeof rowValue !== "object") {
       console.warn(`*** Invalid table row: ${JSON.stringify(rowValue)}`);
       return -1;
@@ -93,7 +93,7 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, omitWarning
       Object.assign(localOptions, replaceSpecialValues(rowValue));
       localOptions.__astNodeIdx = null;
     } else {
-      let newID = rowValue.indexOf(rowValue);
+      let newID = rowKey
       if (rowValue.length > headerSize + 1) {
         if (!omitWarnings) {
           console.warn(`*** Invalid table header, must be as long as all table cells (plus one additional options column):`);
@@ -128,7 +128,7 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, omitWarning
         }
       }
 
-      if (newRow.id !== null) {
+      if (newRow.hasOwnProperty('id') && newRow.id !== null) {
         newID = newRow.id;
         newRow.name = newRow.id;
         newRow.id = null;
