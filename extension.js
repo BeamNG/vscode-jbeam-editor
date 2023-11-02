@@ -26,6 +26,7 @@ function activate(context) {
 
   context.subscriptions.push(disposable);
 
+
   let webPanel
   let disposable2 = vscode.commands.registerCommand('jbeam-editor.show2DScene', function () {
     // Create and show a new webview
@@ -35,12 +36,13 @@ function activate(context) {
       vscode.ViewColumn.Beside, // Editor column to show the new webview panel in
       {
         enableScripts: true,  // Allow scripts to run in the webview
-        retainContextWhenHidden: true  // Optionally, you can retain the state even when webview is not visible
+        retainContextWhenHidden: true,  // Optionally, you can retain the state even when webview is not visible
+        localResourceRoots: [vscode.Uri.file(path.join(context.extensionPath, 'webview'))]
       }
     );
 
     // And set its HTML content
-    webPanel.webview.html = getWebviewContent();
+    webPanel.webview.html = getWebviewContent(webPanel);
   });
 
   context.subscriptions.push(disposable2);
@@ -60,9 +62,19 @@ function activate(context) {
   
 }
 
-function getWebviewContent() {
-    const webviewPath = path.join(__dirname, 'webviewContent.html');
-    return fs.readFileSync(webviewPath, 'utf8');
+function getWebviewContent(webPanel) {
+  const webviewPath = path.join(__dirname, 'webview', 'index.html');
+  let content = fs.readFileSync(webviewPath, 'utf8');
+  
+  // Convert the paths for your scripts (or any other resources) to webview URIs
+  const threeJsPath = webPanel.webview.asWebviewUri(vscode.Uri.file(path.join(__dirname, 'webview', 'three.min.js')));
+  const orbitControlsPath = webPanel.webview.asWebviewUri(vscode.Uri.file(path.join(__dirname, 'webview', 'OrbitControls.js')));
+
+  // Replace the paths in the HTML content
+  content = content.replace('<!-- threeJsPath -->', threeJsPath);
+  content = content.replace('<!-- OrbitJsPath -->', orbitControlsPath);
+
+  return content;
 }
 
 

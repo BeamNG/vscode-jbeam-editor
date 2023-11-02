@@ -2,13 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://cdnjs.cloudflare.com/; style-src 'self' 'unsafe-inline';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' vscode-resource: 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>3D Scene</title>
 </head>
 <body>
 <div id="info">Description</div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="<!-- threeJsPath -->"></script>
+<script src="<!-- OrbitJsPath -->"></script>
 <script>
 let scene = new THREE.Scene();
 let camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
@@ -18,6 +19,8 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.domElement.style.width = '100%';  
 renderer.domElement.style.height = '100%';
 
+const controls = new OrbitControls(camera, renderer.domElement);
+//controls.enableRotate = false;
 
 let geometry = new THREE.BoxGeometry();
 let material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
@@ -40,6 +43,7 @@ function animate() {
   requestAnimationFrame(animate);
   cube.rotation.x += 0.01;
   cube.rotation.y += 0.01;
+  controls.update(); // Add this line to update the controls
   renderer.render(scene, camera);
 }
 

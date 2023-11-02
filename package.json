@@ -12,20 +12,22 @@
   "activationEvents": [],
   "main": "./extension.js",
   "contributes": {
-    "commands": [{
-      "command": "jbeam-editor.helloWorld",
-      "title": "Hello World"
-    },
-    {
-      "command": "jbeam-editor.show2DScene",
-      "title": "Show 2D Scene"
-    }]
+    "commands": [
+      {
+        "command": "jbeam-editor.helloWorld",
+        "title": "Hello World"
+      },
+      {
+        "command": "jbeam-editor.show2DScene",
+        "title": "Show 2D Scene"
+      }
+    ]
   },
   "webview": {
     "scripts": [
       "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
     ]
-  },  
+  },
   "viewsContainers": {
     "activitybar": [
       {
@@ -43,23 +45,25 @@
         "when": "view == sceneView"
       }
     ]
-  },  
+  },
   "scripts": {
     "lint": "eslint .",
     "pretest": "npm run lint",
     "test": "node ./test/runTest.js"
   },
   "devDependencies": {
-    "@types/vscode": "^1.83.2",
     "@types/mocha": "^10.0.3",
     "@types/node": "18.x",
+    "@types/vscode": "^1.83.2",
+    "@vscode/test-electron": "^2.3.6",
     "eslint": "^8.52.0",
     "glob": "^10.3.10",
     "mocha": "^10.2.0",
-    "typescript": "^5.2.2",
-    "@vscode/test-electron": "^2.3.6"
+    "typescript": "^5.2.2"
   },
   "files": [
-    "webviewContent.html"
+    "webviewContent.html",
+    "webview/three.module.min.js",
+    "webview/OrbitControls.js"
   ]
 }
