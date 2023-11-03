@@ -9,20 +9,6 @@
 <body>
 <canvas id="output" tabindex="1"></canvas>
 <div id="info">Description</div>
-<select id="viewSelector">
-  <option value="top">Top</option>
-  <option value="bottom">Bottom</option>
-  <option value="left">Left</option>
-  <option value="right">Right</option>
-  <option value="front">Front</option>
-  <option value="back">Back</option>
-  <option value="iso">Iso</option>
-</select>
-<div id="perspectiveToggleDiv">
-  <input type="checkbox" id="perspectiveToggle" checked>
-  <label for="perspectiveToggle">Perspective</label>
-</div>
-
 <script src="<!-- LocalResource:utils.js -->"></script>
 <script src="<!-- LocalResource:three.min.js -->"></script>
 <script src="<!-- LocalResource:OrbitControls.js -->"></script>
@@ -67,10 +53,10 @@ function createGrid(scene) {
 
 
 let scene = new THREE.Scene();
-let cameraPersp = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+cameraPersp = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
 cameraPersp.position.z = 5;
 cameraPersp.position.y = 0;
-let orthoCamera = new THREE.OrthographicCamera( window.innerWidth / - 16, window.innerWidth / 16, window.innerHeight / 16, window.innerHeight / - 16, 0.1, 60000 );
+orthoCamera = new THREE.OrthographicCamera( window.innerWidth / - 16, window.innerWidth / 16, window.innerHeight / 16, window.innerHeight / - 16, 0.1, 60000 );
 {
   let aspect = window.innerWidth / window.innerHeight;
   let height = window.innerHeight / 16;  // adjust based on your requirements
@@ -163,44 +149,6 @@ window.addEventListener('resize', function() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(window.devicePixelRatio);
 });
-
-document.getElementById("viewSelector").addEventListener("change", function() {
-  switch (this.value) {
-    case 'top':
-      animateCameraMovement(new THREE.Vector3(0, 10, 0));
-      break;
-    case 'bottom':
-      animateCameraMovement(new THREE.Vector3(0, -10, 0));
-      break;
-    case 'left':
-      animateCameraMovement(new THREE.Vector3(-10, 0, 0));
-      break;
-    case 'right':
-      animateCameraMovement(new THREE.Vector3(10, 0, 0));
-      break;
-    case 'front':
-      animateCameraMovement(new THREE.Vector3(0, 0, 10));
-      break;
-    case 'back':
-      animateCameraMovement(new THREE.Vector3(0, 0, -10));
-      break;
-    case 'iso':
-      animateCameraMovement(new THREE.Vector3(10, 10, 10));
-      break;
-  }
-});
-
-document.getElementById("perspectiveToggle").addEventListener("change", function() {
-  if (this.checked) {
-    camera = cameraPersp;
-  } else {
-    camera = orthoCamera;
-  }
-  controls.object = camera;  // Update controls to new camera
-  camera.position.z = 5;
-  camera.position.y = 0;
-  camera.lookAt(0, 0, 0); 
-});
 </script>
 </body>
 <style>
@@ -210,21 +158,6 @@ document.getElementById("perspectiveToggle").addEventListener("change", function
   left:0;
 	z-index: 100;
   font-family: monospace;
-}
-#viewSelector {
-	position: absolute;
-	top:0;
-	width: 80px;
-  right:0;
-	z-index: 100;
-}
-#perspectiveToggleDiv {
-	position: absolute;
-	top: 0;
-	right:200px;
-	text-align: right;
-	z-index: 100;
-  vertical-align:middle;
 }
 body, html, canvas {
   user-select: none;

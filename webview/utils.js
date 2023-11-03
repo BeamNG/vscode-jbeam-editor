@@ -1,4 +1,7 @@
 let camera
+let cameraPersp
+let orthoCamera
+let cameraIsPersp = true
 
 const faceColors = {
   Top: 0xff0000,     // Red
