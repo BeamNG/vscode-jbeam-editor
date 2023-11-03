@@ -156,29 +156,27 @@ window.addEventListener('resize', function() {
 document.getElementById("viewSelector").addEventListener("change", function() {
   switch (this.value) {
     case 'top':
-      camera.position.set(0, 10, 0);
+      animateCameraMovement(new THREE.Vector3(0, 10, 0));
       break;
     case 'bottom':
-      camera.position.set(0, -10, 0);
+      animateCameraMovement(new THREE.Vector3(0, -10, 0));
       break;
     case 'left':
-      camera.position.set(-10, 0, 0);
+      animateCameraMovement(new THREE.Vector3(-10, 0, 0));
       break;
     case 'right':
-      camera.position.set(10, 0, 0);
+      animateCameraMovement(new THREE.Vector3(10, 0, 0));
       break;
     case 'front':
-      camera.position.set(0, 0, 10);
+      animateCameraMovement(new THREE.Vector3(0, 0, 10));
       break;
     case 'back':
-      camera.position.set(0, 0, -10);
+      animateCameraMovement(new THREE.Vector3(0, 0, -10));
       break;
     case 'iso':
-      camera.position.set(10, 10, 10);
+      animateCameraMovement(new THREE.Vector3(10, 10, 10));
       break;
   }
-  //controls.resetSoft()
-  camera.lookAt(0, 0, 0); // Make the camera look at the center of the scene
 });
 
 document.getElementById("perspectiveToggle").addEventListener("change", function() {

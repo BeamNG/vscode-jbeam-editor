@@ -6,8 +6,10 @@ let gizmoCubeEdges
 let gizmoCubeHighlight
 
 let gizmoMaterials
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
+const raycaster = new THREE.Raycaster()
+const mouse = new THREE.Vector2()
+const vecZero = new THREE.Vector3(0, 0, 0)
+const gizmoAnimationTime = 250
 
 function createTextTexture(text, bgColor) {
   const canvas = document.createElement('canvas');
@@ -63,31 +65,53 @@ function onGizmoMouseMove(event) {
   }
 }
 
-function switchCameraBasedOnFace(materialIndex) {
-  targetCameraPosition = new THREE.Vector3();
-  if (materialIndex === 0) {
-    targetCameraPosition.set(10, 0, 0); // Right
-  } else if (materialIndex === 1) {
-    targetCameraPosition.set(-10, 0, 0); // Left
-  } else if (materialIndex === 2) {
-    targetCameraPosition.set(0, 10, 0); // Top
-  } else if (materialIndex === 3) {
-    targetCameraPosition.set(0, -10, 0); // Bottom
-  } else if (materialIndex === 4) {
-    targetCameraPosition.set(0, 0, 10); // Front
-  } else if (materialIndex === 5) {
-    targetCameraPosition.set(0, 0, -10); // Back
-  }
-  camera.lookAt(0, 0, 0);
-  // Create a new tween for the camera
+function animateCameraMovement(targetCameraPosition) {
+    // camera position
   new Tween(camera.position)
-    .to(targetCameraPosition, 250)
+    .to(targetCameraPosition, gizmoAnimationTime)
     .easing(Easing.Quadratic.Out)
-    .onUpdate(function() {
-      camera.up.set(0, 1, 0)
-      camera.lookAt(0, 0, 0);
+    .start()
+
+  // camera rotation
+  const startQuaternion = camera.quaternion.clone();
+  const tempCamera = new THREE.PerspectiveCamera();
+  tempCamera.position.copy(targetCameraPosition);
+  tempCamera.lookAt(0, 0, 0);
+  const targetQuaternion = tempCamera.quaternion.clone();
+  new Tween({ t: 0 })
+    .to({ t: 1 }, gizmoAnimationTime)
+    .easing(Easing.Quadratic.Out)
+    .onUpdate(function(obj) {
+      camera.quaternion.copy(startQuaternion).slerp(targetQuaternion, obj.t);
     })
-    .start();
+    .start();  
+
+  // orbit camera targets and cursors
+  new Tween(controls.target)
+    .to(vecZero, gizmoAnimationTime)
+    .easing(Easing.Quadratic.Out)
+    .start()
+
+  new Tween(controls.cursor)
+    .to(vecZero, gizmoAnimationTime)
+    .easing(Easing.Quadratic.Out)
+    .start()
+}
+
+function switchCameraBasedOnFace(materialIndex) {
+  if (materialIndex === 0) {
+    animateCameraMovement(new THREE.Vector3(10, 0, 0)); // Right
+  } else if (materialIndex === 1) {
+    animateCameraMovement(new THREE.Vector3(-10, 0, 0)); // Left
+  } else if (materialIndex === 2) {
+    animateCameraMovement(new THREE.Vector3(0, 10, 0)); // Top
+  } else if (materialIndex === 3) {
+    animateCameraMovement(new THREE.Vector3(0, -10, 0)); // Bottom
+  } else if (materialIndex === 4) {
+    animateCameraMovement(new THREE.Vector3(0, 0, 10)); // Front
+  } else if (materialIndex === 5) {
+    animateCameraMovement(new THREE.Vector3(0, 0, -10)); // Back
+  }
 }
 
 function gizmoCreate() {
