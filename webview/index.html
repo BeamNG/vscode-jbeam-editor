@@ -80,9 +80,6 @@ let orthoCamera = new THREE.OrthographicCamera( window.innerWidth / - 16, window
   orthoCamera.position.y = 0;
 }
 
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
-
 camera = cameraPersp;
 
 let renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -105,7 +102,6 @@ scene.add(cube);
 createGrid(scene)
 gizmoCreate()
 
-
 function animate() {
   cube.rotation.x += 0.01;
   cube.rotation.y += 0.01;
@@ -113,6 +109,8 @@ function animate() {
   controls.update(); // Add this line to update the controls
   
   TweenUpdate();
+
+  document.getElementById('info').textContent = roundNumber(camera.position.x) + ', ' + roundNumber(camera.position.y) + ', ' + roundNumber(camera.position.z);
 
   renderer.clear();
   renderer.render(scene, camera);
@@ -179,7 +177,8 @@ document.getElementById("viewSelector").addEventListener("change", function() {
       camera.position.set(10, 10, 10);
       break;
   }
-  camera.lookAt(scene.position); // Make the camera look at the center of the scene
+  //controls.resetSoft()
+  camera.lookAt(0, 0, 0); // Make the camera look at the center of the scene
 });
 
 document.getElementById("perspectiveToggle").addEventListener("change", function() {
@@ -191,7 +190,7 @@ document.getElementById("perspectiveToggle").addEventListener("change", function
   controls.object = camera;  // Update controls to new camera
   camera.position.z = 5;
   camera.position.y = 0;
-  camera.lookAt(scene.position); 
+  camera.lookAt(0, 0, 0); 
 });
 </script>
 </body>
@@ -201,6 +200,7 @@ document.getElementById("perspectiveToggle").addEventListener("change", function
 	top: 0;
   left:0;
 	z-index: 100;
+  font-family: monospace;
 }
 #viewSelector {
 	position: absolute;

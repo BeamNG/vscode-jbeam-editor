@@ -3,6 +3,11 @@ let gizmoScene
 let gizmoCamera
 let gizmoCube
 let gizmoCubeEdges
+let gizmoCubeHighlight
+
+let gizmoMaterials
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
 
 function createTextTexture(text, bgColor) {
   const canvas = document.createElement('canvas');
@@ -41,6 +46,23 @@ function onGizmoClick(event) {
   }
 }
 
+function onGizmoMouseMove(event) {
+  event.preventDefault();
+
+  for (let i = 0; i < gizmoCubeHighlight.material.length; i++) {
+    gizmoCubeHighlight.material[i].opacity = 0;
+  }
+
+  const rect = gizmoRenderer.domElement.getBoundingClientRect();
+  mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+  raycaster.setFromCamera(mouse, gizmoCamera);
+  const intersects = raycaster.intersectObject(gizmoCube, true);
+  if (intersects.length > 0 && intersects[0].face) {
+    gizmoCubeHighlight.material[intersects[0].face.materialIndex].opacity = 1
+  }
+}
+
 function switchCameraBasedOnFace(materialIndex) {
   targetCameraPosition = new THREE.Vector3();
   if (materialIndex === 0) {
@@ -56,15 +78,14 @@ function switchCameraBasedOnFace(materialIndex) {
   } else if (materialIndex === 5) {
     targetCameraPosition.set(0, 0, -10); // Back
   }
-  camera.lookAt(scene.position);
-
+  camera.lookAt(0, 0, 0);
   // Create a new tween for the camera
   new Tween(camera.position)
-    .to(targetCameraPosition, 300)
+    .to(targetCameraPosition, 250)
     .easing(Easing.Quadratic.Out)
     .onUpdate(function() {
       camera.up.set(0, 1, 0)
-      camera.lookAt(scene.position);
+      camera.lookAt(0, 0, 0);
     })
     .start();
 }
@@ -92,36 +113,48 @@ function gizmoCreate() {
 
   let gizmoCubeGeometry = new THREE.BoxGeometry(1, 1, 1);
 
-  const materials = [
+  gizmoMaterials = [
     new THREE.MeshBasicMaterial({ map: createTextTexture('Right', faceColors.Right) }),
     new THREE.MeshBasicMaterial({ map: createTextTexture('Left', faceColors.Left) }),
     new THREE.MeshBasicMaterial({ map: createTextTexture('Top', faceColors.Top) }),
     new THREE.MeshBasicMaterial({ map: createTextTexture('Bottom', faceColors.Bottom) }),
     new THREE.MeshBasicMaterial({ map: createTextTexture('Front', faceColors.Front) }),
     new THREE.MeshBasicMaterial({ map: createTextTexture('Back', faceColors.Back) }),
-  ];
+  ]
 
-  let cubeSize = 0.8;
-  let cubeEdgesSize = 1.0;
-  gizmoCube = new THREE.Mesh(gizmoCubeGeometry, materials);
+  const cubeSize = 0.8;
+  const cubeEdgesSize = 1.0;
+  gizmoCube = new THREE.Mesh(gizmoCubeGeometry, gizmoMaterials);
+  gizmoCube.position.set(0, 0, 0);
+  gizmoCube.scale.set(cubeSize, cubeSize, cubeSize);
+  gizmoScene.add(gizmoCube);
 
   const edges = new THREE.EdgesGeometry(gizmoCube.geometry);
   gizmoCubeEdges = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xaaaaaa }));
   gizmoCubeEdges.position.set(0, 0, 0);
   gizmoCubeEdges.scale.set(cubeEdgesSize, cubeEdgesSize, cubeEdgesSize);
-
-  //let gizmoCubeMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true });
-  //gizmoCube = new THREE.Mesh(gizmoCubeGeometry, gizmoCubeMaterial);
-  gizmoCube.position.set(0, 0, 0);
-  gizmoCube.scale.set(cubeSize, cubeSize, cubeSize);
-  gizmoScene.add(gizmoCube);
   gizmoScene.add(gizmoCubeEdges);
 
+  let gizmoHighlightMaterials = [
+    new THREE.MeshBasicMaterial({color: 0xff0000, opacity: 0, transparent: true, blending: THREE.AdditiveBlending}),
+    new THREE.MeshBasicMaterial({color: 0xff0000, opacity: 0, transparent: true, blending: THREE.AdditiveBlending}),
+    new THREE.MeshBasicMaterial({color: 0xff0000, opacity: 0, transparent: true, blending: THREE.AdditiveBlending}),
+    new THREE.MeshBasicMaterial({color: 0xff0000, opacity: 0, transparent: true, blending: THREE.AdditiveBlending}),
+    new THREE.MeshBasicMaterial({color: 0xff0000, opacity: 0, transparent: true, blending: THREE.AdditiveBlending}),
+    new THREE.MeshBasicMaterial({color: 0xff0000, opacity: 0, transparent: true, blending: THREE.AdditiveBlending})
+  ]
+  const cubeHighlightSize = 0.9
+  gizmoCubeHighlight = new THREE.Mesh(gizmoCubeGeometry, gizmoHighlightMaterials);
+  gizmoCubeHighlight.scale.set(cubeHighlightSize, cubeHighlightSize, cubeHighlightSize);
+  gizmoScene.add(gizmoCubeHighlight)
+
   gizmoRenderer.domElement.addEventListener('click', onGizmoClick);
+  gizmoRenderer.domElement.addEventListener('mousemove', onGizmoMouseMove, false);
 }
 
 function gizmoAnimate() {
   gizmoCube.quaternion.copy(camera.quaternion).invert()
   gizmoCubeEdges.quaternion.copy(gizmoCube.quaternion)
+  gizmoCubeHighlight.quaternion.copy(gizmoCube.quaternion)
   gizmoRenderer.render(gizmoScene, gizmoCamera);
 }
