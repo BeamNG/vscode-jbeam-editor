@@ -12,6 +12,13 @@ let views = [
 ]
 let selectedViewName = 'Front'
 
+const settingsWindowFlags = 
+    ImGui.WindowFlags.NoTitleBar | // Hides the title bar
+    ImGui.WindowFlags.NoResize |   // Disables window resizing
+    ImGui.WindowFlags.NoMove |     // Disables window movement
+    ImGui.WindowFlags.NoCollapse;  // Prevents window collapse
+
+
 export async function init() {
   await ImGui.default();
   //console.log("ImGui.VERSION = ", ImGui.VERSION)
@@ -22,7 +29,13 @@ export async function init() {
 }
 
 function drawWindow() {
-  ImGui.Begin("Settings", (_ = show) => show = _);
+  const windowPosX = 0
+  const windowWidth = 200
+  const windowHeight = 100
+  const windowPosY = io.DisplaySize.y - windowHeight; // This places the window 10 units from the bottom
+  ImGui.SetNextWindowPos(new ImGui.ImVec2(windowPosX, windowPosY))
+  ImGui.SetNextWindowSize(new ImGui.ImVec2(windowWidth, windowHeight));
+  ImGui.Begin("##NoTitleWindow", null, settingsWindowFlags);
   //ImGui.Text("Hello, World!");
   //if(ImGui.Button('Save')) {
   //  console.log('Button pressed!')
