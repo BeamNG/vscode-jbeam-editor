@@ -4,6 +4,7 @@ let orthoCamera
 let cameraIsPersp = true
 let orbitControls
 let selectedViewName = 'Front'
+let scene = null
 
 let ctx = {}
 
