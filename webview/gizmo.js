@@ -6,8 +6,6 @@ let gizmoCubeEdges
 let gizmoCubeHighlight
 
 let gizmoMaterials
-const raycaster = new THREE.Raycaster()
-const mouse = new THREE.Vector2()
 const vecZero = new THREE.Vector3(0, 0, 0)
 const gizmoAnimationTime = 250
 

@@ -5,6 +5,10 @@ let cameraIsPersp = true
 let orbitControls
 let selectedViewName = 'Front'
 let scene = null
+let renderer
+
+const raycaster = new THREE.Raycaster()
+const mouse = new THREE.Vector2()
 
 let ctx = {}
 

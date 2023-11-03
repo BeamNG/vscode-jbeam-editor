@@ -1,4 +1,6 @@
 let jbeamData = null
+let pointsObject
+let pointsCache
 
 function createCircleTexture(radius, color) {
   const canvas = document.createElement('canvas');
@@ -27,6 +29,7 @@ function onReceiveData(data) {
 
   let nodeVertices = []
   let lineVertices = []
+  pointsCache = []
   for (let partName in jbeamData) {
     let part = jbeamData[partName]
     if(part.hasOwnProperty('nodes')) {
@@ -34,6 +37,8 @@ function onReceiveData(data) {
         let node = part.nodes[nodeId]
         // node.pos contains [x, y, z]
         nodeVertices.push(...node.pos)
+        node.pos3d = new THREE.Vector3(node.pos[0], node.pos[1], node.pos[2])
+        pointsCache.push(node)
       }
     }
 
@@ -62,8 +67,8 @@ function onReceiveData(data) {
     alphaTest: 0.5,    
     blending: THREE.NormalBlending
   });
-  const points = new THREE.Points(geometryNodes, nodesMaterial);
-  scene.add(points);
+  pointsObject = new THREE.Points(geometryNodes, nodesMaterial);
+  scene.add(pointsObject);
 
   // beams
   const lineGeometry = new THREE.BufferGeometry();
@@ -88,8 +93,67 @@ function onReceiveMessage(event) {
   }
 }
 
+function drawRay(raycaster, scene) {
+  // The default direction vector is normalized, we need to scale it for visualization
+  const length = 100; // this can be any number that works well for the scale of your scene
+  const hex = 0xff0000; // color of the ray
+
+  // Create an arrow helper to represent the ray
+  const arrowHelper = new THREE.ArrowHelper(raycaster.ray.direction, raycaster.ray.origin, length, hex);
+  scene.add(arrowHelper);
+
+  // Keep a reference to this arrowHelper to remove it later if needed
+  return arrowHelper;
+}
+
+function checkIntersection() {
+  // Update the picking ray with the camera and mouse position
+  raycaster.setFromCamera(mouse, camera);
+
+  let closestPointIdx = null;
+  let closestDistance = Infinity;
+  for (let i = 0; i < pointsCache.length; i++) {
+    const distance = raycaster.ray.distanceToPoint(pointsCache[i].pos3d);
+    if (distance < closestDistance) {
+      closestDistance = distance;
+      closestPointIdx = i;
+    }
+  }
+
+  // If the closest point is within the desired threshold, we have a hit
+  if (closestPointIdx && closestDistance <= 0.1) {
+    const node = pointsCache[closestPointIdx]
+    const offset = new THREE.Vector3().subVectors(node.pos3d, orbitControls.target);
+    const newCameraPosition = new THREE.Vector3().addVectors(camera.position, offset);
+
+    console.log('hit node:', node)
+
+    new Tween(orbitControls.target)
+      .to(node.pos3d, 120)
+      .easing(Easing.Quadratic.Out)
+      .start()
+      
+    new Tween(camera.position)
+      .to(newCameraPosition, 120)
+      .easing(Easing.Quadratic.Out)
+      .start()
+  }
+}
+
+function onMouseClick(event) {
+  const rect = renderer.domElement.getBoundingClientRect();
+  mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+  //mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  //mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  
+  checkIntersection();
+}
+
 export function init() {
   window.addEventListener('message', onReceiveMessage);
+  window.addEventListener('click', onMouseClick, false);
 }
 
 export function animate(time) {

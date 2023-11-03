@@ -1,5 +1,4 @@
 //let cube
-let renderer
 let cameraCenterSphere
 
 function animate(time) {

@@ -204,7 +204,7 @@ function processPart(part, processSlotsTable, omitWarnings) {
     for (let nodeId in part.nodes) {
       let node = part.nodes[nodeId];
       try {
-        node.pos = [node.posX, node.posY, node.posZ]
+        node.pos = [node.posX, node.posZ, node.posY] // FLIP!
       } catch (e) {
       }
       //console.log(node)
