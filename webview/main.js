@@ -2,6 +2,7 @@
 let cameraCenterSphere
 
 function animate(time) {
+  ctx.ui.frameBegin()
   cameraCenterSphere.position.copy(orbitControls.target);
   ctx.jbeamVisuals.animate(time)
 
@@ -23,7 +24,7 @@ function animate(time) {
 
   requestAnimationFrame(animate);
 
-  ctx.ui.animate()
+  ctx.ui.frameEnd()
 }
 
 function onResize() {

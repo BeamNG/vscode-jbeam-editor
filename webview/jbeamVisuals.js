@@ -1,6 +1,7 @@
 let jbeamData = null
 let pointsObject
 let pointsCache
+let selectedNodeIdx = null
 
 function createCircleTexture(radius, color) {
   const canvas = document.createElement('canvas');
@@ -107,7 +108,11 @@ function drawRay(raycaster, scene) {
 }
 
 function checkIntersection() {
-  // Update the picking ray with the camera and mouse position
+  if(ctx.ui.wantCaptureMouse()) return
+
+  //selectedNodeIdx = null
+  console.log(">>> checkIntersection")
+
   raycaster.setFromCamera(mouse, camera);
 
   let closestPointIdx = null;
@@ -127,6 +132,7 @@ function checkIntersection() {
     const newCameraPosition = new THREE.Vector3().addVectors(camera.position, offset);
 
     console.log('hit node:', node)
+    selectedNodeIdx = closestPointIdx
 
     new Tween(orbitControls.target)
       .to(node.pos3d, 120)
@@ -140,23 +146,29 @@ function checkIntersection() {
   }
 }
 
-function onMouseClick(event) {
+function onMouseDown(event) {
   const rect = renderer.domElement.getBoundingClientRect();
   mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
   mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-  //mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-  //mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-  
   checkIntersection();
 }
 
 export function init() {
   window.addEventListener('message', onReceiveMessage);
-  window.addEventListener('click', onMouseClick, false);
+  window.addEventListener('mousedown', onMouseDown, false);
 }
 
 export function animate(time) {
   if(jbeamData === null) return
 
+  if(selectedNodeIdx) {
+    const selectedNode = pointsCache[selectedNodeIdx]
+    const prettyJson = JSON.stringify(selectedNode, null, 2)
+    ImGui.Begin("Node Data##nodedata");
+    ImGui.TextUnformatted(prettyJson);
+    if(ImGui.SmallButton('deselect')) {
+      selectedNodeIdx = null
+    }
+    ImGui.End();
+  }
 }

@@ -82,16 +82,15 @@ function drawWindow() {
   ImGui.End();
 }
 
-let showDemoWindow = [true]
-export function animate(time) {
+export function frameBegin(time) {
   if(io === null) return
   ImGui_Impl.NewFrame(time)
   ImGui.NewFrame()
+}
 
+export function frameEnd() {
+  if(io === null) return
   drawWindow()
-
-  ImGui.ShowDemoWindow(showDemoWindow)
-
   ImGui.EndFrame()
   ImGui.Render()
   ImGui_Impl.RenderDrawData(ImGui.GetDrawData())
