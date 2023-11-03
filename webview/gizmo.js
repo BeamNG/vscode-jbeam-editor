@@ -101,16 +101,22 @@ function animateCameraMovement(targetCameraPosition) {
 function switchCameraBasedOnFace(materialIndex) {
   if (materialIndex === 0) {
     animateCameraMovement(new THREE.Vector3(10, 0, 0)); // Right
+    selectedViewName = 'Right'
   } else if (materialIndex === 1) {
     animateCameraMovement(new THREE.Vector3(-10, 0, 0)); // Left
+    selectedViewName = 'Left'
   } else if (materialIndex === 2) {
     animateCameraMovement(new THREE.Vector3(0, 10, 0)); // Top
+    selectedViewName = 'Top'
   } else if (materialIndex === 3) {
     animateCameraMovement(new THREE.Vector3(0, -10, 0)); // Bottom
+    selectedViewName = 'Bottom'
   } else if (materialIndex === 4) {
     animateCameraMovement(new THREE.Vector3(0, 0, 10)); // Front
+    selectedViewName = 'Front'
   } else if (materialIndex === 5) {
     animateCameraMovement(new THREE.Vector3(0, 0, -10)); // Back
+    selectedViewName = 'Back'
   }
 }
 

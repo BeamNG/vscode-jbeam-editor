@@ -10,7 +10,6 @@ let views = [
   {name: 'Back'  , onActivate() { animateCameraMovement(new THREE.Vector3(0, 0,-10)) }},
   {name: 'Iso'   , onActivate() { animateCameraMovement(new THREE.Vector3(10,10,10)) }},
 ]
-let selectedViewName = 'Front'
 
 const settingsWindowFlags = 
     ImGui.WindowFlags.NoTitleBar | // Hides the title bar
@@ -47,9 +46,19 @@ function drawWindow() {
       camera = orthoCamera;
     }
     orbitControls.object = camera;  // Update controls to new camera
-    camera.position.z = 5;
-    camera.position.y = 0;
-    camera.lookAt(0, 0, 0); 
+    let viewFound = false
+    views.forEach((view) => {
+      if(selectedViewName === view.name) {
+        view.onActivate()
+        viewFound = true
+        return
+      }
+    });
+    if(!viewFound) {
+      camera.position.z = 5
+      camera.position.y = 0
+      camera.lookAt(0, 0, 0)
+    }
   }
   
   if (ImGui.BeginCombo("View", selectedViewName)) {

@@ -8,156 +8,23 @@
 </head>
 <body>
 <canvas id="output" tabindex="1"></canvas>
-<div id="info">Description</div>
 <script src="<!-- LocalResource:utils.js -->"></script>
 <script src="<!-- LocalResource:three.min.js -->"></script>
 <script src="<!-- LocalResource:OrbitControls.js -->"></script>
 <script src="<!-- LocalResource:tween.js -->"></script>
 <script src="<!-- LocalResource:gizmo.js -->"></script>
 <script type="module">
-
 import * as ImGui from "<!-- LocalResource:imgui.umd.js -->";
 import * as ImGui_Impl from "<!-- LocalResource:imgui_impl.umd.js -->";
 import * as ui from '<!-- LocalResource:ui.js -->';
+import * as main from '<!-- LocalResource:main.js -->';
 
-function createGrid(scene) {
-  let size = 20; // 20x20 grid
-  let divisions = 20;
+ctx.ui = ui
 
-  // Grid for the XZ plane (Right-Left)
-  let fadedFront = interpolateColor(new THREE.Color(faceColors.Right), new THREE.Color(0x808080), 0.1);
-  let fadedBack = interpolateColor(new THREE.Color(faceColors.Left), new THREE.Color(0x808080), 0.6);
-  let gridXZ = new THREE.GridHelper(size, divisions, fadedFront, fadedBack);
-  gridXZ.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);  // Rotate around the X-axis to lay it flat
-  gridXZ.material.opacity = 0.5;
-  gridXZ.material.transparent = true;
-  scene.add(gridXZ);
-
-  // Grid for the XY plane (Top-Bottom)
-  fadedFront = interpolateColor(new THREE.Color(faceColors.Top), new THREE.Color(0x808080), 0.1);
-  fadedBack = interpolateColor(new THREE.Color(faceColors.Bottom), new THREE.Color(0x808080), 0.6);
-  let gridXY = new THREE.GridHelper(size, divisions, fadedFront, fadedBack);
-  gridXY.material.opacity = 0.5;
-  gridXY.material.transparent = true;
-  scene.add(gridXY);
-
-  // Grid for the YZ plane (Front-Back)
-  fadedFront = interpolateColor(new THREE.Color(faceColors.Front), new THREE.Color(0x808080), 0.1);
-  fadedBack = interpolateColor(new THREE.Color(faceColors.Back), new THREE.Color(0x808080), 0.6);
-  let gridYZ = new THREE.GridHelper(size, divisions, fadedFront, fadedBack);
-  gridYZ.material.opacity = 0.5;
-  gridYZ.material.transparent = true;
-  gridYZ.rotateOnAxis(new THREE.Vector3(0, 0, 1), Math.PI / 2);  // Rotate around the Z-axis to make it vertical
-  scene.add(gridYZ);
-}
-
-
-let scene = new THREE.Scene();
-cameraPersp = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-cameraPersp.position.z = 5;
-cameraPersp.position.y = 0;
-orthoCamera = new THREE.OrthographicCamera( window.innerWidth / - 16, window.innerWidth / 16, window.innerHeight / 16, window.innerHeight / - 16, 0.1, 60000 );
-{
-  let aspect = window.innerWidth / window.innerHeight;
-  let height = window.innerHeight / 16;  // adjust based on your requirements
-  let width = height * aspect;
-
-  orthoCamera.left = -width / 2;
-  orthoCamera.right = width / 2;
-  orthoCamera.top = height / 2;
-  orthoCamera.bottom = -height / 2;
-  orthoCamera.updateProjectionMatrix();
-  orthoCamera.position.z = 5;
-  orthoCamera.position.y = 0;
-}
-
-camera = cameraPersp;
-
-const canvas = document.getElementById("output");
-let renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
-document.body.appendChild(renderer.domElement);
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.domElement.style.width = '100%';  
-renderer.domElement.style.height = '100%';
-renderer.setPixelRatio(window.devicePixelRatio);
-renderer.gammaFactor = 2.2; 
-renderer.gammaOutput = true;
-
-orbitControls = new OrbitControls(camera, renderer.domElement);
-
-let geometry = new THREE.BoxGeometry();
-let material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
-let cube = new THREE.Mesh(geometry, material);
-scene.add(cube);
-
-createGrid(scene)
-gizmoCreate()
-ui.init()
-
-function animate(time) {
-  cube.rotation.x += 0.01;
-  cube.rotation.y += 0.01;
-
-  orbitControls.enabled = !ui.wantCaptureMouse()
-
-  orbitControls.update();
-  
-  TweenUpdate();
-
-  document.getElementById('info').textContent = roundNumber(camera.position.x) + ', ' + roundNumber(camera.position.y) + ', ' + roundNumber(camera.position.z);
-
-  renderer.clear();
-  renderer.render(scene, camera);
-
-  gizmoAnimate()
-
-  requestAnimationFrame(animate);
-
-  ui.animate()
-}
-
-animate(0);
-
-window.addEventListener('message', event => {
-  const message = event.data; // The JSON data our extension sent
-
-  switch (message.command) {
-    case 'jbeamData':
-      const data = message.text;
-      console.log(data);
-      break;
-  }
-});
-
-window.addEventListener('resize', function() {
-  cameraPersp.aspect = window.innerWidth / window.innerHeight;
-  cameraPersp.updateProjectionMatrix();
-
-  // For the orthographic camera
-  let aspect = window.innerWidth / window.innerHeight;
-  let height = window.innerHeight / 16;  // adjust based on your requirements
-  let width = height * aspect;
-
-  orthoCamera.left = -width / 2;
-  orthoCamera.right = width / 2;
-  orthoCamera.top = height / 2;
-  orthoCamera.bottom = -height / 2;
-  orthoCamera.updateProjectionMatrix();
-
-  // Update the renderer's size
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(window.devicePixelRatio);
-});
+main.init()
 </script>
 </body>
 <style>
-#info {
-	position: absolute;
-	top: 0;
-  left:0;
-	z-index: 100;
-  font-family: monospace;
-}
 body, html, canvas {
   user-select: none;
   margin: 0;
