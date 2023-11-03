@@ -83,8 +83,7 @@ renderer.setPixelRatio(window.devicePixelRatio);
 renderer.gammaFactor = 2.2; 
 renderer.gammaOutput = true;
 
-const controls = new OrbitControls(camera, renderer.domElement);
-//controls.enableRotate = false;
+orbitControls = new OrbitControls(camera, renderer.domElement);
 
 let geometry = new THREE.BoxGeometry();
 let material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
@@ -99,9 +98,9 @@ function animate(time) {
   cube.rotation.x += 0.01;
   cube.rotation.y += 0.01;
 
-  controls.enabled = !ui.wantCaptureMouse()
+  orbitControls.enabled = !ui.wantCaptureMouse()
 
-  controls.update(); // Add this line to update the controls
+  orbitControls.update();
   
   TweenUpdate();
 

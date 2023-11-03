@@ -10,19 +10,14 @@ let views = [
   {name: 'Back'  , onActivate() { animateCameraMovement(new THREE.Vector3(0, 0,-10)) }},
   {name: 'Iso'   , onActivate() { animateCameraMovement(new THREE.Vector3(10,10,10)) }},
 ]
-let selectedViewName = ''
+let selectedViewName = 'Front'
 
 export async function init() {
   await ImGui.default();
-  console.log(">>> ImGui.VERSION = ", ImGui.VERSION)
-  console.log(">> ImGui = ", ImGui)
-  console.log(">> ImGui.CreateContext = ", ImGui.CreateContext)
-  //await ImGui.default();
+  //console.log("ImGui.VERSION = ", ImGui.VERSION)
   ImGui.CreateContext();
   ImGui.StyleColorsDark();
-  //const clear_color = new ImGui.ImVec4(0.3, 0.3, 0.3, 1.00);
-  const canvas = document.getElementById("output")
-  ImGui_Impl.Init(canvas)
+  ImGui_Impl.Init(document.getElementById("output"))
   io = ImGui.GetIO()
 }
 
@@ -38,7 +33,7 @@ function drawWindow() {
     } else {
       camera = orthoCamera;
     }
-    controls.object = camera;  // Update controls to new camera
+    orbitControls.object = camera;  // Update controls to new camera
     camera.position.z = 5;
     camera.position.y = 0;
     camera.lookAt(0, 0, 0); 
@@ -62,6 +57,7 @@ function drawWindow() {
 }
 
 export function animate(time) {
+  if(io === null) return
   ImGui_Impl.NewFrame(time)
   ImGui.NewFrame()
 
