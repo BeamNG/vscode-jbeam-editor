@@ -1,11 +1,13 @@
-let cube
+//let cube
 let renderer
+let cameraCenterSphere
 
 function animate(time) {
+  cameraCenterSphere.position.copy(orbitControls.target);
   ctx.jbeamVisuals.animate(time)
 
-  cube.rotation.x += 0.01;
-  cube.rotation.y += 0.01;
+  //cube.rotation.x += 0.01;
+  //cube.rotation.y += 0.01;
 
   orbitControls.enabled = !ctx.ui.wantCaptureMouse()
 
@@ -50,7 +52,7 @@ export function init() {
   cameraPersp = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
   cameraPersp.position.z = 5;
   cameraPersp.position.y = 0;
-  orthoCamera = new THREE.OrthographicCamera( window.innerWidth / - 16, window.innerWidth / 16, window.innerHeight / 16, window.innerHeight / - 16, 0.1, 60000 );
+  orthoCamera = new THREE.OrthographicCamera( window.innerWidth / - 16, window.innerWidth / 16, window.innerHeight / 16, window.innerHeight / - 16, 0.01, 6000 );
   {
     let aspect = window.innerWidth / window.innerHeight;
     let height = window.innerHeight / 16;  // adjust based on your requirements
@@ -80,10 +82,19 @@ export function init() {
 
   orbitControls = new OrbitControls(camera, renderer.domElement);
 
-  let geometry = new THREE.BoxGeometry();
-  let material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
-  cube = new THREE.Mesh(geometry, material);
-  scene.add(cube);
+  //let geometry = new THREE.BoxGeometry();
+  //let material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
+  //cube = new THREE.Mesh(geometry, material);
+  //scene.add(cube);
+
+  // the camera center
+  const sphereGeometry = new THREE.SphereGeometry(0.025);
+  const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0x333333 });
+  //sphereMaterial.opacity = 0.5;
+  //sphereMaterial.transparent = true;
+  cameraCenterSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+  scene.add(cameraCenterSphere);  
+  
 
   createGrid(scene)
   gizmoCreate()
@@ -91,4 +102,6 @@ export function init() {
   ctx.jbeamVisuals.init()
 
   animate(0);
+
+  window.addEventListener('resize', onResize)
 }

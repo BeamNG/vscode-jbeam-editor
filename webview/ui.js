@@ -42,10 +42,13 @@ function drawWindow() {
   if(ImGui.Checkbox("Perspective", (value = cameraIsPersp) => cameraIsPersp = value)) {
     if (cameraIsPersp) {
       camera = cameraPersp;
+      cameraPersp.position.copy(orthoCamera.position)
     } else {
       camera = orthoCamera;
+      orthoCamera.position.copy(cameraPersp.position)
     }
     orbitControls.object = camera;  // Update controls to new camera
+    /*
     let viewFound = false
     views.forEach((view) => {
       if(selectedViewName === view.name) {
@@ -59,6 +62,7 @@ function drawWindow() {
       camera.position.y = 0
       camera.lookAt(0, 0, 0)
     }
+    */
   }
   
   if (ImGui.BeginCombo("View", selectedViewName)) {
