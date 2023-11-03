@@ -1,5 +1,25 @@
 let jbeamData = null
 
+function createCircleTexture(radius, color) {
+  const canvas = document.createElement('canvas');
+  canvas.width = radius * 2;
+  canvas.height = radius * 2;
+
+  const context = canvas.getContext('2d');
+  const gradient = context.createRadialGradient(
+    radius, radius, 0, 
+    radius, radius, radius
+  );
+
+  gradient.addColorStop(0, color);
+  gradient.addColorStop(1, 'transparent');
+
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  return new THREE.CanvasTexture(canvas);
+}
+const pointTexture = createCircleTexture(32, 'red');
 
 function onReceiveData(data) {
   jbeamData = data
@@ -30,18 +50,29 @@ function onReceiveData(data) {
     }
   }
 
-  
   // nodes
   const geometryNodes = new THREE.BufferGeometry();
   geometryNodes.setAttribute('position', new THREE.BufferAttribute(new Float32Array(nodeVertices), 3));
-  const nodesMaterial = new THREE.PointsMaterial({ color: 0xFF0000, size: 0.1 });
+  const nodesMaterial = new THREE.PointsMaterial({ 
+    size: 0.1, 
+    color: 0xff0000,
+    //map: pointTexture, 
+    transparent: true,
+    premultipliedAlpha: true,
+    alphaTest: 0.5,    
+    blending: THREE.NormalBlending
+  });
   const points = new THREE.Points(geometryNodes, nodesMaterial);
   scene.add(points);
 
   // beams
   const lineGeometry = new THREE.BufferGeometry();
   lineGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(lineVertices), 3));
-  const lineMaterial = new THREE.LineBasicMaterial({ color: 0x00FF00 });
+  let lineMaterial = new THREE.LineBasicMaterial({ color: 0x00FF00 });
+  lineMaterial.depthTest = true;
+  lineMaterial.depthWrite = true;
+
+  //const lineMaterial = new THREE.LineBasicMaterial({ color: 0x00FF00 });
   const lines = new THREE.LineSegments(lineGeometry, lineMaterial);
   scene.add(lines);
 
