@@ -59,7 +59,7 @@ function onGizmoMouseMove(event) {
   raycaster.setFromCamera(mouse, gizmoCamera);
   const intersects = raycaster.intersectObject(gizmoCube, true);
   if (intersects.length > 0 && intersects[0].face) {
-    gizmoCubeHighlight.material[intersects[0].face.materialIndex].opacity = 1
+    gizmoCubeHighlight.material[intersects[0].face.materialIndex].opacity = 0.6
   }
 }
 
@@ -143,9 +143,8 @@ function gizmoCreate() {
     new THREE.MeshBasicMaterial({color: 0xff0000, opacity: 0, transparent: true, blending: THREE.AdditiveBlending}),
     new THREE.MeshBasicMaterial({color: 0xff0000, opacity: 0, transparent: true, blending: THREE.AdditiveBlending})
   ]
-  const cubeHighlightSize = 0.9
   gizmoCubeHighlight = new THREE.Mesh(gizmoCubeGeometry, gizmoHighlightMaterials);
-  gizmoCubeHighlight.scale.set(cubeHighlightSize, cubeHighlightSize, cubeHighlightSize);
+  gizmoCubeHighlight.scale.set(cubeEdgesSize, cubeEdgesSize, cubeEdgesSize);
   gizmoScene.add(gizmoCubeHighlight)
 
   gizmoRenderer.domElement.addEventListener('click', onGizmoClick);
