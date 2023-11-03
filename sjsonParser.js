@@ -27,22 +27,43 @@ function decodeSJSON(s) {
     throw new SJSONException(msg, i, 0, ''); // Adjust to give correct line and snippet
   }
 
+  let lineNumber = 1; // Global variable to keep track of the line numbers
+
   function skipWhiteSpace() {
-    while (i < s.length && (s[i] <= ' ' || s[i] === ',')) i++;
-    if (s[i] === '/') {
-      if (s[i + 1] === '/') {
+    while (i < s.length && (s[i] <= ' ' || s[i] === ',' || s[i] === '/' )) {
+      if (s[i] === '\n') {
+        // Increment the line number on a newline
+        lineNumber++;
+        i++;
+      } else if (s[i] === '/' && s[i + 1] === '/') {
         // Single line comment
-        while (i < s.length && s[i] !== '\n') i++;
-        skipWhiteSpace();
-      } else if (s[i + 1] === '*') {
-        // Multi line comment
-        i += 2; // Move past the '/*'
-        while (i < s.length && !(s[i] === '*' && s[i + 1] === '/')) i++;
-        if (i >= s.length) jsonError('Unterminated comment');
-        i += 2; // Move past the '*/'
-        skipWhiteSpace();
-      } else {
-        jsonError('Invalid comment');
+        i += 2;
+        while (i < s.length && s[i] !== '\n') {
+          i++;
+        }
+        if (i < s.length) {
+          // Increment the line number when the end of the comment is a newline
+          lineNumber++;
+        }
+        i++; // Skip the newline
+      } else if (s[i] === '/' && s[i + 1] === '*') {
+        // Multi-line comment
+        i += 2; // Skip the '/*'
+        while (i < s.length && !(s[i] === '*' && s[i + 1] === '/')) {
+          if (s[i] === '\n') {
+            // Increment the line number within the comment block on a newline
+            lineNumber++;
+          }
+          i++;
+        }
+        if (i >= s.length) {
+          jsonError('Unterminated comment');
+        } else {
+          i += 2; // Skip the '*/'
+        }
+      } else if (s[i] <= ' ' || s[i] === ',') {
+        // Skip other white space and commas
+        i++;
       }
     }
   }
@@ -112,6 +133,7 @@ function decodeSJSON(s) {
 
   function parseObject() {
     const obj = {};
+    obj.__line = lineNumber + 1
     i++; // skip '{'
     skipWhiteSpace();
     while (s[i] !== '}') {

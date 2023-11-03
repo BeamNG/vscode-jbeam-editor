@@ -6,6 +6,7 @@ let orbitControls
 let selectedViewName = 'Front'
 let scene = null
 let renderer
+let vscode
 
 const raycaster = new THREE.Raycaster()
 const mouse = new THREE.Vector2()

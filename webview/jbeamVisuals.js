@@ -1,4 +1,5 @@
 let jbeamData = null
+let uri = null
 let pointsObject
 let linesObject
 let pointsCache
@@ -26,9 +27,10 @@ function createCircleTexture(radius, color) {
 }
 const pointTexture = createCircleTexture(32, 'red');
 
-function onReceiveData(data) {
-  jbeamData = data
-  console.log(jbeamData);
+function onReceiveData(message) {
+  jbeamData = message.data
+  uri = message.uri
+  console.log("onReceiveData", message);
 
   let nodeVertices = []
   let lineVertices = []
@@ -93,15 +95,13 @@ function onReceiveData(data) {
   //const lineMaterial = new THREE.LineBasicMaterial({ color: 0x00FF00 });
   linesObject = new THREE.LineSegments(lineGeometry, lineMaterial);
   scene.add(linesObject);
-
-  console.log("DONE!")
 }
 
 function onReceiveMessage(event) {
   const message = event.data;
   switch (message.command) {
     case 'jbeamData':
-      onReceiveData(message.text);
+      onReceiveData(message);
       break;
   }
 }
@@ -145,6 +145,15 @@ function checkIntersection() {
 
     console.log('hit node:', node)
     selectedNodeIdx = closestPointIdx
+
+    if(node.hasOwnProperty('__line')) {
+      vscode.postMessage({
+        command: 'selectLine',
+        line: node.__line,
+        uri: uri,
+      });
+      console.log(">postMessage>", node.__line)
+    }
 
     new Tween(orbitControls.target)
       .to(node.pos3d, 120)

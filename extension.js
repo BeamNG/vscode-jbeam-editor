@@ -44,8 +44,31 @@ function activate(context) {
       }
     )
     webPanel.webview.html = getWebviewContent(webPanel);
+    function goToLine(message) {
+      let targetEditor = vscode.window.visibleTextEditors.find(editor => {
+        return editor.document.uri.toString() === message.uri;
+      })
+      if (targetEditor) {
+        const range = targetEditor.document.lineAt(message.line - 1).range;
+        targetEditor.selection = new vscode.Selection(range.start, range.end);
+        targetEditor.revealRange(range);
+      }
+    }
+    webPanel.webview.onDidReceiveMessage(
+      message => {
+        switch (message.command) {
+          case 'selectLine':
+            goToLine(message);
+            break;
+        }
+      },
+      undefined,
+      context.subscriptions
+    );
 
-    function parseAndPostData(text) {
+    function parseAndPostData(doc) {
+      const text = doc.getText()
+      const uri = doc.uri.toString()
       try {
         let parsedData = sjsonParser.decodeSJSON(text);
         //console.log("PARSED:", parsedData);
@@ -57,8 +80,6 @@ function activate(context) {
             
           if (result !== true) {
             console.error("An error occurred while processing the data.");
-          } else {
-            console.log("Processed data:", part);
           }
           tableInterpretedData[partName] = part
         }
@@ -67,7 +88,8 @@ function activate(context) {
         //console.log("table expanded:", parsedData);
         webPanel.webview.postMessage({
           command: 'jbeamData',
-          text: parsedData
+          data: parsedData,
+          uri: uri,
         });
       } catch (e) {
         // If there's an error in parsing, show it to the user
@@ -79,20 +101,20 @@ function activate(context) {
     // Listen for when the active editor changes
     vscode.window.onDidChangeActiveTextEditor(editor => {
       if (editor) {
-        parseAndPostData(editor.document.getText());
+        parseAndPostData(editor.document);
       }
     });
 
     // Listen for changes in the document of the active editor
     let disposable3 = vscode.workspace.onDidChangeTextDocument(event => {
       if (webPanel.visible && event.document === vscode.window.activeTextEditor.document) {
-        parseAndPostData(event.document.getText());
+        parseAndPostData(event.document);
       }
     });
 
     // Initial parse and post
     if (vscode.window.activeTextEditor) {
-      parseAndPostData(vscode.window.activeTextEditor.document.getText());
+      parseAndPostData(vscode.window.activeTextEditor.document);
     }
   });
 
