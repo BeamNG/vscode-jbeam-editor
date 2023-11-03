@@ -75,7 +75,7 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, omitWarning
   }
 
   let headerSize = header.length;
-  let headerSize1 = headerSize + 1;
+  let headerSize1 = headerSize;
   let newListSize = 0;
   let newList = {}
   let localOptions = replaceSpecialValues(Object.assign({}, inputOptions)) || {};

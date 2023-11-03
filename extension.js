@@ -42,47 +42,57 @@ function activate(context) {
         retainContextWhenHidden: true,  // Optionally, you can retain the state even when webview is not visible
         localResourceRoots: [vscode.Uri.file(path.join(context.extensionPath, 'webview'))]
       }
-    );
-
-    // And set its HTML content
+    )
     webPanel.webview.html = getWebviewContent(webPanel);
 
-    // Get the active editor
-    let editor = vscode.window.activeTextEditor;
-    if (!editor) {
-      vscode.window.showInformationMessage('No document is open');
-      return;
-    }
-    // Get the document text
-    const documentText = editor.document.getText();
-
-    // Now, parse the document text as SJSON
-    try {
-      let parsedData = sjsonParser.decodeSJSON(documentText);
-      //console.log("PARSED:", parsedData);
-      let tableInterpretedData = {}
-      for (let partName in parsedData) {
-        if (!parsedData.hasOwnProperty(partName)) continue;
-        let part = parsedData[partName];
-        let result = tableSchema.processPart(part, false, false);
-          
-        if (result !== true) {
-          console.error("An error occurred while processing the data.");
-        } else {
-          console.log("Processed data:", part);
+    function parseAndPostData(text) {
+      try {
+        let parsedData = sjsonParser.decodeSJSON(text);
+        //console.log("PARSED:", parsedData);
+        let tableInterpretedData = {}
+        for (let partName in parsedData) {
+          if (!parsedData.hasOwnProperty(partName)) continue;
+          let part = parsedData[partName];
+          let result = tableSchema.processPart(part, false, false);
+            
+          if (result !== true) {
+            console.error("An error occurred while processing the data.");
+          } else {
+            console.log("Processed data:", part);
+          }
+          tableInterpretedData[partName] = part
         }
-        tableInterpretedData[partName] = part
+        // Do something with the parsed data, like show it in an information message
+        vscode.window.showInformationMessage('Document parsed successfully. Check the console for the data.');
+        //console.log("table expanded:", parsedData);
+        webPanel.webview.postMessage({
+          command: 'jbeamData',
+          text: parsedData
+        });
+      } catch (e) {
+        // If there's an error in parsing, show it to the user
+        vscode.window.showErrorMessage(`Error parsing SJSON: ${e.message}`);
       }
-      // Do something with the parsed data, like show it in an information message
-      vscode.window.showInformationMessage('Document parsed successfully. Check the console for the data.');
-      //console.log("table expanded:", parsedData);
-      webPanel.webview.postMessage({
-        command: 'jbeamData',
-        text: parsedData
-      });
-    } catch (e) {
-      // If there's an error in parsing, show it to the user
-      vscode.window.showErrorMessage(`Error parsing SJSON: ${e.message}`);
+    }
+
+
+    // Listen for when the active editor changes
+    vscode.window.onDidChangeActiveTextEditor(editor => {
+      if (editor) {
+        parseAndPostData(editor.document.getText());
+      }
+    });
+
+    // Listen for changes in the document of the active editor
+    let disposable3 = vscode.workspace.onDidChangeTextDocument(event => {
+      if (webPanel.visible && event.document === vscode.window.activeTextEditor.document) {
+        parseAndPostData(event.document.getText());
+      }
+    });
+
+    // Initial parse and post
+    if (vscode.window.activeTextEditor) {
+      parseAndPostData(vscode.window.activeTextEditor.document.getText());
     }
   });
 

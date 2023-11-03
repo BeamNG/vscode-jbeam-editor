@@ -1,7 +1,9 @@
 let jbeamData = null
 let pointsObject
+let linesObject
 let pointsCache
 let selectedNodeIdx = null
+
 
 function createCircleTexture(radius, color) {
   const canvas = document.createElement('canvas');
@@ -57,7 +59,12 @@ function onReceiveData(data) {
   }
 
   // nodes
-  const geometryNodes = new THREE.BufferGeometry();
+  if(pointsObject) {
+    if (pointsObject.geometry) pointsObject.geometry.dispose();
+    if (pointsObject.material) pointsObject.material.dispose();
+    scene.remove(pointsObject);
+  }
+  let geometryNodes = new THREE.BufferGeometry();
   geometryNodes.setAttribute('position', new THREE.BufferAttribute(new Float32Array(nodeVertices), 3));
   const nodesMaterial = new THREE.PointsMaterial({ 
     size: 0.1, 
@@ -72,6 +79,11 @@ function onReceiveData(data) {
   scene.add(pointsObject);
 
   // beams
+  if(linesObject) {
+    if (linesObject.geometry) linesObject.geometry.dispose();
+    if (linesObject.material) linesObject.material.dispose();
+    scene.remove(linesObject);
+  }
   const lineGeometry = new THREE.BufferGeometry();
   lineGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(lineVertices), 3));
   let lineMaterial = new THREE.LineBasicMaterial({ color: 0x00FF00 });
@@ -79,8 +91,8 @@ function onReceiveData(data) {
   lineMaterial.depthWrite = true;
 
   //const lineMaterial = new THREE.LineBasicMaterial({ color: 0x00FF00 });
-  const lines = new THREE.LineSegments(lineGeometry, lineMaterial);
-  scene.add(lines);
+  linesObject = new THREE.LineSegments(lineGeometry, lineMaterial);
+  scene.add(linesObject);
 
   console.log("DONE!")
 }
