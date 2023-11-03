@@ -112,7 +112,9 @@ ui.init()
 function animate(time) {
   cube.rotation.x += 0.01;
   cube.rotation.y += 0.01;
-  
+
+  controls.enabled = !ui.wantCaptureMouse()
+
   controls.update(); // Add this line to update the controls
   
   TweenUpdate();

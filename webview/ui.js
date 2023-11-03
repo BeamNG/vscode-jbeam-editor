@@ -1,5 +1,5 @@
 let show = true;
-
+let io = null
 export async function init() {
   await ImGui.default();
   console.log(">>> ImGui.VERSION = ", ImGui.VERSION)
@@ -10,7 +10,8 @@ export async function init() {
   ImGui.StyleColorsDark();
   //const clear_color = new ImGui.ImVec4(0.3, 0.3, 0.3, 1.00);
   const canvas = document.getElementById("output")
-  ImGui_Impl.Init(canvas);
+  ImGui_Impl.Init(canvas)
+  io = ImGui.GetIO()
 }
 
 export function animate(time) {
@@ -29,4 +30,9 @@ export function animate(time) {
 export function shutdown() {
   ImGui_Impl.Shutdown()
   ImGui.DestroyContext()
+}
+
+export function wantCaptureMouse() {
+  if(io === null) return false
+  return io.WantCaptureMouse
 }
