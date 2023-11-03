@@ -42,6 +42,7 @@ export function init() {
     orthoCamera.updateProjectionMatrix();
     orthoCamera.position.z = 5;
     orthoCamera.position.y = 0;
+    orthoCamera.zoom = 2
   }
 
   camera = cameraPersp;

@@ -27,31 +27,32 @@ const typeIds = {
 function replaceSpecialValues(val) {
   let typeval = typeof val;
   if (typeval === "object" && !Array.isArray(val)) {
-  // Recursive replace
-  for (let k in val) {
-    val[k] = replaceSpecialValues(val[k]);
-  }
-  return val;
+    // Recursive replace
+    for (let k in val) {
+      val[k] = replaceSpecialValues(val[k]);
+    }
+    return val;
   }
   if (typeval !== "string") {
-  // Only replace strings
-  return val;
+    // Only replace strings
+    return val;
   }
 
   if (specialVals[val]) return specialVals[val];
 
   if (val.includes('|')) {
-  let parts = val.split("|");
-  let ival = 0;
-  for (let i = 1; i < parts.length; i++) {
-    let valuePart = parts[i];
-    // Is it a node material?
-    if (valuePart.startsWith("NM_")) {
-    ival = particles.getMaterialIDByName(materials, valuePart.substring(3));
+    let parts = val.split("|");
+    let ival = 0;
+    for (let i = 1; i < parts.length; i++) {
+      let valuePart = parts[i];
+      // Is it a node material?
+      if (valuePart.startsWith("NM_")) {
+        ival = 0 // NOFIX: not important for this parser?
+        // ival = particles.getMaterialIDByName(materials, valuePart.substring(3));
+      }
+      ival = ival | (typeIds[valuePart] || 0);
     }
-    ival = ival | (typeIds[valuePart] || 0);
-  }
-  return ival;
+    return ival;
   }
   return val;
 }
@@ -76,13 +77,14 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, omitWarning
   let headerSize = header.length;
   let headerSize1 = headerSize + 1;
   let newListSize = 0;
-  let newList = []
+  let newList = {}
   let localOptions = replaceSpecialValues(Object.assign({}, inputOptions)) || {};
 
   // Remove the header from the data, as we don't need it anymore
   jbeamTable.shift();
 
   // Walk the list entries
+  let newRowId = 0
   for (let [rowKey, rowValue] of jbeamTable.entries()) {
     if (typeof rowValue !== "object") {
       console.warn(`*** Invalid table row: ${JSON.stringify(rowValue)}`);
@@ -93,7 +95,7 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, omitWarning
       Object.assign(localOptions, replaceSpecialValues(rowValue));
       localOptions.__astNodeIdx = null;
     } else {
-      let newID = rowKey
+      let newID = newRowId++
       if (rowValue.length > headerSize + 1) {
         if (!omitWarnings) {
           console.warn(`*** Invalid table header, must be as long as all table cells (plus one additional options column):`);
@@ -144,53 +146,53 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, omitWarning
   return newList;
 }
 
-function process(vehicle, processSlotsTable, omitWarnings) {
-  vehicle.maxIDs = {};
-  vehicle.validTables = {};
-  vehicle.beams = vehicle.beams || {};
+function processPart(part, processSlotsTable, omitWarnings) {
+  part.maxIDs = {};
+  part.validTables = {};
+  part.beams = part.beams || {};
 
   // Walk everything and look for options
-  vehicle.options = vehicle.options || {};
-  for (let keyEntry in vehicle) {
-    if (!vehicle.hasOwnProperty(keyEntry)) continue;
+  part.options = part.options || {};
+  for (let keyEntry in part) {
+    if (!part.hasOwnProperty(keyEntry)) continue;
 
-    let entry = vehicle[keyEntry];
+    let entry = part[keyEntry];
     if (typeof entry !== "object") {
       // seems to be an option, add it to the vehicle options
-      vehicle.options[keyEntry] = entry;
-      delete vehicle[keyEntry];
+      part.options[keyEntry] = entry;
+      delete part[keyEntry];
     }
   }
 
-  // Walk all entries of the vehicle
-  for (let keyEntry in vehicle) {
-    if (!vehicle.hasOwnProperty(keyEntry)) continue;
+  // Walk all sections of the part
+  for (let sectionName in part) {
+    if (!part.hasOwnProperty(sectionName)) continue;
 
-    let entry = vehicle[keyEntry];
+    let section = part[sectionName];
 
     // Verify key names to be properly formatted
-    if (!/^[a-zA-Z_]+[a-zA-Z0-9_]*$/.test(keyEntry)) {
-      console.error(`*** Invalid attribute name '${keyEntry}'`);
+    if (!/^[a-zA-Z_]+[a-zA-Z0-9_]*$/.test(sectionName)) {
+      console.error(`*** Invalid attribute name '${sectionName}'`);
       return false;
     }
 
     // Init max
-    vehicle.maxIDs[keyEntry] = 0;
+    part.maxIDs[sectionName] = 0;
 
-    if (typeof entry === "object" && !ignoreSections[keyEntry] && Object.keys(entry).length > 0) {
-      if (entry.constructor === Object) {
-        // Entry dictionaries to be written
+    if (typeof section === "object" && !ignoreSections[sectionName] && Object.keys(section).length > 0) {
+      if (section.constructor === Object) {
+        // section dictionaries to be written
       } else {
-        if (keyEntry === 'slots' && !processSlotsTable) {
-          vehicle.validTables[keyEntry] = true;
+        if (sectionName === 'slots' && !processSlotsTable) {
+          part.validTables[sectionName] = true;
         } else {
-          if (!vehicle.validTables[keyEntry]) {
-            let newList = processTableWithSchemaDestructive(entry, vehicle.options, omitWarnings);
+          if (!part.validTables[sectionName]) {
+            let newList = processTableWithSchemaDestructive(section, part.options, omitWarnings);
 
             if (newList.length > 0) {
-              vehicle.validTables[keyEntry] = true;
+              part.validTables[sectionName] = true;
             }
-            vehicle[keyEntry] = newList;
+            part[sectionName] = newList;
           }
         }
       }
@@ -198,9 +200,9 @@ function process(vehicle, processSlotsTable, omitWarnings) {
   }
 
   // now custom, advanced processing ...
-  if (vehicle.hasOwnProperty('nodes')) {
-    for (let nodeId in vehicle.nodes) {
-      let node = vehicle.nodes[nodeId];
+  if (part.hasOwnProperty('nodes')) {
+    for (let nodeId in part.nodes) {
+      let node = part.nodes[nodeId];
       try {
         node.pos = [node.posX, node.posY, node.posZ]
       } catch (e) {
@@ -213,5 +215,5 @@ function process(vehicle, processSlotsTable, omitWarnings) {
 }
 
 module.exports = {
-  process
+  processPart
 };

@@ -18,8 +18,8 @@
         "title": "Hello World"
       },
       {
-        "command": "jbeam-editor.show2DScene",
-        "title": "Show 2D Scene"
+        "command": "jbeam-editor.show3DScene",
+        "title": "Show 3D Scene"
       }
     ]
   },
@@ -31,8 +31,8 @@
   "viewsContainers": {
     "activitybar": [
       {
-        "id": "2d-scenes",
-        "title": "2D Scenes",
+        "id": "3d-scene",
+        "title": "3D Scene",
         "icon": "media/icon/path.svg"
       }
     ]

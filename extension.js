@@ -31,11 +31,11 @@ function activate(context) {
 
 
   let webPanel
-  let disposable2 = vscode.commands.registerCommand('jbeam-editor.show2DScene', function () {
+  let disposable2 = vscode.commands.registerCommand('jbeam-editor.show3DScene', function () {
     // Create and show a new webview
     webPanel = vscode.window.createWebviewPanel(
       'sceneView', // Identifies the type of the webview
-      '2D Scene View', // Title of the panel displayed to the user
+      '3D Scene View', // Title of the panel displayed to the user
       vscode.ViewColumn.Beside, // Editor column to show the new webview panel in
       {
         enableScripts: true,  // Allow scripts to run in the webview
@@ -64,7 +64,7 @@ function activate(context) {
       for (let partName in parsedData) {
         if (!parsedData.hasOwnProperty(partName)) continue;
         let part = parsedData[partName];
-        let result = tableSchema.process(part, false, false);
+        let result = tableSchema.processPart(part, false, false);
           
         if (result !== true) {
           console.error("An error occurred while processing the data.");
