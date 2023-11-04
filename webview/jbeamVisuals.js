@@ -197,7 +197,7 @@ function checkIntersection() {
     }
   }
   // If the closest point is within the desired threshold, we have a hit
-  if(closestPointIdx) focusNodeIdx(closestPointIdx)
+  if(closestPointIdx && closestDistance < 0.1) focusNodeIdx(closestPointIdx)
 }
 
 function onMouseDown(event) {
