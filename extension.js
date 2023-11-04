@@ -166,7 +166,7 @@ function activate(context) {
           tableInterpretedData[partName] = part
         }
         // Do something with the parsed data, like show it in an information message
-        vscode.window.showInformationMessage('Document parsed successfully. Check the console for the data.');
+        //vscode.window.showInformationMessage('Document parsed successfully. Check the console for the data.');
         //console.log("table expanded:", parsedData);
         webPanel.webview.postMessage({
           command: 'jbeamData',

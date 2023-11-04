@@ -184,7 +184,9 @@ function tryLoad3dMesh(meshName, onDone) {
   ctx.colladaLoader.load(uri, function (collada) {
     collada.scene.traverse(function (node) {
       if (node instanceof THREE.Object3D) {
-        //node.rotation.x = -Math.PI / 2;
+        //node.rotation.x -= scene.rotation.x
+        //node.rotation.y -= scene.rotation.y
+        //node.rotation.z -= scene.rotation.z
         meshLibraryFull[node.name] = node;
         //console.log('Loaded mesh: ', node.name)
       }
@@ -236,10 +238,12 @@ function addMeshesToScene() {
             mesh.add(wireframe);
     
           }
+          node.rotation.x = -Math.PI / 2;
+          scene.add(node)
+          loadedMeshes.push(mesh)
+          return
         })
         //console.log(`Added Flexbody mesh to scene: ${flexbody.mesh}`)
-        scene.add(node)
-        loadedMeshes.push(node)
       })
     }
   }

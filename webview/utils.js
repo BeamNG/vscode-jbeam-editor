@@ -42,7 +42,7 @@ function roundNumber(num) {
 }
 
 function createGrid(scene) {
-  let size = 20; // 20x20 grid
+  let size = 10; // 20x20 grid
   let divisions = 20;
 
   // Grid for the XZ plane (Right-Left)
