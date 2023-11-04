@@ -41,20 +41,33 @@ function onReceiveData(message) {
       for (let nodeId in part.nodes) {
         let node = part.nodes[nodeId]
         // node.pos contains [x, y, z]
-        nodeVertices.push(...node.pos)
-        node.pos3d = new THREE.Vector3(node.pos[0], node.pos[1], node.pos[2])
-        pointsCache.push(node)
+        if(node.hasOwnProperty('pos')) {
+          nodeVertices.push(node.pos[0])
+          nodeVertices.push(node.pos[1])
+          nodeVertices.push(node.pos[2])
+          node.pos3d = new THREE.Vector3(node.pos[0], node.pos[1], node.pos[2])
+          pointsCache.push(node)
+        } else {
+          console.log("ERR", node)
+        }
       }
     }
 
     if(part.hasOwnProperty('beams')) {
       for (let beamId in part.beams) {
         let beam = part.beams[beamId];
+        //console.log(">beam>", beam, part.nodes[beam['id1:']])
         let startNode = part.nodes[beam['id1:']]
         let endNode = part.nodes[beam['id2:']]
     
         if (startNode && endNode) {
-          lineVertices.push(...startNode.pos, ...endNode.pos);
+          lineVertices.push(startNode.pos[0])
+          lineVertices.push(startNode.pos[1])
+          lineVertices.push(startNode.pos[2])
+          lineVertices.push(endNode.pos[0])
+          lineVertices.push(endNode.pos[1])
+          lineVertices.push(endNode.pos[2])
+          //lineVertices.push(...startNode.pos, ...endNode.pos);
         }
       }
     }
@@ -120,10 +133,10 @@ function drawRay(raycaster, scene) {
 }
 
 function checkIntersection() {
-  if(ctx.ui.wantCaptureMouse()) return
+  if(ctx.ui.wantCaptureMouse() || !pointsCache) return
 
   //selectedNodeIdx = null
-  console.log(">>> checkIntersection")
+  //console.log(">>> checkIntersection")
 
   raycaster.setFromCamera(mouse, camera);
 
@@ -152,7 +165,7 @@ function checkIntersection() {
         line: node.__line,
         uri: uri,
       });
-      console.log(">postMessage>", node.__line)
+      //console.log(">postMessage>", node.__line)
     }
 
     new Tween(orbitControls.target)

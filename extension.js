@@ -73,7 +73,9 @@ function activate(context) {
         let parsedData = sjsonParser.decodeSJSON(text);
         //console.log("PARSED:", parsedData);
         let tableInterpretedData = {}
-        for (let partName in parsedData) {
+        const keys = Object.keys(parsedData).filter(key => key !== '__line' && key !== '__isarray')
+        for (let partNameIdx in keys) {
+          let partName = keys[partNameIdx]
           if (!parsedData.hasOwnProperty(partName)) continue;
           let part = parsedData[partName];
           let result = tableSchema.processPart(part, false, false);

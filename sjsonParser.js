@@ -8,6 +8,8 @@ class SJSONException extends Error {
 }
 
 function decodeSJSON(s) {
+  let lineNumber = 0;
+
   const escapes = {
     't': '\t',
     'n': '\n',
@@ -27,47 +29,55 @@ function decodeSJSON(s) {
     throw new SJSONException(msg, i, 0, ''); // Adjust to give correct line and snippet
   }
 
-  let lineNumber = 1; // Global variable to keep track of the line numbers
-
+  let lastNewline = 0
   function skipWhiteSpace() {
-    while (i < s.length && (s[i] <= ' ' || s[i] === ',' || s[i] === '/' )) {
+    while (i < s.length) {
       if (s[i] === '\n') {
-        // Increment the line number on a newline
+        // Increment line number on newline
         lineNumber++;
+        //console.log('1Line: ', lineNumber, s.substring(lastNewline + 1, i))
+        lastNewline = i
         i++;
-      } else if (s[i] === '/' && s[i + 1] === '/') {
-        // Single line comment
-        i += 2;
-        while (i < s.length && s[i] !== '\n') {
-          i++;
-        }
-        if (i < s.length) {
-          // Increment the line number when the end of the comment is a newline
-          lineNumber++;
-        }
-        i++; // Skip the newline
-      } else if (s[i] === '/' && s[i + 1] === '*') {
-        // Multi-line comment
-        i += 2; // Skip the '/*'
-        while (i < s.length && !(s[i] === '*' && s[i + 1] === '/')) {
-          if (s[i] === '\n') {
-            // Increment the line number within the comment block on a newline
-            lineNumber++;
-          }
-          i++;
-        }
-        if (i >= s.length) {
-          jsonError('Unterminated comment');
-        } else {
-          i += 2; // Skip the '*/'
-        }
-      } else if (s[i] <= ' ' || s[i] === ',') {
-        // Skip other white space and commas
-        i++;
+        continue;
       }
+      if (s[i] <= ' ' || s[i] === ',') {
+        i++;
+        continue;
+      }
+      if (s[i] === '/') {
+        if (s[i + 1] === '/') {
+          // Single-line comment
+          i += 2; // Skip '//' characters
+          while (i < s.length && s[i] !== '\n') {
+            i++;
+          }
+          continue;
+        } else if (s[i + 1] === '*') {
+          // Multi-line comment
+          i += 2; // Skip the '/*'
+          while (i < s.length && !(s[i] === '*' && s[i + 1] === '/')) {
+            if (s[i] === '\n') {
+              lineNumber++; // Increment line number inside multi-line comment
+              //console.log('3Line: ', lineNumber, s.substring(lastNewline + 1, i))
+              lastNewline = i
+            }
+            i++;
+          }
+          if (i >= s.length) {
+            jsonError('Unterminated comment');
+          }
+          i += 2; // Skip the '*/'
+          continue;
+        } else {
+          jsonError('Invalid comment');
+        }
+      }
+      break; // If it's not whitespace, a comment or a newline, break the loop
     }
   }
-
+  
+  
+  
   function readString() {
     // TODO: Add support for escape characters and unicode
     let result = '';
@@ -116,11 +126,14 @@ function decodeSJSON(s) {
   }
 
   function parseArray() {
-    const arr = [];
+    const arr = {};
     i++; // skip '['
     skipWhiteSpace();
+    arr.__line = lineNumber + 1
+    arr.__isarray = true
+    let idx = 0
     while (s[i] !== ']') {
-      arr.push(parseValue());
+      arr[idx++] = parseValue();
       skipWhiteSpace();
       if (s[i] === ',') {
         i++; // skip ','
@@ -133,9 +146,9 @@ function decodeSJSON(s) {
 
   function parseObject() {
     const obj = {};
-    obj.__line = lineNumber + 1
     i++; // skip '{'
     skipWhiteSpace();
+    obj.__line = lineNumber + 1
     while (s[i] !== '}') {
       if (s[i] !== '"') jsonError('Expected key');
       const key = readString();
