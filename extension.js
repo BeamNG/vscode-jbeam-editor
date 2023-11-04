@@ -60,6 +60,15 @@ function activate(context) {
           case 'selectLine':
             goToLine(message);
             break;
+          case 'loadDae':
+            const uri = vscode.Uri.file(path.join(context.extensionPath, 'webview', message.path)); // Convert to a file URI
+            const webviewUri = webPanel.webview.asWebviewUri(uri); // Convert to a webview URI
+            console.log(">loadDae> ", message.path, webviewUri.toString())
+            webPanel.webview.postMessage({
+              command: 'loadDaeFinal',
+              uri: webviewUri.toString(),
+            });
+            break;
         }
       },
       undefined,

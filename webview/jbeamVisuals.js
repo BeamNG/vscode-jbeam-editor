@@ -151,6 +151,20 @@ function onReceiveData(message) {
   //const lineMaterial = new THREE.LineBasicMaterial({ color: 0x00FF00 });
   linesObject = new THREE.LineSegments(lineGeometry, lineMaterial);
   scene.add(linesObject);
+
+  // trigger loading dae
+  ctx.vscode.postMessage({
+    command: 'loadDae',
+    path: 'citybus.dae',
+  });
+}
+
+function loadMesh(uri) {
+  const loader = new ctx.colladaLoader.ColladaLoader();
+  loader.load(uri, function (collada) {
+    const model = collada.scene;
+    scene.add(model);
+  });
 }
 
 function onReceiveMessage(event) {
@@ -162,6 +176,9 @@ function onReceiveMessage(event) {
       break;
     case 'lineChanged':
       onLineChangeEditor(message)
+      break
+    case 'loadDaeFinal':
+      loadMesh(message.uri)
       break
   }
 }
