@@ -41,7 +41,7 @@ function focusNodeIdx(closestPointIdx, triggerEditor = true) {
     selectedNodeIdx = closestPointIdx
 
     if(node.hasOwnProperty('__line') && triggerEditor) {
-      vscode.postMessage({
+      ctx.vscode.postMessage({
         command: 'selectLine',
         line: node.__line,
         uri: uri,
