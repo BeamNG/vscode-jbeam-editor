@@ -4,6 +4,7 @@ const path = require('path');
 const sjsonParser = require('./sjsonParser');
 const tableSchema = require('./tableSchema');
 let webPanel
+let meshCache = {}
 
 function convertUri(filePath) {
   const uri = vscode.Uri.file(filePath);
@@ -11,7 +12,7 @@ function convertUri(filePath) {
   return webviewUri.toString()
 }
 
-function loadColladaFiles(uri) {
+function loadColladaNamespaces(uri, loadedNamespaces) {
   // Parse the URI to get the full file system path
   let filePath = vscode.Uri.parse(uri).fsPath;
 
@@ -31,30 +32,28 @@ function loadColladaFiles(uri) {
     return;
   }
 
-  // Define the common folder path
-  const commonFolderPath = path.join(vehiclesPath, 'common');
-  const commonFolderPattern = new vscode.RelativePattern(commonFolderPath, '**/*.{dae,DAE,dAe,DaE,daE,DAe,daE,dAE}');
-
-  // Define the vehicle specific folder path
-  const vehicleSpecificFolderPath = vehicleSpecificPath ? path.join(vehiclesPath, vehicleSpecificPath) : null;
-  const vehicleFolderPattern = vehicleSpecificFolderPath ? new vscode.RelativePattern(vehicleSpecificFolderPath, '**/*.{dae,DAE,dAe,DaE,daE,DAe,daE,dAE}') : null;
-
   let findFilesPromises = [];
 
   // Find .dae files in the common folder
-  findFilesPromises.push(vscode.workspace.findFiles(commonFolderPattern, null, 100).then(files => {
-    files.forEach(file => {
-      //console.log(`Found .dae in common folder: ${file.fsPath}`);
-      webPanel.webview.postMessage({
-        command: 'loadDaeFinal',
-        uri: convertUri(file.fsPath),
-        namespace: '/vehicles/common/',
-      })
-    });
-  }));
+  if(!loadedNamespaces.includes('/vehicles/common/')) {
+    const commonFolderPath = path.join(vehiclesPath, 'common');
+    const commonFolderPattern = new vscode.RelativePattern(commonFolderPath, '**/*.{dae,DAE,dAe,DaE,daE,DAe,daE,dAE}');
 
-  // If there is a vehicle specific path, find .dae files there too
-  if (vehicleFolderPattern) {
+    findFilesPromises.push(vscode.workspace.findFiles(commonFolderPattern, null, 100).then(files => {
+      files.forEach(file => {
+        //console.log(`Found .dae in common folder: ${file.fsPath}`);
+        webPanel.webview.postMessage({
+          command: 'loadDaeFinal',
+          uri: convertUri(file.fsPath),
+          namespace: '/vehicles/common/',
+        })
+      });
+    }));
+  }
+
+  if(!loadedNamespaces.includes('/vehicles/' + vehicleSpecificPath)) {
+    const vehicleSpecificFolderPath = path.join(vehiclesPath, vehicleSpecificPath);
+    const vehicleFolderPattern = new vscode.RelativePattern(vehicleSpecificFolderPath, '**/*.{dae,DAE,dAe,DaE,daE,DAe,daE,dAE}');
     findFilesPromises.push(vscode.workspace.findFiles(vehicleFolderPattern, null, 100).then(files => {
       files.forEach(file => {
         //console.log(`Found .dae in vehicle specific folder: ${file.fsPath} > ${convertUri(file.fsPath)}`);
@@ -66,7 +65,6 @@ function loadColladaFiles(uri) {
       });
     }));
   }
-
   Promise.all(findFilesPromises).then(allFilesArrays => {
     //console.log("Find files done!")
     webPanel.webview.postMessage({
@@ -128,8 +126,8 @@ function activate(context) {
           case 'selectLine':
             goToLine(message);
             break;
-          case 'loadColladaFiles':
-            loadColladaFiles(message.uri)
+          case 'loadColladaNamespaces':
+            loadColladaNamespaces(message.uri, message.data)
             break
           case 'loadDae':
             // this converts any file requests to proper URIs that can load inside the webview.
@@ -142,7 +140,10 @@ function activate(context) {
               uri: webviewUri.toString(),
             });
             break;
-        }
+            case 'updateMeshCache':
+              Object.assign(meshCache, message.data)
+              break
+          }
       },
       undefined,
       context.subscriptions
@@ -174,6 +175,7 @@ function activate(context) {
           command: 'jbeamData',
           data: parsedData,
           uri: uri,
+          meshCache: meshCache,
         });
       } catch (e) {
         // If there's an error in parsing, show it to the user

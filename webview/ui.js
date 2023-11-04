@@ -29,7 +29,7 @@ export async function init() {
 
 function drawWindow() {
   const windowPosX = 0
-  const windowWidth = 200
+  const windowWidth = 300
   const windowHeight = 200
   const windowPosY = io.DisplaySize.y - windowHeight; // This places the window 10 units from the bottom
   ImGui.SetNextWindowPos(new ImGui.ImVec2(windowPosX, windowPosY))

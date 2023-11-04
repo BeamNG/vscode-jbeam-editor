@@ -76,6 +76,7 @@ function onLineChangeEditor(message) {
 function onReceiveData(message) {
   jbeamData = message.data
   uri = message.uri
+  meshFolderCache = message.meshCache
   console.log("onReceiveData", message);
 
   let nodeVertices = []
@@ -165,11 +166,11 @@ function onReceiveData(message) {
 
   loadedMeshes = []
   meshLibraryFull = {}
-  meshFolderCache = {}
   daeFindfilesDone = false
   daeLoadingCounter = 0
   ctx.vscode.postMessage({
-    command: 'loadColladaFiles',
+    command: 'loadColladaNamespaces',
+    data: Object.keys(meshFolderCache),
     uri: uri,
   });
 }
@@ -204,6 +205,13 @@ function tryLoad3dMesh(meshName, onDone) {
 function finalizeMeshes() {
   console.log(">>>> finalizeMeshes <<<<")
   console.log('Adding meshes to scene ...')
+
+  // update cache on the extension side of things ...
+  ctx.vscode.postMessage({
+    command: 'updateMeshCache',
+    data: meshFolderCache,
+  });
+
 
   meshFilenameLookupLibrary = {}
   for (let ns in meshFolderCache) {
@@ -302,6 +310,9 @@ function onReceiveMessage(event) {
       break
     case 'daeFileLoadingDone':
       daeFindfilesDone = true
+      if (daeLoadingCounter == 0 && daeFindfilesDone) {
+        finalizeMeshes();
+      }      
       break
   }
 }
