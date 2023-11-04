@@ -12,8 +12,6 @@ function convertUri(filePath) {
 }
 
 function loadColladaFiles(uri) {
-  console.log(">> uri = ", uri);
-
   // Parse the URI to get the full file system path
   let filePath = vscode.Uri.parse(uri).fsPath;
 
@@ -41,8 +39,10 @@ function loadColladaFiles(uri) {
   const vehicleSpecificFolderPath = vehicleSpecificPath ? path.join(vehiclesPath, vehicleSpecificPath) : null;
   const vehicleFolderPattern = vehicleSpecificFolderPath ? new vscode.RelativePattern(vehicleSpecificFolderPath, '**/*.dae') : null;
 
+  let findFilesPromises = [];
+
   // Find .dae files in the common folder
-  vscode.workspace.findFiles(commonFolderPattern, null, 100).then(files => {
+  findFilesPromises.push(vscode.workspace.findFiles(commonFolderPattern, null, 100).then(files => {
     files.forEach(file => {
       //console.log(`Found .dae in common folder: ${file.fsPath}`);
       webPanel.webview.postMessage({
@@ -50,11 +50,11 @@ function loadColladaFiles(uri) {
         uri: convertUri(file.fsPath)
       })
     });
-  });
+  }));
 
   // If there is a vehicle specific path, find .dae files there too
   if (vehicleFolderPattern) {
-    vscode.workspace.findFiles(vehicleFolderPattern, null, 100).then(files => {
+    findFilesPromises.push(vscode.workspace.findFiles(vehicleFolderPattern, null, 100).then(files => {
       files.forEach(file => {
         //console.log(`Found .dae in vehicle specific folder: ${file.fsPath} > ${convertUri(file.fsPath)}`);
         webPanel.webview.postMessage({
@@ -62,12 +62,18 @@ function loadColladaFiles(uri) {
           uri: convertUri(file.fsPath)
         })
       });
-    });
+    }));
   }
+
+  Promise.all(findFilesPromises).then(allFilesArrays => {
+    console.log("Find files done!")
+    webPanel.webview.postMessage({
+      command: 'daeFileLoadingDone',
+    })
+  })
 }
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
+
 
 /**
  * @param {vscode.ExtensionContext} context

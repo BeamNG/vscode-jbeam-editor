@@ -201,7 +201,7 @@ function processPart(part, processSlotsTable, omitWarnings) {
       let node = part.nodes[nodeId];
       if(node.hasOwnProperty('posX')) {
         try {
-          node.pos = [node.posX, node.posZ, node.posY] // FLIP!
+          node.pos = [node.posX, node.posZ, -node.posY] // FLIP!
         } catch (e) {
           console.error(e.message)
         }

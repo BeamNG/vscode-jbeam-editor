@@ -4,10 +4,8 @@ let pointsObject
 let linesObject
 let pointsCache
 let selectedNodeIdx = null
-
-let daeCommonDone = false
-let daeVehicleDone = false
-let daeAllDone = false
+let daeLoadingCounter = 0
+let daeFindfilesDone = false
 
 function createCircleTexture(radius, color) {
   const canvas = document.createElement('canvas');
@@ -157,29 +155,77 @@ function onReceiveData(message) {
 
   // trigger loading dae
   meshLibrary = {}
-  daeCommonDone = false
-  daeVehicleDone = false
-  daeAllDone = false
-
+  daeFindfilesDone = false
+  daeLoadingCounter = 0
   ctx.vscode.postMessage({
     command: 'loadColladaFiles',
     uri: uri,
   });
 }
 
+function addMeshesToScene() {
+  console.log('Adding meshes to scene ...')
+  console.log(jbeamData)
+
+  for (let partName in jbeamData) {
+    let part = jbeamData[partName]
+
+    if(!part.hasOwnProperty('flexbodies')) continue
+
+    for (let flexBodyId in part.flexbodies) {
+      let flexbody = part.flexbodies[flexBodyId]
+      let mesh = meshLibrary[flexbody.mesh]
+      if(mesh) {
+
+        mesh.material = new THREE.MeshStandardMaterial({
+          color: 0x808080, // Grey color
+          metalness: 0.5,
+          roughness: 0.5
+        });
+
+        // Create a wireframe geometry from the mesh's geometry
+        const wireframeGeometry = new THREE.WireframeGeometry(mesh.geometry);
+        const wireframeMaterial = new THREE.LineBasicMaterial({
+          color: 0xaaaaaa, // Color of the wireframe
+          linewidth: 1 // Thickness of the wireframe lines
+        });
+        const wireframe = new THREE.LineSegments(wireframeGeometry, wireframeMaterial);
+        mesh.add(wireframe);
+
+        scene.add(mesh)
+        console.log(`Added Flexbody mesh to scene: ${flexbody.mesh}`)
+      } else {
+        console.error(`Flexbody mesh not found: ${flexbody.mesh}`)
+      }
+    }
+  }
+}
+
 function loadMesh(uri) {
   //console.log('>>> loadMesh >>> ', uri)
+  daeLoadingCounter++;
   const loader = new ctx.colladaLoader.ColladaLoader();
   loader.load(uri, function (collada) {
-    const model = collada.scene;
+    daeLoadingCounter--
+    //const model = collada.scene;
 
     collada.scene.traverse(function (child) {
       if (child instanceof THREE.Mesh) {
         // Store each mesh by its name in the meshLibrary
+        child.rotation.x = -Math.PI / 2;
         meshLibrary[child.name] = child;
       }
     });
     //console.log("meshLibrary = ", meshLibrary)
+    if(daeLoadingCounter <= 0 && daeFindfilesDone) {
+      addMeshesToScene()
+    }
+  }, undefined, function (error) {
+    console.error('An error happened during loading:', error);
+    daeLoadingCounter--;
+    if (daeLoadingCounter <= 0 && daeFindfilesDone) {
+      addMeshesToScene();
+    }
   });
 }
 
@@ -196,11 +242,8 @@ function onReceiveMessage(event) {
     case 'loadDaeFinal':
       loadMesh(message.uri)
       break
-    case 'daeCommonDone':
-      daeCommonDone = true
-      break
-    case 'daeVehicleDone':
-      daeVehicleDone = true
+    case 'daeFileLoadingDone':
+      daeFindfilesDone = true
       break
   }
 }
@@ -251,28 +294,6 @@ export function init() {
   window.addEventListener('mousedown', onMouseDown, false);
 }
 
-function addFlexbodiesToScene() {
-  console.log('Adding meshes to scene ...')
-  console.log(jbeamData)
-
-  for (let partName in jbeamData) {
-    let part = jbeamData[partName]
-
-    if(!part.hasOwnProperty('flexbodies')) continue
-
-    for (let flexBodyId in part.flexbodies) {
-      let flexbody = part.flexbodies[flexBodyId]
-      let mesh = meshLibrary[flexbody.mesh]
-      if(mesh) {
-        scene.add(mesh)
-        console.log(`Added Flexbody mesh to scene: ${flexbody.mesh}`)
-      } else {
-        console.error(`Flexbody mesh not found: ${flexbody.mesh}`)
-      }
-    }
-  }
-
-}
 
 export function animate(time) {
   if(jbeamData === null) return
@@ -287,10 +308,5 @@ export function animate(time) {
     }
     ImGui.End();
   }
-
-  console.log(daeCommonDone, daeVehicleDone, daeAllDone)
-  if(!daeAllDone && daeCommonDone && daeVehicleDone) {
-    daeAllDone = true
-    addFlexbodiesToScene()
-  }
+  console.log("daeLoadingCounter = ", daeLoadingCounter)
 }

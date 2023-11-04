@@ -96,6 +96,16 @@ export function init() {
   scene.add(cameraCenterSphere);  
   
 
+  // Ambient light affects all objects in the scene globally.
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // soft white light
+  scene.add(ambientLight);
+
+  // Directional light for more targeted illumination with direction.
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+  directionalLight.position.set(0, 1, 1); // Adjust the position as needed
+  scene.add(directionalLight);
+
+
   createGrid(scene)
   gizmoCreate()
   ctx.ui.init()
