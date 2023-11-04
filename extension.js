@@ -66,7 +66,7 @@ function loadColladaFiles(uri) {
   }
 
   Promise.all(findFilesPromises).then(allFilesArrays => {
-    console.log("Find files done!")
+    //console.log("Find files done!")
     webPanel.webview.postMessage({
       command: 'daeFileLoadingDone',
     })

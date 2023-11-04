@@ -29,7 +29,7 @@ const vscode = acquireVsCodeApi();
 ctx.ui = ui
 ctx.vscode = vscode
 ctx.jbeamVisuals = jbeamVisuals
-ctx.colladaLoader = colladaLoader
+ctx.colladaLoader = new colladaLoader.ColladaLoader()
 
 main.init()
 </script>

@@ -2,14 +2,13 @@
 
 class ColladaLoader extends THREE.Loader {
 
-  constructor( manager ) {
+  constructor( manager) {
 
     super( manager );
 
   }
 
-  load( url, onLoad, onProgress, onError ) {
-
+  load( url, onLoad, onProgress, onError, shallowLoading = false ) {
     const scope = this;
 
     const path = ( scope.path === '' ) ? THREE.LoaderUtils.extractUrlBase( url ) : scope.path;
@@ -23,7 +22,7 @@ class ColladaLoader extends THREE.Loader {
 
       try {
 
-        onLoad( scope.parse( text, path ) );
+        onLoad( scope.parse( text, path, shallowLoading ) );
 
       } catch ( e ) {
 
@@ -45,7 +44,7 @@ class ColladaLoader extends THREE.Loader {
 
   }
 
-  parse( text, path ) {
+  parse( text, path, shallowLoading ) {
 
     function getElementsByTagName( xml, name ) {
 
@@ -173,7 +172,6 @@ class ColladaLoader extends THREE.Loader {
     // library
 
     function parseLibrary( xml, libraryName, nodeName, parser ) {
-
       const library = getElementsByTagName( xml, libraryName )[ 0 ];
 
       if ( library !== undefined ) {
@@ -1515,6 +1513,7 @@ class ColladaLoader extends THREE.Loader {
     }
 
     function buildMaterial( data ) {
+      if(shallowLoading) return null
 
       const effect = getEffect( data.url );
       const technique = effect.profile.technique;
@@ -2084,8 +2083,10 @@ class ColladaLoader extends THREE.Loader {
             break;
 
           case 'vertices':
-            // data.sources[ id ] = data.sources[ parseId( getElementsByTagName( child, 'input' )[ 0 ].getAttribute( 'source' ) ) ];
-            data.vertices = parseGeometryVertices( child );
+            if(!shallowLoading) {
+              // data.sources[ id ] = data.sources[ parseId( getElementsByTagName( child, 'input' )[ 0 ].getAttribute( 'source' ) ) ];
+              data.vertices = parseGeometryVertices( child );
+            }
             break;
 
           case 'polygons':
@@ -2096,7 +2097,9 @@ class ColladaLoader extends THREE.Loader {
           case 'linestrips':
           case 'polylist':
           case 'triangles':
-            data.primitives.push( parseGeometryPrimitive( child ) );
+            if(!shallowLoading) {
+              data.primitives.push( parseGeometryPrimitive( child ) );
+            }
             break;
 
           default:
@@ -3702,6 +3705,7 @@ class ColladaLoader extends THREE.Loader {
     }
 
     function buildObjects( geometries, instanceMaterials ) {
+      if(shallowLoading) return []
 
       const objects = [];
 

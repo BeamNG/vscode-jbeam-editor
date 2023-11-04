@@ -30,7 +30,7 @@ export async function init() {
 function drawWindow() {
   const windowPosX = 0
   const windowWidth = 200
-  const windowHeight = 100
+  const windowHeight = 200
   const windowPosY = io.DisplaySize.y - windowHeight; // This places the window 10 units from the bottom
   ImGui.SetNextWindowPos(new ImGui.ImVec2(windowPosX, windowPosY))
   ImGui.SetNextWindowSize(new ImGui.ImVec2(windowWidth, windowHeight));
@@ -78,7 +78,11 @@ function drawWindow() {
     });
     ImGui.EndCombo();  
   }
-  ImGui.TextUnformatted(Object.keys(meshLibrary).length + ' meshes loaded')
+  ImGui.TextUnformatted(Object.keys(meshFilenameLookupLibrary).length + ' meshes shallow loaded')
+  ImGui.TextUnformatted(Object.keys(meshLibraryFull).length + ' meshes fully loaded')
+  if(daeLoadingCounter > 0) {
+    ImGui.TextUnformatted(daeLoadingCounter + ' files loading ...')
+  }
 
   ImGui.End();
 }

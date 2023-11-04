@@ -4,8 +4,10 @@ let pointsObject
 let linesObject
 let pointsCache
 let selectedNodeIdx = null
-let daeLoadingCounter = 0
+
 let daeFindfilesDone = false
+
+let loadedMeshes = []
 
 function createCircleTexture(radius, color) {
   const canvas = document.createElement('canvas');
@@ -154,8 +156,18 @@ function onReceiveData(message) {
   scene.add(linesObject);
 
   // trigger loading dae
-  meshLibrary = {}
+
+  for (let key in loadedMeshes) {
+    let mesh = loadedMeshes[key];
+    // Remove the mesh from the scene
+    scene.remove(mesh);
+  }
+
+  loadedMeshes = []
+  meshLibraryFull = {}
+  meshFilenameLookupLibrary = {}
   daeFindfilesDone = false
+  meshesBeingAdded = false
   daeLoadingCounter = 0
   ctx.vscode.postMessage({
     command: 'loadColladaFiles',
@@ -163,9 +175,34 @@ function onReceiveData(message) {
   });
 }
 
+function tryLoad3dMesh(meshName, onDone) {
+  const uri = meshFilenameLookupLibrary[meshName]
+  if(!uri) {
+    console.error('Mesh not found: ', meshName)
+    return
+  }
+  ctx.colladaLoader.load(uri, function (collada) {
+    collada.scene.traverse(function (node) {
+      if (node instanceof THREE.Object3D) {
+        //node.rotation.x = -Math.PI / 2;
+        meshLibraryFull[node.name] = node;
+        //console.log('Loaded mesh: ', node.name)
+      }
+    });
+    onDone(meshLibraryFull[meshName])
+  }, undefined, function (error) {
+    console.error('An error happened during loading:', error);
+  });
+}
+
+let meshesBeingAdded = false
 function addMeshesToScene() {
+  if(meshesBeingAdded) return
+  meshesBeingAdded = true
   console.log('Adding meshes to scene ...')
-  console.log(jbeamData)
+  //console.log("meshFilenameLookupLibrary = ", meshFilenameLookupLibrary)
+
+  //console.log(jbeamData)
 
   for (let partName in jbeamData) {
     let part = jbeamData[partName]
@@ -174,59 +211,60 @@ function addMeshesToScene() {
 
     for (let flexBodyId in part.flexbodies) {
       let flexbody = part.flexbodies[flexBodyId]
-      let mesh = meshLibrary[flexbody.mesh]
-      if(mesh) {
+      //console.log('Fexbody: ', flexbody)
 
-        mesh.material = new THREE.MeshStandardMaterial({
-          color: 0x808080, // Grey color
-          metalness: 0.5,
-          roughness: 0.5
-        });
-
-        // Create a wireframe geometry from the mesh's geometry
-        const wireframeGeometry = new THREE.WireframeGeometry(mesh.geometry);
-        const wireframeMaterial = new THREE.LineBasicMaterial({
-          color: 0xaaaaaa, // Color of the wireframe
-          linewidth: 1 // Thickness of the wireframe lines
-        });
-        const wireframe = new THREE.LineSegments(wireframeGeometry, wireframeMaterial);
-        mesh.add(wireframe);
-
-        scene.add(mesh)
-        console.log(`Added Flexbody mesh to scene: ${flexbody.mesh}`)
-      } else {
-        console.error(`Flexbody mesh not found: ${flexbody.mesh}`)
-      }
+      tryLoad3dMesh(flexbody.mesh, (node) => {
+        if(!node) {
+          console.error(`Flexbody mesh not found: ${flexbody.mesh}`)
+          return
+        }
+        node.traverse((mesh) => {
+          if(mesh && mesh instanceof THREE.Mesh) {
+            mesh.material = new THREE.MeshStandardMaterial({
+              color: 0x808080, // Grey color
+              metalness: 0.5,
+              roughness: 0.5
+            });
+    
+            // Create a wireframe geometry from the mesh's geometry
+            const wireframeGeometry = new THREE.WireframeGeometry(mesh.geometry);
+            const wireframeMaterial = new THREE.LineBasicMaterial({
+              color: 0xaaaaaa, // Color of the wireframe
+              linewidth: 1 // Thickness of the wireframe lines
+            });
+            const wireframe = new THREE.LineSegments(wireframeGeometry, wireframeMaterial);
+            mesh.add(wireframe);
+    
+          }
+        })
+        //console.log(`Added Flexbody mesh to scene: ${flexbody.mesh}`)
+        scene.add(node)
+        loadedMeshes.push(node)
+      })
     }
   }
 }
 
-function loadMesh(uri) {
-  //console.log('>>> loadMesh >>> ', uri)
+function loadMeshShallow(uri) {
   daeLoadingCounter++;
-  const loader = new ctx.colladaLoader.ColladaLoader();
-  loader.load(uri, function (collada) {
+  ctx.colladaLoader.load(uri, function (collada) {
     daeLoadingCounter--
-    //const model = collada.scene;
-
-    collada.scene.traverse(function (child) {
-      if (child instanceof THREE.Mesh) {
-        // Store each mesh by its name in the meshLibrary
-        child.rotation.x = -Math.PI / 2;
-        meshLibrary[child.name] = child;
+    collada.scene.traverse(function (node) {
+      if (node instanceof THREE.Object3D) {
+        meshFilenameLookupLibrary[node.name] = uri;
+        //console.log("NODE?", node.name)
       }
     });
-    //console.log("meshLibrary = ", meshLibrary)
-    if(daeLoadingCounter <= 0 && daeFindfilesDone) {
-      addMeshesToScene()
-    }
-  }, undefined, function (error) {
-    console.error('An error happened during loading:', error);
-    daeLoadingCounter--;
     if (daeLoadingCounter <= 0 && daeFindfilesDone) {
       addMeshesToScene();
     }
-  });
+  }, undefined, function (error) {
+    daeLoadingCounter--;
+    console.error(error)
+    if (daeLoadingCounter <= 0 && daeFindfilesDone) {
+      addMeshesToScene();
+    }
+  }, true);
 }
 
 function onReceiveMessage(event) {
@@ -240,7 +278,7 @@ function onReceiveMessage(event) {
       onLineChangeEditor(message)
       break
     case 'loadDaeFinal':
-      loadMesh(message.uri)
+      loadMeshShallow(message.uri)
       break
     case 'daeFileLoadingDone':
       daeFindfilesDone = true
@@ -308,5 +346,4 @@ export function animate(time) {
     }
     ImGui.End();
   }
-  console.log("daeLoadingCounter = ", daeLoadingCounter)
 }
