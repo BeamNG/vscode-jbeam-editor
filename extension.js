@@ -33,11 +33,11 @@ function loadColladaFiles(uri) {
 
   // Define the common folder path
   const commonFolderPath = path.join(vehiclesPath, 'common');
-  const commonFolderPattern = new vscode.RelativePattern(commonFolderPath, '**/*.dae');
+  const commonFolderPattern = new vscode.RelativePattern(commonFolderPath, '**/*.{dae,DAE,dAe,DaE,daE,DAe,daE,dAE}');
 
   // Define the vehicle specific folder path
   const vehicleSpecificFolderPath = vehicleSpecificPath ? path.join(vehiclesPath, vehicleSpecificPath) : null;
-  const vehicleFolderPattern = vehicleSpecificFolderPath ? new vscode.RelativePattern(vehicleSpecificFolderPath, '**/*.dae') : null;
+  const vehicleFolderPattern = vehicleSpecificFolderPath ? new vscode.RelativePattern(vehicleSpecificFolderPath, '**/*.{dae,DAE,dAe,DaE,daE,DAe,daE,dAE}') : null;
 
   let findFilesPromises = [];
 

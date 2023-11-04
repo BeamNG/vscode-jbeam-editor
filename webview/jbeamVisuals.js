@@ -167,7 +167,6 @@ function onReceiveData(message) {
   meshLibraryFull = {}
   meshFilenameLookupLibrary = {}
   daeFindfilesDone = false
-  meshesBeingAdded = false
   daeLoadingCounter = 0
   ctx.vscode.postMessage({
     command: 'loadColladaFiles',
@@ -176,33 +175,36 @@ function onReceiveData(message) {
 }
 
 function tryLoad3dMesh(meshName, onDone) {
+  meshName = meshName.trim()
   const uri = meshFilenameLookupLibrary[meshName]
   if(!uri) {
-    console.error('Mesh not found: ', meshName)
+    console.error(`Mesh not found: '${meshName}'` )
     return
   }
   ctx.colladaLoader.load(uri, function (collada) {
-    collada.scene.traverse(function (node) {
-      if (node instanceof THREE.Object3D) {
-        //node.rotation.x -= scene.rotation.x
-        //node.rotation.y -= scene.rotation.y
-        //node.rotation.z -= scene.rotation.z
-        meshLibraryFull[node.name] = node;
-        //console.log('Loaded mesh: ', node.name)
+
+    console.log("collada: ", collada)
+    for (let i in collada.scene.children) {
+      let child = collada.scene.children[i]
+      if(child.type === 'Mesh') {
+        // temp: use scene scale for the child
+        child.scale.x = collada.scene.scale.x
+        child.scale.y = collada.scene.scale.y
+        child.scale.z = collada.scene.scale.z
+        meshLibraryFull[child.name.trim()] = child;
       }
-    });
+    }
+    //console.log(">meshLibraryFull>", meshName, meshLibraryFull, meshFilenameLookupLibrary)
     onDone(meshLibraryFull[meshName])
   }, undefined, function (error) {
     console.error('An error happened during loading:', error);
   });
 }
 
-let meshesBeingAdded = false
 function addMeshesToScene() {
-  if(meshesBeingAdded) return
-  meshesBeingAdded = true
+  console.log(">>>> addMeshesToScene")
   console.log('Adding meshes to scene ...')
-  //console.log("meshFilenameLookupLibrary = ", meshFilenameLookupLibrary)
+  console.log("meshFilenameLookupLibrary = ", meshFilenameLookupLibrary)
 
   //console.log(jbeamData)
 
@@ -250,22 +252,29 @@ function addMeshesToScene() {
 }
 
 function loadMeshShallow(uri) {
+  console.log(">loadMeshShallow>", uri)
   daeLoadingCounter++;
   ctx.colladaLoader.load(uri, function (collada) {
     daeLoadingCounter--
-    collada.scene.traverse(function (node) {
-      if (node instanceof THREE.Object3D) {
-        meshFilenameLookupLibrary[node.name] = uri;
-        //console.log("NODE?", node.name)
-      }
-    });
-    if (daeLoadingCounter <= 0 && daeFindfilesDone) {
+    if(collada && collada.scene) {
+      collada.scene.traverse(function (node) {
+        if (node instanceof THREE.Object3D) {
+          if(node.name) {
+            //console.log("NODE?", node.name)
+            meshFilenameLookupLibrary[node.name.trim()] = uri;
+          }
+        }
+      });
+    }
+    if (daeLoadingCounter == 0 && daeFindfilesDone) {
+      //console.log('>> addMeshesToScene 1 >>', daeLoadingCounter, daeFindfilesDone)
       addMeshesToScene();
     }
   }, undefined, function (error) {
     daeLoadingCounter--;
     console.error(error)
-    if (daeLoadingCounter <= 0 && daeFindfilesDone) {
+    if (daeLoadingCounter == 0 && daeFindfilesDone) {
+      //console.log('>> addMeshesToScene 2 >>', daeLoadingCounter, daeFindfilesDone)
       addMeshesToScene();
     }
   }, true);

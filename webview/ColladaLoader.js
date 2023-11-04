@@ -17,12 +17,11 @@ class ColladaLoader extends THREE.Loader {
     loader.setPath( scope.path );
     loader.setRequestHeader( scope.requestHeader );
     loader.setWithCredentials( scope.withCredentials );
-    //console.log(url)
     loader.load( url, function ( text ) {
 
       try {
 
-        onLoad( scope.parse( text, path, shallowLoading ) );
+        onLoad( scope.parse( text, path, url, shallowLoading ) );
 
       } catch ( e ) {
 
@@ -44,7 +43,7 @@ class ColladaLoader extends THREE.Loader {
 
   }
 
-  parse( text, path, shallowLoading ) {
+  parse( text, path, url, shallowLoading ) {
 
     function getElementsByTagName( xml, name ) {
 
@@ -1513,7 +1512,9 @@ class ColladaLoader extends THREE.Loader {
     }
 
     function buildMaterial( data ) {
-      if(shallowLoading) return null
+      // material loading disabled globally
+      return null
+      //if(shallowLoading) return null
 
       const effect = getEffect( data.url );
       const technique = effect.profile.technique;
@@ -3977,7 +3978,7 @@ class ColladaLoader extends THREE.Loader {
 
       }
 
-      console.error( 'THREE.ColladaLoader: Failed to parse collada file.\n', errorText );
+      console.error( 'THREE.ColladaLoader: Failed to parse collada file.\n', errorText, url);
 
       return null;
 
