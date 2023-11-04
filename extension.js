@@ -3,7 +3,71 @@ const fs = require('fs');
 const path = require('path');
 const sjsonParser = require('./sjsonParser');
 const tableSchema = require('./tableSchema');
+let webPanel
 
+function convertUri(filePath) {
+  const uri = vscode.Uri.file(filePath);
+  const webviewUri = webPanel.webview.asWebviewUri(uri);
+  return webviewUri.toString()
+}
+
+function loadColladaFiles(uri) {
+  console.log(">> uri = ", uri);
+
+  // Parse the URI to get the full file system path
+  let filePath = vscode.Uri.parse(uri).fsPath;
+
+  // Find the 'vehicles' directory in the path
+  let vehiclesPath = filePath;
+  let vehicleSpecificPath = null;
+  while (!vehiclesPath.endsWith('vehicles') && path.dirname(vehiclesPath) !== vehiclesPath) {
+    if (path.basename(path.dirname(vehiclesPath)) === 'vehicles') {
+      vehicleSpecificPath = path.basename(vehiclesPath); // Grab the specific vehicle directory name
+    }
+    vehiclesPath = path.dirname(vehiclesPath);
+  }
+
+  // Check if 'vehicles' was found
+  if (!vehiclesPath.endsWith('vehicles')) {
+    console.error('The "vehicles" directory was not found in the path.');
+    return;
+  }
+
+  // Define the common folder path
+  const commonFolderPath = path.join(vehiclesPath, 'common');
+  const commonFolderPattern = new vscode.RelativePattern(commonFolderPath, '**/*.dae');
+
+  // Define the vehicle specific folder path
+  const vehicleSpecificFolderPath = vehicleSpecificPath ? path.join(vehiclesPath, vehicleSpecificPath) : null;
+  const vehicleFolderPattern = vehicleSpecificFolderPath ? new vscode.RelativePattern(vehicleSpecificFolderPath, '**/*.dae') : null;
+
+  // Find .dae files in the common folder
+  vscode.workspace.findFiles(commonFolderPattern, null, 100).then(files => {
+    files.forEach(file => {
+      //console.log(`Found .dae in common folder: ${file.fsPath}`);
+      webPanel.webview.postMessage({
+        command: 'loadDaeFinal',
+        uri: convertUri(file.fsPath)
+      })
+    });
+  });
+
+  // If there is a vehicle specific path, find .dae files there too
+  if (vehicleFolderPattern) {
+    vscode.workspace.findFiles(vehicleFolderPattern, null, 100).then(files => {
+      files.forEach(file => {
+        //console.log(`Found .dae in vehicle specific folder: ${file.fsPath} > ${convertUri(file.fsPath)}`);
+        // Load the .dae file or perform other actions
+
+        webPanel.webview.postMessage({
+          command: 'loadDaeFinal',
+          uri: convertUri(file.fsPath)
+        })
+        
+      });
+    });
+  }
+}
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -30,7 +94,6 @@ function activate(context) {
   context.subscriptions.push(disposable);
 
 
-  let webPanel
   let disposable2 = vscode.commands.registerCommand('jbeam-editor.show3DScene', function () {
     // Create and show a new webview
     webPanel = vscode.window.createWebviewPanel(
@@ -40,7 +103,7 @@ function activate(context) {
       {
         enableScripts: true,  // Allow scripts to run in the webview
         retainContextWhenHidden: true,  // Optionally, you can retain the state even when webview is not visible
-        localResourceRoots: [vscode.Uri.file(path.join(context.extensionPath, 'webview'))]
+        //localResourceRoots: [vscode.Uri.file(path.join(context.extensionPath, 'webview'))]
       }
     )
     webPanel.webview.html = getWebviewContent(webPanel);
@@ -60,10 +123,15 @@ function activate(context) {
           case 'selectLine':
             goToLine(message);
             break;
+          case 'loadColladaFiles':
+            loadColladaFiles(message.uri)
+            break
           case 'loadDae':
-            const uri = vscode.Uri.file(path.join(context.extensionPath, 'webview', message.path)); // Convert to a file URI
-            const webviewUri = webPanel.webview.asWebviewUri(uri); // Convert to a webview URI
-            console.log(">loadDae> ", message.path, webviewUri.toString())
+            // this converts any file requests to proper URIs that can load inside the webview.
+            // the sandbox does not allow any direct file interaction, so this indirection is required
+            const uri = vscode.Uri.file(path.join(context.extensionPath, 'webview', message.path));
+            const webviewUri = webPanel.webview.asWebviewUri(uri);
+            //console.log(">loadDae> ", message.path, webviewUri.toString())
             webPanel.webview.postMessage({
               command: 'loadDaeFinal',
               uri: webviewUri.toString(),

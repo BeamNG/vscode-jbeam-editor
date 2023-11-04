@@ -154,15 +154,47 @@ function onReceiveData(message) {
 
   // trigger loading dae
   ctx.vscode.postMessage({
-    command: 'loadDae',
-    path: 'citybus.dae',
+    command: 'loadColladaFiles',
+    uri: uri,
   });
 }
 
 function loadMesh(uri) {
+  console.log('>>> loadMesh >>> ', uri)
   const loader = new ctx.colladaLoader.ColladaLoader();
   loader.load(uri, function (collada) {
     const model = collada.scene;
+
+    
+    // Create checkerboard texture
+    var canvas = document.createElement('canvas');
+    canvas.width = 64; // Texture size - can be adjusted as needed
+    canvas.height = 64; // Texture size - can be adjusted as needed
+
+    var context = canvas.getContext('2d');
+
+    // Define the size of the squares
+    var size = 8; // Size of the checkerboard squares
+
+    // Draw the checkerboard
+    for (let i = 0; i < canvas.width; i += size) {
+      for (let j = 0; j < canvas.height; j += size) {
+        context.fillStyle = ((i & size) == (j & size)) ? 'white' : 'black';
+        context.fillRect(i, j, size, size);
+      }
+    }
+
+    // Use the canvas as a texture
+    var checkerboardTexture = new THREE.CanvasTexture(canvas);
+    var checkerboardMaterial = new THREE.MeshBasicMaterial({ map: checkerboardTexture });
+
+    // Apply the checkerboard material to all child meshes in the model
+    model.traverse((child) => {
+      if (child.isMesh) {
+        child.material = checkerboardMaterial;
+      }
+    });
+
     scene.add(model);
   });
 }
