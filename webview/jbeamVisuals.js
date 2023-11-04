@@ -165,7 +165,7 @@ function onReceiveData(message) {
 
   loadedMeshes = []
   meshLibraryFull = {}
-  meshFilenameLookupLibrary = {}
+  meshFolderCache = {}
   daeFindfilesDone = false
   daeLoadingCounter = 0
   ctx.vscode.postMessage({
@@ -201,12 +201,18 @@ function tryLoad3dMesh(meshName, onDone) {
   });
 }
 
-function addMeshesToScene() {
-  console.log(">>>> addMeshesToScene")
+function finalizeMeshes() {
+  console.log(">>>> finalizeMeshes <<<<")
   console.log('Adding meshes to scene ...')
+
+  meshFilenameLookupLibrary = {}
+  for (let ns in meshFolderCache) {
+    Object.assign(meshFilenameLookupLibrary, meshFolderCache[ns])
+  }
+  console.log("meshFolderCache = ", meshFolderCache)
   console.log("meshFilenameLookupLibrary = ", meshFilenameLookupLibrary)
 
-  //console.log(jbeamData)
+  console.log(jbeamData)
 
   for (let partName in jbeamData) {
     let part = jbeamData[partName]
@@ -251,8 +257,8 @@ function addMeshesToScene() {
   }
 }
 
-function loadMeshShallow(uri) {
-  console.log(">loadMeshShallow>", uri)
+function loadMeshShallow(uri, namespace) {
+  console.log(">loadMeshShallow>", uri, namespace)
   daeLoadingCounter++;
   ctx.colladaLoader.load(uri, function (collada) {
     daeLoadingCounter--
@@ -261,21 +267,22 @@ function loadMeshShallow(uri) {
         if (node instanceof THREE.Object3D) {
           if(node.name) {
             //console.log("NODE?", node.name)
-            meshFilenameLookupLibrary[node.name.trim()] = uri;
+            if(!meshFolderCache[namespace]) meshFolderCache[namespace] = {}
+            meshFolderCache[namespace][node.name.trim()] = uri
           }
         }
       });
     }
     if (daeLoadingCounter == 0 && daeFindfilesDone) {
-      //console.log('>> addMeshesToScene 1 >>', daeLoadingCounter, daeFindfilesDone)
-      addMeshesToScene();
+      //console.log('>> finalizeMeshes 1 >>', daeLoadingCounter, daeFindfilesDone)
+      finalizeMeshes();
     }
   }, undefined, function (error) {
     daeLoadingCounter--;
     console.error(error)
     if (daeLoadingCounter == 0 && daeFindfilesDone) {
-      //console.log('>> addMeshesToScene 2 >>', daeLoadingCounter, daeFindfilesDone)
-      addMeshesToScene();
+      //console.log('>> finalizeMeshes 2 >>', daeLoadingCounter, daeFindfilesDone)
+      finalizeMeshes();
     }
   }, true);
 }
@@ -291,7 +298,7 @@ function onReceiveMessage(event) {
       onLineChangeEditor(message)
       break
     case 'loadDaeFinal':
-      loadMeshShallow(message.uri)
+      loadMeshShallow(message.uri, message.namespace)
       break
     case 'daeFileLoadingDone':
       daeFindfilesDone = true

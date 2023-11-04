@@ -78,7 +78,11 @@ function drawWindow() {
     });
     ImGui.EndCombo();  
   }
-  ImGui.TextUnformatted(Object.keys(meshFilenameLookupLibrary).length + ' meshes shallow loaded')
+
+  ImGui.TextUnformatted('MeshCache')
+  for (let ns in meshFolderCache) {
+    ImGui.TextUnformatted(ns + ' - ' + Object.keys(meshFolderCache[ns]).length)
+  }
   ImGui.TextUnformatted(Object.keys(meshLibraryFull).length + ' meshes fully loaded')
   if(daeLoadingCounter > 0) {
     ImGui.TextUnformatted(daeLoadingCounter + ' files loading ...')

@@ -9,6 +9,7 @@ let renderer
 let vscode
 let meshFilenameLookupLibrary = {}
 let meshLibraryFull = {}
+let meshFolderCache = {}
 let daeLoadingCounter = 0
 
 const raycaster = new THREE.Raycaster()

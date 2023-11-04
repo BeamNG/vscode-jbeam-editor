@@ -47,7 +47,8 @@ function loadColladaFiles(uri) {
       //console.log(`Found .dae in common folder: ${file.fsPath}`);
       webPanel.webview.postMessage({
         command: 'loadDaeFinal',
-        uri: convertUri(file.fsPath)
+        uri: convertUri(file.fsPath),
+        namespace: '/vehicles/common/',
       })
     });
   }));
@@ -59,7 +60,8 @@ function loadColladaFiles(uri) {
         //console.log(`Found .dae in vehicle specific folder: ${file.fsPath} > ${convertUri(file.fsPath)}`);
         webPanel.webview.postMessage({
           command: 'loadDaeFinal',
-          uri: convertUri(file.fsPath)
+          uri: convertUri(file.fsPath),
+          namespace: '/vehicles/' + vehicleSpecificPath,
         })
       });
     }));
