@@ -118,6 +118,19 @@ function activate(context) {
     if (vscode.window.activeTextEditor) {
       parseAndPostData(vscode.window.activeTextEditor.document);
     }
+
+    let selectionChangeDisposable = vscode.window.onDidChangeTextEditorSelection(event => {
+      if (event.textEditor === vscode.window.activeTextEditor) {
+        let newLineNumber = event.selections[0].start.line + 1; // Line numbers are 0-based
+        if (webPanel && webPanel.visible) {
+          webPanel.webview.postMessage({
+            command: 'lineChanged',
+            lineNumber: newLineNumber
+          });
+        }
+      }
+    });
+  
   });
 
   context.subscriptions.push(disposable2);

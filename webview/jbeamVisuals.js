@@ -27,6 +27,49 @@ function createCircleTexture(radius, color) {
 }
 const pointTexture = createCircleTexture(32, 'red');
 
+
+function focusNodeIdx(closestPointIdx, triggerEditor = true) {
+  if (closestPointIdx) {
+    const node = pointsCache[closestPointIdx]
+    const offset = new THREE.Vector3().subVectors(node.pos3d, orbitControls.target);
+    const newCameraPosition = new THREE.Vector3().addVectors(camera.position, offset);
+
+    //console.log('hit node:', node)
+    selectedNodeIdx = closestPointIdx
+
+    if(node.hasOwnProperty('__line') && triggerEditor) {
+      vscode.postMessage({
+        command: 'selectLine',
+        line: node.__line,
+        uri: uri,
+      });
+      //console.log(">postMessage>", node.__line)
+    }
+
+    new Tween(orbitControls.target)
+      .to(node.pos3d, 120)
+      .easing(Easing.Quadratic.Out)
+      .start()
+      
+    new Tween(camera.position)
+      .to(newCameraPosition, 120)
+      .easing(Easing.Quadratic.Out)
+      .start()
+  }
+}
+
+
+function onLineChangeEditor(message) {
+  if(!pointsCache) return
+  //console.log('>>> onLineChangeEditor >>>', message)
+  for (let i = 0; i < pointsCache.length; i++) {
+    if(pointsCache[i].__line == message.lineNumber) {
+      focusNodeIdx(i, false)
+      return
+    }
+  }
+}
+
 function onReceiveData(message) {
   jbeamData = message.data
   uri = message.uri
@@ -111,11 +154,15 @@ function onReceiveData(message) {
 }
 
 function onReceiveMessage(event) {
+  //console.log(">>> onReceiveMessage >>>", event)
   const message = event.data;
   switch (message.command) {
     case 'jbeamData':
       onReceiveData(message);
       break;
+    case 'lineChanged':
+      onLineChangeEditor(message)
+      break
   }
 }
 
@@ -149,35 +196,8 @@ function checkIntersection() {
       closestPointIdx = i;
     }
   }
-
   // If the closest point is within the desired threshold, we have a hit
-  if (closestPointIdx && closestDistance <= 0.1) {
-    const node = pointsCache[closestPointIdx]
-    const offset = new THREE.Vector3().subVectors(node.pos3d, orbitControls.target);
-    const newCameraPosition = new THREE.Vector3().addVectors(camera.position, offset);
-
-    console.log('hit node:', node)
-    selectedNodeIdx = closestPointIdx
-
-    if(node.hasOwnProperty('__line')) {
-      vscode.postMessage({
-        command: 'selectLine',
-        line: node.__line,
-        uri: uri,
-      });
-      //console.log(">postMessage>", node.__line)
-    }
-
-    new Tween(orbitControls.target)
-      .to(node.pos3d, 120)
-      .easing(Easing.Quadratic.Out)
-      .start()
-      
-    new Tween(camera.position)
-      .to(newCameraPosition, 120)
-      .easing(Easing.Quadratic.Out)
-      .start()
-  }
+  if(closestPointIdx) focusNodeIdx(closestPointIdx)
 }
 
 function onMouseDown(event) {
