@@ -18,7 +18,7 @@ class ColladaLoader extends THREE.Loader {
     loader.setPath( scope.path );
     loader.setRequestHeader( scope.requestHeader );
     loader.setWithCredentials( scope.withCredentials );
-    console.log(url)
+    //console.log(url)
     loader.load( url, function ( text ) {
 
       try {
@@ -1041,7 +1041,7 @@ class ColladaLoader extends THREE.Loader {
 
       }
 
-      console.warn( 'THREE.ColladaLoader: Couldn\'t find image with ID:', id );
+      //console.warn( 'THREE.ColladaLoader: Couldn\'t find image with ID:', id );
 
       return null;
 
@@ -1606,7 +1606,7 @@ class ColladaLoader extends THREE.Loader {
 
         } else {
 
-          console.warn( 'THREE.ColladaLoader: Couldn\'t create texture with ID:', textureObject.id );
+          //console.warn( 'THREE.ColladaLoader: Couldn\'t create texture with ID:', textureObject.id );
 
           return null;
 
@@ -4059,7 +4059,7 @@ class ColladaLoader extends THREE.Loader {
 
     if ( asset.upAxis === 'Z_UP' ) {
 
-      console.warn( 'THREE.ColladaLoader: You are loading an asset with a Z-UP coordinate system. The loader just rotates the asset to transform it into Y-UP. The vertex data are not converted, see #24289.' );
+      //console.warn( 'THREE.ColladaLoader: You are loading an asset with a Z-UP coordinate system. The loader just rotates the asset to transform it into Y-UP. The vertex data are not converted, see #24289.' );
       scene.rotation.set( - Math.PI / 2, 0, 0 );
 
     }

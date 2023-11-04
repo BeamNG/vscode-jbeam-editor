@@ -5,6 +5,9 @@ let linesObject
 let pointsCache
 let selectedNodeIdx = null
 
+let daeCommonDone = false
+let daeVehicleDone = false
+let daeAllDone = false
 
 function createCircleTexture(radius, color) {
   const canvas = document.createElement('canvas');
@@ -153,6 +156,11 @@ function onReceiveData(message) {
   scene.add(linesObject);
 
   // trigger loading dae
+  meshLibrary = {}
+  daeCommonDone = false
+  daeVehicleDone = false
+  daeAllDone = false
+
   ctx.vscode.postMessage({
     command: 'loadColladaFiles',
     uri: uri,
@@ -160,42 +168,18 @@ function onReceiveData(message) {
 }
 
 function loadMesh(uri) {
-  console.log('>>> loadMesh >>> ', uri)
+  //console.log('>>> loadMesh >>> ', uri)
   const loader = new ctx.colladaLoader.ColladaLoader();
   loader.load(uri, function (collada) {
     const model = collada.scene;
 
-    
-    // Create checkerboard texture
-    var canvas = document.createElement('canvas');
-    canvas.width = 64; // Texture size - can be adjusted as needed
-    canvas.height = 64; // Texture size - can be adjusted as needed
-
-    var context = canvas.getContext('2d');
-
-    // Define the size of the squares
-    var size = 8; // Size of the checkerboard squares
-
-    // Draw the checkerboard
-    for (let i = 0; i < canvas.width; i += size) {
-      for (let j = 0; j < canvas.height; j += size) {
-        context.fillStyle = ((i & size) == (j & size)) ? 'white' : 'black';
-        context.fillRect(i, j, size, size);
-      }
-    }
-
-    // Use the canvas as a texture
-    var checkerboardTexture = new THREE.CanvasTexture(canvas);
-    var checkerboardMaterial = new THREE.MeshBasicMaterial({ map: checkerboardTexture });
-
-    // Apply the checkerboard material to all child meshes in the model
-    model.traverse((child) => {
-      if (child.isMesh) {
-        child.material = checkerboardMaterial;
+    collada.scene.traverse(function (child) {
+      if (child instanceof THREE.Mesh) {
+        // Store each mesh by its name in the meshLibrary
+        meshLibrary[child.name] = child;
       }
     });
-
-    scene.add(model);
+    //console.log("meshLibrary = ", meshLibrary)
   });
 }
 
@@ -211,6 +195,12 @@ function onReceiveMessage(event) {
       break
     case 'loadDaeFinal':
       loadMesh(message.uri)
+      break
+    case 'daeCommonDone':
+      daeCommonDone = true
+      break
+    case 'daeVehicleDone':
+      daeVehicleDone = true
       break
   }
 }
@@ -261,6 +251,29 @@ export function init() {
   window.addEventListener('mousedown', onMouseDown, false);
 }
 
+function addFlexbodiesToScene() {
+  console.log('Adding meshes to scene ...')
+  console.log(jbeamData)
+
+  for (let partName in jbeamData) {
+    let part = jbeamData[partName]
+
+    if(!part.hasOwnProperty('flexbodies')) continue
+
+    for (let flexBodyId in part.flexbodies) {
+      let flexbody = part.flexbodies[flexBodyId]
+      let mesh = meshLibrary[flexbody.mesh]
+      if(mesh) {
+        scene.add(mesh)
+        console.log(`Added Flexbody mesh to scene: ${flexbody.mesh}`)
+      } else {
+        console.error(`Flexbody mesh not found: ${flexbody.mesh}`)
+      }
+    }
+  }
+
+}
+
 export function animate(time) {
   if(jbeamData === null) return
 
@@ -273,5 +286,11 @@ export function animate(time) {
       selectedNodeIdx = null
     }
     ImGui.End();
+  }
+
+  console.log(daeCommonDone, daeVehicleDone, daeAllDone)
+  if(!daeAllDone && daeCommonDone && daeVehicleDone) {
+    daeAllDone = true
+    addFlexbodiesToScene()
   }
 }

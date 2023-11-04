@@ -57,13 +57,10 @@ function loadColladaFiles(uri) {
     vscode.workspace.findFiles(vehicleFolderPattern, null, 100).then(files => {
       files.forEach(file => {
         //console.log(`Found .dae in vehicle specific folder: ${file.fsPath} > ${convertUri(file.fsPath)}`);
-        // Load the .dae file or perform other actions
-
         webPanel.webview.postMessage({
           command: 'loadDaeFinal',
           uri: convertUri(file.fsPath)
         })
-        
       });
     });
   }

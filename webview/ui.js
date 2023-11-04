@@ -78,6 +78,7 @@ function drawWindow() {
     });
     ImGui.EndCombo();  
   }
+  ImGui.TextUnformatted(Object.keys(meshLibrary).length + ' meshes loaded')
 
   ImGui.End();
 }

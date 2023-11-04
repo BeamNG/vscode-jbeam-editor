@@ -7,6 +7,8 @@ let selectedViewName = 'Front'
 let scene = null
 let renderer
 let vscode
+let meshLibrary = {}
+
 
 const raycaster = new THREE.Raycaster()
 const mouse = new THREE.Vector2()
