@@ -53,7 +53,7 @@ function onReceiveData(message) {
   // Fill arrays with data for each node
   for (let i = 0; i < beamNodesCounter; i++) {
     alphas.push(0.5)
-    colors.push(1, 1, 0)
+    colors.push(0, 1, 0)
   }
   
   lineGeometry = new THREE.BufferGeometry()
@@ -152,8 +152,8 @@ function onMouseMove(event) {
     normalizedDistance = THREE.MathUtils.clamp(normalizedDistance, 0, 1) // Ensure it's between 0 and 1
 
     // Set alpha based on distance (closer points are less transparent)
-    alphasAttribute.setX(i*2  , 1.0 - (normalizedDistance * 0.8))
-    alphasAttribute.setX(i*2+1, 1.0 - (normalizedDistance * 0.8))
+    alphasAttribute.setX(i*2  , 1.0 - (normalizedDistance * 0.6))
+    alphasAttribute.setX(i*2+1, 1.0 - (normalizedDistance * 0.6))
 
     let color = getColorFromDistance(distance, maxDistance)
     colorsAttribute.setXYZ(i*2  , color.r, color.g, color.b)

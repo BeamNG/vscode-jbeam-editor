@@ -45,9 +45,9 @@ function focusNodeIdx(closestPointIdx, triggerEditor = true) {
     const sizesAttribute = geometryNodes.getAttribute('size');
     for (let i = 0; i < pointsCache.length; i++) {
       if(i == selectedNodeIdx) continue
-      alphasAttribute.setX(i, 0.3)
-      sizesAttribute.setX(i, 0.04)
-      colorsAttribute.setXYZ(i, 0.8, 0.65, 0);
+      alphasAttribute.setX(i, 0.4)
+      sizesAttribute.setX(i, 0.03)
+      colorsAttribute.setXYZ(i, 1, 0.65, 0);
     }
     alphasAttribute.setX(selectedNodeIdx, 1)
     sizesAttribute.setX(selectedNodeIdx, 0.11)
