@@ -106,3 +106,60 @@ function createDome(scene) {
   // Add the dome to the scene
   scene.add(domeMesh);
 }
+
+function createLegend(scene) {
+  // Create a canvas element
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  canvas.width = 1024; // The size can be adjusted based on the scale
+  canvas.height = 1024;
+
+  // Calculate the size and position for your arrow and text
+  let size = 10; //Math.abs(maxX - minX); // The width you want to display
+  let scaleFactor = 100; // How much to scale your measurements by for the canvas
+
+  // Draw arrow line
+  context.beginPath();
+  context.moveTo(512 - (size * scaleFactor) / 2, 512);
+  context.lineTo(512 + (size * scaleFactor) / 2, 512);
+  context.strokeStyle = '#000';
+  context.lineWidth = 10;
+  context.stroke();
+
+  // Draw arrowheads
+  context.beginPath();
+  context.moveTo(512 + (size * scaleFactor) / 2, 512);
+  context.lineTo(512 + (size * scaleFactor) / 2 - 20, 507);
+  context.lineTo(512 + (size * scaleFactor) / 2 - 20, 517);
+  context.fill();
+
+  context.beginPath();
+  context.moveTo(512 - (size * scaleFactor) / 2, 512);
+  context.lineTo(512 - (size * scaleFactor) / 2 + 20, 507);
+  context.lineTo(512 - (size * scaleFactor) / 2 + 20, 517);
+  context.fill();
+
+  // Draw text
+  context.font = '48px Arial';
+  context.textAlign = 'center';
+  context.fillText(size.toFixed(2) + 'm', 512, 552);
+
+  // Create a texture from the canvas
+  const texture = new THREE.CanvasTexture(canvas);
+
+  // Create a material
+  const material = new THREE.MeshBasicMaterial({ map: texture });
+  material.transparent = true;
+
+  // Create a mesh with a plane geometry
+  const planeGeometry = new THREE.PlaneGeometry(2, 2); // Size of the plane
+  const planeMesh = new THREE.Mesh(planeGeometry, material);
+
+  // Adjust the plane to lay flat on the ground
+  planeMesh.rotation.x = -Math.PI / 2;
+  planeMesh.position.y = 0.01; // slightly above the ground to avoid z-fighting
+
+  // Add the plane to the scene
+  scene.add(planeMesh);
+
+}

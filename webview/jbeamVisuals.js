@@ -131,7 +131,7 @@ function onReceiveData(message) {
   let geometryNodes = new THREE.BufferGeometry();
   geometryNodes.setAttribute('position', new THREE.BufferAttribute(new Float32Array(nodeVertices), 3));
   const nodesMaterial = new THREE.PointsMaterial({ 
-    size: 0.1, 
+    size: 0.07, 
     color: 0xff0000,
     //map: pointTexture, 
     transparent: true,

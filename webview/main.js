@@ -19,6 +19,7 @@ function animate(time) {
 
   renderer.clear();
   renderer.render(scene, camera);
+  renderer.state.reset();
 
   gizmoAnimate()
 
@@ -131,6 +132,7 @@ export function init() {
 
   createDome(scene)
   createGrid(scene)
+  //createLegend(scene)
   gizmoCreate()
   ctx.ui.init()
   ctx.jbeamVisuals.init()

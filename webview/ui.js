@@ -102,6 +102,7 @@ export function frameEnd() {
   drawWindow()
   ImGui.EndFrame()
   ImGui.Render()
+
   ImGui_Impl.RenderDrawData(ImGui.GetDrawData())
 }
 
