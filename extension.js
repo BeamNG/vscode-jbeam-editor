@@ -116,18 +116,12 @@ function activate(context) {
         return editor.document.uri.toString() === message.uri;
       })
       if (targetEditor) {
-        if(message.col) {
-          // Create a position for the cursor
-          console.log('goto:', message.range)
-          const position = new vscode.Position(message.range[0] - 1, message.range[1] - 1);
-          targetEditor.selection = new vscode.Selection(position, position);
-          targetEditor.revealRange(new vscode.Range(position, position));
-        } else {
-          // full line
-          const range = targetEditor.document.lineAt(message.range[0] - 1).range;
-          targetEditor.selection = new vscode.Selection(range.start, range.end);
-          targetEditor.revealRange(range);
-        }
+        console.log('goto:', message.range)
+        const position = new vscode.Position(message.range[0] - 1, message.range[1] - 1);
+        targetEditor.selection = new vscode.Selection(position, position);
+        targetEditor.revealRange(new vscode.Range(position, position));
+      } else {
+        console.error('Editor for uri not found: ', message.uri)
       }
     }
     webPanel.webview.onDidReceiveMessage(

@@ -81,6 +81,7 @@ function onCursorChangeEditor(message) {
 
 export function onReceiveData(message) {
   jbeamData = message.data
+  uri = message.uri
   let nodeCounter = 0
   let nodeVertices = []
   pointsCache = []
