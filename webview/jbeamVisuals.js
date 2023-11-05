@@ -84,19 +84,31 @@ function onReceiveData(message) {
   pointsCache = []
   for (let partName in jbeamData) {
     let part = jbeamData[partName]
+    let sumX = 0
+    let sumY = 0
+    let sumZ = 0
+    let nodeCounter = 0
     if(part.hasOwnProperty('nodes')) {
       for (let nodeId in part.nodes) {
         let node = part.nodes[nodeId]
         // node.pos contains [x, y, z]
         if(node.hasOwnProperty('pos')) {
           nodeVertices.push(node.pos[0])
+          sumX += node.pos[0]
           nodeVertices.push(node.pos[1])
+          sumY += node.pos[1]
           nodeVertices.push(node.pos[2])
+          sumZ += node.pos[2]
+          nodeCounter++
           node.pos3d = new THREE.Vector3(node.pos[0], node.pos[1], node.pos[2])
           pointsCache.push(node)
         } else {
           console.log("ERR", node)
         }
+      }
+
+      if(nodeCounter > 0) {
+        part.__centerPosition = new THREE.Vector3(sumX / nodeCounter, sumY / nodeCounter, sumZ / nodeCounter)
       }
     }
 
@@ -122,10 +134,22 @@ function onReceiveData(message) {
     }
   }
 
+
+  if(message.updatedOnly === false) {
+    selectedNodeIdx = 0
+    for (let partName in jbeamData) {
+      let part = jbeamData[partName]
+      if(part.__centerPosition) {
+        orbitControls.target = part.__centerPosition
+        break
+      }
+    }
+  }
+
   // nodes
   if(pointsObject) {
-    if (pointsObject.geometry) pointsObject.geometry.dispose();
-    if (pointsObject.material) pointsObject.material.dispose();
+  //  if (pointsObject.geometry) pointsObject.geometry.dispose();
+  //  if (pointsObject.material) pointsObject.material.dispose();
     scene.remove(pointsObject);
   }
   let geometryNodes = new THREE.BufferGeometry();
@@ -144,8 +168,8 @@ function onReceiveData(message) {
 
   // beams
   if(linesObject) {
-    if (linesObject.geometry) linesObject.geometry.dispose();
-    if (linesObject.material) linesObject.material.dispose();
+  //  if (linesObject.geometry) linesObject.geometry.dispose();
+  //  if (linesObject.material) linesObject.material.dispose();
     scene.remove(linesObject);
   }
   const lineGeometry = new THREE.BufferGeometry();
@@ -238,7 +262,7 @@ function finalizeMeshes() {
   //console.log("meshFolderCache = ", meshFolderCache)
   //console.log("meshFilenameLookupLibrary = ", meshFilenameLookupLibrary)
 
-  console.log(jbeamData)
+  //console.log('jbeamData = ', jbeamData)
 
   for (let partName in jbeamData) {
     let part = jbeamData[partName]
@@ -394,7 +418,7 @@ export function animate(time) {
     const selectedNode = pointsCache[selectedNodeIdx]
     const prettyJson = JSON.stringify(selectedNode, null, 2)
     ImGui.Begin("Node Data##nodedata");
-    ImGui.TextUnformatted(prettyJson);
+    ImGui.TextUnformatted(prettyJson ? prettyJson : "");
     if(ImGui.SmallButton('deselect')) {
       selectedNodeIdx = null
     }

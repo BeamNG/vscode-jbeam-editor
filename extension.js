@@ -149,7 +149,7 @@ function activate(context) {
       context.subscriptions
     );
 
-    function parseAndPostData(doc) {
+    function parseAndPostData(doc, updatedOnly = false) {
       const text = doc.getText()
       const uri = doc.uri.toString()
       try {
@@ -176,13 +176,13 @@ function activate(context) {
           data: parsedData,
           uri: uri,
           meshCache: meshCache,
+          updatedOnly: updatedOnly,
         });
       } catch (e) {
         // If there's an error in parsing, show it to the user
         vscode.window.showErrorMessage(`Error parsing SJSON: ${e.message}`);
       }
     }
-
 
     // Listen for when the active editor changes
     vscode.window.onDidChangeActiveTextEditor(editor => {
@@ -192,9 +192,9 @@ function activate(context) {
     });
 
     // Listen for changes in the document of the active editor
-    let disposable3 = vscode.workspace.onDidChangeTextDocument(event => {
+    vscode.workspace.onDidChangeTextDocument(event => {
       if (webPanel.visible && event.document === vscode.window.activeTextEditor.document) {
-        parseAndPostData(event.document);
+        parseAndPostData(event.document, true);
       }
     });
 
@@ -203,7 +203,7 @@ function activate(context) {
       parseAndPostData(vscode.window.activeTextEditor.document);
     }
 
-    let selectionChangeDisposable = vscode.window.onDidChangeTextEditorSelection(event => {
+    vscode.window.onDidChangeTextEditorSelection(event => {
       if (event.textEditor === vscode.window.activeTextEditor) {
         let newLineNumber = event.selections[0].start.line + 1; // Line numbers are 0-based
         if (webPanel && webPanel.visible) {
