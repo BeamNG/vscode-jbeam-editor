@@ -96,6 +96,12 @@ function activate(context) {
 
   context.subscriptions.push(disposable);
 
+  const highlightDecorationType = vscode.window.createTextEditorDecorationType({
+    backgroundColor: 'rgba(255, 255, 0, 0.3)', // yellow background for highlighting
+  });  
+  const fadeDecorationType = vscode.window.createTextEditorDecorationType({
+    color: 'rgba(200, 200, 200, 0.5)',
+  });
 
   let disposable2 = vscode.commands.registerCommand('jbeam-editor.show3DScene', function () {
     // Create and show a new webview
@@ -110,25 +116,67 @@ function activate(context) {
       }
     )
     webPanel.webview.html = getWebviewContent(webPanel);
-    function goToLine(message) {
-      console.log('goToLine', message)
+
+    function applyFadeEffectToDocument(editor, rangeToHighlight) {
+      const fullRange = new vscode.Range(
+        0,
+        0,
+        editor.document.lineCount - 1,
+        editor.document.lineAt(editor.document.lineCount - 1).text.length
+      );
+    
+      const rangesToFade = [
+        new vscode.Range(fullRange.start, rangeToHighlight.start),
+        new vscode.Range(rangeToHighlight.end, fullRange.end),
+      ];
+    
+      // Set the fade decoration for all the document except the highlighted range
+      editor.setDecorations(fadeDecorationType, rangesToFade);
+    
+      // Set the highlight decoration for the range to be highlighted
+      editor.setDecorations(highlightDecorationType, [rangeToHighlight]);
+    }
+
+    function resetSelection(message) {
       let targetEditor = vscode.window.visibleTextEditors.find(editor => {
         return editor.document.uri.toString() === message.uri;
-      })
+      });
+
       if (targetEditor) {
-        console.log('goto:', message.range)
-        const position = new vscode.Position(message.range[0] - 1, message.range[1] - 1);
-        targetEditor.selection = new vscode.Selection(position, position);
-        targetEditor.revealRange(new vscode.Range(position, position));
-      } else {
-        console.error('Editor for uri not found: ', message.uri)
+        targetEditor.setDecorations(highlightDecorationType, []);
+        targetEditor.setDecorations(fadeDecorationType, []);    
       }
     }
+
+    function goToLineAndDecorate(message) {
+      let targetEditor = vscode.window.visibleTextEditors.find(editor => {
+        return editor.document.uri.toString() === message.uri;
+      });
+
+      if (targetEditor) {
+        const start = new vscode.Position(message.range[0] - 1, message.range[1] - 1);
+        const end = new vscode.Position(message.range[2] - 1, message.range[3]);
+        const highlightRange = new vscode.Range(start, end);
+
+        // Apply the highlight and fade effects
+        applyFadeEffectToDocument(targetEditor, highlightRange);
+
+        // Go to the line and reveal it in the center of the viewport
+        targetEditor.selection = new vscode.Selection(start, start);
+        targetEditor.revealRange(highlightRange, vscode.TextEditorRevealType.InCenter);
+      } else {
+        console.error('Editor for uri not found: ', message.uri);
+      }
+    }
+
     webPanel.webview.onDidReceiveMessage(
       message => {
         switch (message.command) {
           case 'selectLine':
-            goToLine(message);
+            goToLineAndDecorate(message);
+            break;
+          case 'resetSelection':
+            resetSelection(message);
             break;
           case 'loadColladaNamespaces':
             loadColladaNamespaces(message.uri, message.data)

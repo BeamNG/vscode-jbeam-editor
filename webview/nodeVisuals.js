@@ -282,10 +282,18 @@ function onReceiveMessage(event) {
   }
 }
 
+function onMouseOut(event) {
+  ctx.vscode.postMessage({
+    command: 'resetSelection',
+    uri: uri,
+  });
+}
+
 export function init() {
   window.addEventListener('message', onReceiveMessage);
   window.addEventListener('mousedown', onMouseDown, false);
   window.addEventListener('mousemove', onMouseMove, false); 
+  window.addEventListener('mouseout', onMouseOut, false); 
 }
 
 export function animate(time) {
