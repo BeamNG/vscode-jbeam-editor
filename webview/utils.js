@@ -45,31 +45,28 @@ function roundNumber(num) {
 
 function createGrid(scene) {
   let size = 10; // 20x20 grid
-  let divisions = 20;
+  let divisions = 10;
+
+  const colorFront = new THREE.Color(0xaaaaaa);
+  const colorBack = new THREE.Color(0x808080);
 
   // Grid for the XZ plane (Right-Left)
-  let fadedFront = interpolateColor(new THREE.Color(faceColors.Right), new THREE.Color(0x808080), 0.1);
-  let fadedBack = interpolateColor(new THREE.Color(faceColors.Left), new THREE.Color(0x808080), 0.6);
-  let gridXZ = new THREE.GridHelper(size, divisions, fadedFront, fadedBack);
+  let gridXZ = new THREE.GridHelper(size, divisions, colorFront, colorBack);
   gridXZ.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);  // Rotate around the X-axis to lay it flat
   gridXZ.material.opacity = 0.5;
   gridXZ.material.transparent = true;
   scene.add(gridXZ);
 
   // Grid for the XY plane (Top-Bottom)
-  fadedFront = interpolateColor(new THREE.Color(faceColors.Top), new THREE.Color(0x808080), 0.1);
-  fadedBack = interpolateColor(new THREE.Color(faceColors.Bottom), new THREE.Color(0x808080), 0.6);
-  let gridXY = new THREE.GridHelper(size, divisions, fadedFront, fadedBack);
+  let gridXY = new THREE.GridHelper(size, divisions, colorFront, colorBack);
   gridXY.material.opacity = 0.5;
   gridXY.material.transparent = true;
   scene.add(gridXY);
 
   // Grid for the YZ plane (Front-Back)
-  fadedFront = interpolateColor(new THREE.Color(faceColors.Front), new THREE.Color(0x808080), 0.1);
-  fadedBack = interpolateColor(new THREE.Color(faceColors.Back), new THREE.Color(0x808080), 0.6);
-  let gridYZ = new THREE.GridHelper(size, divisions, fadedFront, fadedBack);
+  let gridYZ = new THREE.GridHelper(size, divisions, colorFront, colorBack);
   gridYZ.material.opacity = 0.5;
   gridYZ.material.transparent = true;
   gridYZ.rotateOnAxis(new THREE.Vector3(0, 0, 1), Math.PI / 2);  // Rotate around the Z-axis to make it vertical
-  scene.add(gridYZ);
+  //scene.add(gridYZ);
 }
