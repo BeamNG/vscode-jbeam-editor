@@ -119,6 +119,7 @@ function decodeSJSON(s) {
     if (!numberMatch) jsonError('Invalid number');
     let numberStr = numberMatch[0];
     i += numberStr.length;
+    columnNumber += numberStr.length
     return Number(numberStr);
   }
 
@@ -128,9 +129,9 @@ function decodeSJSON(s) {
 
     if (ch === '"') return readString();
     if (ch === '-' || (ch >= '0' && ch <= '9')) return readNumber();
-    if (ch === 't') { i += 4; return true; }
-    if (ch === 'f') { i += 5; return false; }
-    if (ch === 'n') { i += 4; return null; }
+    if (ch === 't') { i += 4; columnNumber += 4; return true; }
+    if (ch === 'f') { i += 5; columnNumber += 5; return false; }
+    if (ch === 'n') { i += 4; columnNumber += 4; return null; }
 
     if (ch === '{') return parseObject();
     if (ch === '[') return parseArray();

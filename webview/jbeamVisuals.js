@@ -155,7 +155,7 @@ function onReceiveData(message) {
 
 
   if(message.updatedOnly === false) {
-    selectedNodeIdx = 0
+    selectedNodeIdx = null
     for (let partName in jbeamData) {
       let part = jbeamData[partName]
       if(part.__centerPosition) {
@@ -435,14 +435,16 @@ export function init() {
 export function animate(time) {
   if(jbeamData === null) return
 
-  if(selectedNodeIdx) {
+  if(selectedNodeIdx !== null) {
     const selectedNode = pointsCache[selectedNodeIdx]
-    const prettyJson = JSON.stringify(selectedNode, null, 2)
-    ImGui.Begin("Node Data##nodedata");
-    ImGui.TextUnformatted(prettyJson ? prettyJson : "");
-    if(ImGui.SmallButton('deselect')) {
-      selectedNodeIdx = null
+    if(selectedNode) {
+      const prettyJson = JSON.stringify(selectedNode, null, 2)
+      ImGui.Begin("Node Data##nodedata");
+      ImGui.TextUnformatted(prettyJson ? prettyJson : "");
+      if(ImGui.SmallButton('deselect')) {
+        selectedNodeIdx = null
+      }
+      ImGui.End();
     }
-    ImGui.End();
   }
 }
