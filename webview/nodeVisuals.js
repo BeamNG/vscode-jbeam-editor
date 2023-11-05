@@ -39,6 +39,17 @@ function focusNodeIdx(closestPointIdx, triggerEditor = true) {
     //console.log('hit node:', node)
     selectedNodeIdx = closestPointIdx
 
+    // color the node properly
+    const alphasAttribute = geometryNodes.getAttribute('alpha');
+    const colorsAttribute = geometryNodes.getAttribute('color');
+    const sizesAttribute = geometryNodes.getAttribute('size');
+    alphasAttribute.setX(selectedNodeIdx, 2)
+    sizesAttribute.setX(selectedNodeIdx, 0.11)
+    colorsAttribute.setXYZ(selectedNodeIdx, 255, 0, 255)
+    alphasAttribute.needsUpdate = true;
+    colorsAttribute.needsUpdate = true;
+    sizesAttribute.needsUpdate = true;
+
     if(node.hasOwnProperty('__range') && triggerEditor) {
       ctx.vscode.postMessage({
         command: 'selectLine',
@@ -176,7 +187,7 @@ export function onReceiveData(message) {
       }
     `,
     transparent: true,
-    blending: THREE.AdditiveBlending,
+    //blending: THREE.AdditiveBlending,
     depthTest: true
   });
   
@@ -211,8 +222,6 @@ function onMouseDown(event) {
   mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
   if(ctx.ui.wantCaptureMouse() || !pointsCache) return
 
-  //selectedNodeIdx = null
-
   raycaster.setFromCamera(mouse, camera);
   
   let closestPointIdx = null;
@@ -234,18 +243,17 @@ function onMouseMove(event) {
   mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
   if(ctx.ui.wantCaptureMouse() || !pointsCache) return
 
-  //selectedNodeIdx = null
-  console.log(">>> onMouseMove")
-
   raycaster.setFromCamera(mouse, camera);
 
   const alphasAttribute = geometryNodes.getAttribute('alpha');
   const colorsAttribute = geometryNodes.getAttribute('color');
+  const sizesAttribute = geometryNodes.getAttribute('size');
   
   let alphaDecay = 0.01; // The rate at which alpha value decreases with distance
   let maxDistance = 1; // Maximum distance to affect the alpha
   
   for (let i = 0; i < pointsCache.length; i++) {
+    if(i == selectedNodeIdx) continue
     const distance = raycaster.ray.distanceToPoint(pointsCache[i].pos3d);
 
     // Normalize the distance based on a predefined maximum distance
@@ -254,13 +262,14 @@ function onMouseMove(event) {
 
     // Set alpha based on distance (closer points are less transparent)
     alphasAttribute.setX(i, 1.0 - (normalizedDistance * alphaDecay))
-    //sizes[i] = 1.0 - (normalizedDistance * alphaDecay);
+    sizesAttribute.setX(i, (1.0 - (normalizedDistance * 0.7)) * 0.08)
 
     let color = getColorFromDistance(distance, maxDistance);
     colorsAttribute.setXYZ(i, color.r, color.g, color.b);
   }
   alphasAttribute.needsUpdate = true;
   colorsAttribute.needsUpdate = true;
+  sizesAttribute.needsUpdate = true;
 }
 
 
