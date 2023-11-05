@@ -6,6 +6,18 @@ let pointsCache
 
 let selectedNodeIdx = null
 
+// Create arrays to hold the per-node data
+let geometryNodes
+
+let alphas = [];
+let alphaBuffer
+
+let colors = [];
+let colorBuffer
+
+let sizes = [];
+let sizeBuffer
+
 function moveCameraCenter(pos) {
   const offset = new THREE.Vector3().subVectors(pos, orbitControls.target);
   const newCameraPosition = new THREE.Vector3().addVectors(camera.position, offset);
@@ -52,6 +64,7 @@ function onCursorChangeEditor(message) {
 
 export function onReceiveData(message) {
   jbeamData = message.data
+  let nodeCounter = 0
   let nodeVertices = []
   pointsCache = []
   for (let partName in jbeamData) {
@@ -59,7 +72,6 @@ export function onReceiveData(message) {
     let sumX = 0
     let sumY = 0
     let sumZ = 0
-    let nodeCounter = 0
     if(part.hasOwnProperty('nodes')) {
       for (let nodeId in part.nodes) {
         let node = part.nodes[nodeId]
@@ -99,32 +111,68 @@ export function onReceiveData(message) {
   if(pointsObject) {
     scene.remove(pointsObject);
   }
-  let geometryNodes = new THREE.BufferGeometry();
-  geometryNodes.setAttribute('position', new THREE.BufferAttribute(new Float32Array(nodeVertices), 3));
+  geometryNodes = new THREE.BufferGeometry();
+  
+  const positions = geometryNodes.getAttribute('position');
+  if(!positions) {
+    geometryNodes.setAttribute('position', new THREE.BufferAttribute(new Float32Array(nodeVertices), 3));
+  } else {
+    positions.array = new Float32Array(nodeVertices); // Use the new data
+    positions.needsUpdate = true;
+  }
+
+  
+
+  // Fill arrays with data for each node
+  for (let i = 0; i < nodeCounter; i++) {
+    alphas.push(1);
+    colors.push(255, 0, 0);
+    sizes.push(0.1);
+  }
+
+  // Convert arrays to typed arrays and add as attributes to the geometry
+  alphaBuffer = new THREE.Float32BufferAttribute(alphas, 1)
+  alphaBuffer.setUsage(THREE.DynamicDrawUsage);
+  geometryNodes.setAttribute('alpha', alphaBuffer);
+  
+  colorBuffer = new THREE.Float32BufferAttribute(colors, 3)
+  colorBuffer.setUsage(THREE.DynamicDrawUsage);
+  geometryNodes.setAttribute('color', colorBuffer);
+
+  sizeBuffer = new THREE.Float32BufferAttribute(sizes, 1)
+  sizeBuffer.setUsage(THREE.DynamicDrawUsage);
+  geometryNodes.setAttribute('size', sizeBuffer);
 
   const nodesMaterial = new THREE.ShaderMaterial({
     uniforms: {
-      color: { value: new THREE.Color(0xff0000) },
-      pointSize: { value: 10.0 },
-      scale: { value: 4 } // Assuming perspective camera and square points
+      scale: { value: window.innerHeight / 2 } // Assuming perspective camera and square points
     },
     vertexShader: `
-      uniform float pointSize;
+      attribute float alpha;
+      attribute vec3 color;
+      attribute float size;
+  
+      varying float vAlpha;
+      varying vec3 vColor;
+  
       uniform float scale;
       void main() {
+        vAlpha = alpha;
+        vColor = color;
         vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-        gl_PointSize = pointSize * (scale / -mvPosition.z);
+        gl_PointSize = size * (scale / -mvPosition.z);
         gl_Position = projectionMatrix * mvPosition;
       }
     `,
     fragmentShader: `
-      uniform vec3 color;
+      varying float vAlpha;
+      varying vec3 vColor;
       void main() {
         float r = distance(gl_PointCoord, vec2(0.5, 0.5));
         if (r > 0.5) {
           discard;
         }
-        gl_FragColor = vec4(color, 1.0);
+        gl_FragColor = vec4(vColor, vAlpha);
       }
     `,
     transparent: true,
@@ -137,14 +185,36 @@ export function onReceiveData(message) {
 
 }
 
-function checkIntersection() {
+function getColorFromDistance(distance, maxDistance) {
+  // This function will return a color where the red component decreases with distance
+
+  // Clamp the distance to the range [0, maxDistance]
+  let clampedDistance = Math.min(distance, maxDistance);
+  
+  // Normalize the distance so it's a value between 0 and 1
+  let normalizedDistance = clampedDistance / maxDistance;
+
+  // Create a color starting with red
+  let color = new THREE.Color(0xff0000); // Bright red
+  
+  // Modify the color's intensity based on the distance
+  // As the distance increases, the color fades to black
+  color.lerp(new THREE.Color(0x000000), normalizedDistance); 
+
+  return color;
+}
+
+
+function onMouseDown(event) {
+  const rect = renderer.domElement.getBoundingClientRect();
+  mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
   if(ctx.ui.wantCaptureMouse() || !pointsCache) return
 
   //selectedNodeIdx = null
-  //console.log(">>> checkIntersection")
 
   raycaster.setFromCamera(mouse, camera);
-
+  
   let closestPointIdx = null;
   let closestDistance = Infinity;
   for (let i = 0; i < pointsCache.length; i++) {
@@ -158,12 +228,41 @@ function checkIntersection() {
   if(closestPointIdx !== null && closestDistance < 0.1) focusNodeIdx(closestPointIdx)
 }
 
-function onMouseDown(event) {
+function onMouseMove(event) {
   const rect = renderer.domElement.getBoundingClientRect();
   mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
   mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-  checkIntersection();
+  if(ctx.ui.wantCaptureMouse() || !pointsCache) return
+
+  //selectedNodeIdx = null
+  console.log(">>> onMouseMove")
+
+  raycaster.setFromCamera(mouse, camera);
+
+  const alphasAttribute = geometryNodes.getAttribute('alpha');
+  const colorsAttribute = geometryNodes.getAttribute('color');
+  
+  let alphaDecay = 0.01; // The rate at which alpha value decreases with distance
+  let maxDistance = 1; // Maximum distance to affect the alpha
+  
+  for (let i = 0; i < pointsCache.length; i++) {
+    const distance = raycaster.ray.distanceToPoint(pointsCache[i].pos3d);
+
+    // Normalize the distance based on a predefined maximum distance
+    let normalizedDistance = distance / maxDistance;
+    normalizedDistance = THREE.MathUtils.clamp(normalizedDistance, 0, 1); // Ensure it's between 0 and 1
+
+    // Set alpha based on distance (closer points are less transparent)
+    alphasAttribute.setX(i, 1.0 - (normalizedDistance * alphaDecay))
+    //sizes[i] = 1.0 - (normalizedDistance * alphaDecay);
+
+    let color = getColorFromDistance(distance, maxDistance);
+    colorsAttribute.setXYZ(i, color.r, color.g, color.b);
+  }
+  alphasAttribute.needsUpdate = true;
+  colorsAttribute.needsUpdate = true;
 }
+
 
 function onReceiveMessage(event) {
   //console.log(">>> onReceiveMessage >>>", event)
@@ -178,6 +277,8 @@ function onReceiveMessage(event) {
 export function init() {
   window.addEventListener('message', onReceiveMessage);
   window.addEventListener('mousedown', onMouseDown, false);
+  window.addEventListener('mousemove', onMouseMove, false);
+  
 }
 
 export function animate(time) {
