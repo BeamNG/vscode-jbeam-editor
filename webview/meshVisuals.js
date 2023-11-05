@@ -18,7 +18,7 @@ function onReceiveData(message) {
   jbeamData = message.data
   uri = message.uri
   meshFolderCache = message.meshCache
-  console.log("onReceiveData", message);
+  //console.log("onReceiveData", message);
 
   // trigger loading dae
 

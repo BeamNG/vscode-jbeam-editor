@@ -19,7 +19,6 @@ function onReceiveData(message) {
   jbeamData = message.data
   uri = message.uri
   meshFolderCache = message.meshCache
-  console.log("onReceiveData", message);
 
   for (let partName in jbeamData) {
     let part = jbeamData[partName]
@@ -50,9 +49,7 @@ function onReceiveMessage(event) {
     case 'jbeamData':
       onReceiveData(message);
       break;
-    case 'cursorChanged':
-      onCursorChangeEditor(message)
-      break
+
   }
 }
 

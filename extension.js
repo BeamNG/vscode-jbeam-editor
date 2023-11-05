@@ -111,6 +111,7 @@ function activate(context) {
     )
     webPanel.webview.html = getWebviewContent(webPanel);
     function goToLine(message) {
+      console.log('goToLine', message)
       let targetEditor = vscode.window.visibleTextEditors.find(editor => {
         return editor.document.uri.toString() === message.uri;
       })

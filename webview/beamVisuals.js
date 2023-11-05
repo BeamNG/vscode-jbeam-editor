@@ -3,16 +3,19 @@ let linesObject
 
 let lineGeometry
 
+let beamCache
 let positions = []
 let alphas = [];
 let colors = [];
-let sizes = [];
+
+let selectedBeamIdx
 
 function onReceiveData(message) {
   jbeamData = message.data
   
   positions = []
-  let beamCounter = 0
+  beamCache = []
+  let beamNodesCounter = 0
   for (let partName in jbeamData) {
     let part = jbeamData[partName]
 
@@ -25,7 +28,9 @@ function onReceiveData(message) {
           let endNode = part.nodes[beam['id2:']]
       
           if (startNode && endNode) {
-            beamCounter+=2
+            beam.nodePos1 = new THREE.Vector3(startNode.pos[0], startNode.pos[1], startNode.pos[2])
+            beamCache.push(beam)
+            beamNodesCounter+=2
             positions.push(startNode.pos[0])
             positions.push(startNode.pos[1])
             positions.push(startNode.pos[2])
@@ -46,10 +51,9 @@ function onReceiveData(message) {
   }
 
   // Fill arrays with data for each node
-  for (let i = 0; i < beamCounter; i++) {
-    alphas.push(1)
+  for (let i = 0; i < beamNodesCounter; i++) {
+    alphas.push(0.5)
     colors.push(1, 1, 0)
-    sizes.push(0.1)
   }
   
   lineGeometry = new THREE.BufferGeometry()
@@ -84,21 +88,10 @@ function onReceiveData(message) {
     lineGeometry.setAttribute('color', colorBuffer)
   }
 
-  let sizeBuffer = lineGeometry.getAttribute('size')
-  if(sizeBuffer) {
-    sizeBuffer.array = new Float32Array(sizes)
-    sizeBuffer.needsUpdate = true
-  } else {
-    sizeBuffer = new THREE.BufferAttribute(new Float32Array(sizes), 1)
-    sizeBuffer.setUsage(THREE.DynamicDrawUsage)
-    lineGeometry.setAttribute('size', sizeBuffer)
-  }
-
   let lineMaterial = new THREE.ShaderMaterial({
     vertexShader: `
       attribute float alpha;
       attribute vec3 color;
-      attribute float size;
       varying float vAlpha;
       varying vec3 vColor;
 
@@ -117,13 +110,57 @@ function onReceiveData(message) {
       }
     `,
     transparent: true,
-    depthTest: true,
+    //depthTest: true,
     //side: THREE.DoubleSide
   });
 
 
   linesObject = new THREE.LineSegments(lineGeometry, lineMaterial);
   scene.add(linesObject);
+}
+
+//const beamColorActive = new THREE.Color(0x00ff00);
+const beamColorInative = new THREE.Color(0x88dd88);
+
+function getColorFromDistance(distance, maxDistance) {
+  let clampedDistance = Math.min(distance, maxDistance);
+  let normalizedDistance = clampedDistance / maxDistance;
+  let color = new THREE.Color(0x00ff00);
+  color.lerp(beamColorInative, normalizedDistance); 
+  return color;
+}
+
+function onMouseMove(event) {
+  const rect = renderer.domElement.getBoundingClientRect()
+  mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+  mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
+  if(ctx.ui.wantCaptureMouse() || !beamCache) return
+
+  raycaster.setFromCamera(mouse, camera)
+
+  const alphasAttribute = lineGeometry.getAttribute('alpha')
+  const colorsAttribute = lineGeometry.getAttribute('color')
+  
+  let maxDistance = 1 // Maximum distance to affect the alpha
+  
+  for (let i = 0; i < beamCache.length; i++) {
+    if(i == selectedBeamIdx) continue
+    const distance = raycaster.ray.distanceToPoint(beamCache[i].nodePos1);
+
+    // Normalize the distance based on a predefined maximum distance
+    let normalizedDistance = distance / maxDistance
+    normalizedDistance = THREE.MathUtils.clamp(normalizedDistance, 0, 1) // Ensure it's between 0 and 1
+
+    // Set alpha based on distance (closer points are less transparent)
+    alphasAttribute.setX(i*2  , 1.0 - (normalizedDistance * 0.8))
+    alphasAttribute.setX(i*2+1, 1.0 - (normalizedDistance * 0.8))
+
+    let color = getColorFromDistance(distance, maxDistance)
+    colorsAttribute.setXYZ(i*2  , color.r, color.g, color.b)
+    colorsAttribute.setXYZ(i*2+1, color.r, color.g, color.b)
+  }
+  alphasAttribute.needsUpdate = true
+  colorsAttribute.needsUpdate = true
 }
 
 function onReceiveMessage(event) {
@@ -138,11 +175,11 @@ function onReceiveMessage(event) {
 
 export function init() {
   window.addEventListener('message', onReceiveMessage);
+  window.addEventListener('mousemove', onMouseMove, false); 
   ctx.nodeVisuals.init()
 }
 
 
 export function animate(time) {
   if(jbeamData === null) return
-
 }

@@ -43,7 +43,13 @@ function focusNodeIdx(closestPointIdx, triggerEditor = true) {
     const alphasAttribute = geometryNodes.getAttribute('alpha');
     const colorsAttribute = geometryNodes.getAttribute('color');
     const sizesAttribute = geometryNodes.getAttribute('size');
-    alphasAttribute.setX(selectedNodeIdx, 2)
+    for (let i = 0; i < pointsCache.length; i++) {
+      if(i == selectedNodeIdx) continue
+      alphasAttribute.setX(i, 0.3)
+      sizesAttribute.setX(i, 0.04)
+      colorsAttribute.setXYZ(i, 0.8, 0.65, 0);
+    }
+    alphasAttribute.setX(selectedNodeIdx, 1)
     sizesAttribute.setX(selectedNodeIdx, 0.11)
     colorsAttribute.setXYZ(selectedNodeIdx, 1, 0, 1)
     alphasAttribute.needsUpdate = true;
@@ -137,8 +143,8 @@ export function onReceiveData(message) {
   // Fill arrays with data for each node
   for (let i = 0; i < nodeCounter; i++) {
     alphas.push(1);
-    colors.push(1, 0, 0);
-    sizes.push(0.1);
+    colors.push(1, 0.65, 0);
+    sizes.push(0.05);
   }
 
   // Convert arrays to typed arrays and add as attributes to the geometry
@@ -197,21 +203,10 @@ export function onReceiveData(message) {
 }
 
 function getColorFromDistance(distance, maxDistance) {
-  // This function will return a color where the red component decreases with distance
-
-  // Clamp the distance to the range [0, maxDistance]
   let clampedDistance = Math.min(distance, maxDistance);
-  
-  // Normalize the distance so it's a value between 0 and 1
   let normalizedDistance = clampedDistance / maxDistance;
-
-  // Create a color starting with red
-  let color = new THREE.Color(0xff0000); // Bright red
-  
-  // Modify the color's intensity based on the distance
-  // As the distance increases, the color fades to black
-  color.lerp(new THREE.Color(0x000000), normalizedDistance); 
-
+  let color = new THREE.Color(0xFFA500);
+  color.lerp(new THREE.Color(0xddA500), normalizedDistance); 
   return color;
 }
 
@@ -280,14 +275,16 @@ function onReceiveMessage(event) {
     case 'jbeamData':
       onReceiveData(message);
       break;
+    case 'cursorChanged':
+      onCursorChangeEditor(message)
+      break
   }
 }
 
 export function init() {
   window.addEventListener('message', onReceiveMessage);
   window.addEventListener('mousedown', onMouseDown, false);
-  window.addEventListener('mousemove', onMouseMove, false);
-  
+  window.addEventListener('mousemove', onMouseMove, false); 
 }
 
 export function animate(time) {
