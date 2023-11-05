@@ -167,7 +167,6 @@ function onReceiveData(message) {
   }
 
   loadedMeshes = []
-  meshLibraryFull = {}
   daeFindfilesDone = false
   daeLoadingCounter = 0
   daeLoadingCounterFull = 0
@@ -179,6 +178,14 @@ function onReceiveData(message) {
 }
 
 function tryLoad3dMesh(meshName, onDone) {
+
+  // check if the mesh is by chance already full loaded ...
+  if(meshLibraryFull[meshName]) {
+    onDone(meshLibraryFull[meshName])
+    return
+  }
+
+  // not loaded, lets try to load it ...
   meshName = meshName.trim()
   const uri = meshFilenameLookupLibrary[meshName]
   if(!uri) {
@@ -266,6 +273,10 @@ function finalizeMeshes() {
     
           }
           node.rotation.x = -Math.PI / 2;
+
+          node.traverse((n) => {
+            n.castShadow = true
+          })
           scene.add(node)
           loadedMeshes.push(mesh)
           return

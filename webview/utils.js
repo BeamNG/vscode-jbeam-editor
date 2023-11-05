@@ -70,3 +70,39 @@ function createGrid(scene) {
   gridYZ.rotateOnAxis(new THREE.Vector3(0, 0, 1), Math.PI / 2);  // Rotate around the Z-axis to make it vertical
   //scene.add(gridYZ);
 }
+
+function createDome(scene) {
+  // Create a half-sphere geometry (dome)
+  const domeRadius = 500; // Should be large enough to encompass your entire scene
+  const domeWidthSegments = 60; // Adjust for more detail
+  const domeHeightSegments = 40; // Adjust for more detail
+  const domePhiStart = 0; // Starting angle
+  const domePhiLength = Math.PI * 2; // Full circle
+  const domeThetaStart = 0; // Starting height
+  const domeThetaLength = Math.PI * 0.5; // Half-circle to make a dome
+
+  const domeGeometry = new THREE.SphereGeometry(
+    domeRadius,
+    domeWidthSegments,
+    domeHeightSegments,
+    domePhiStart,
+    domePhiLength,
+    domeThetaStart,
+    domeThetaLength
+  );
+
+  // Create a material with a solid color
+  const domeMaterial = new THREE.MeshBasicMaterial({
+    color: 0x808080, // Light blue color, for example
+    side: THREE.BackSide // Render on the inside of the dome
+  });
+
+  // Create a mesh with the geometry and material
+  const domeMesh = new THREE.Mesh(domeGeometry, domeMaterial);
+
+  // Optionally, you may want to position the dome so that its bottom aligns with the ground level
+  domeMesh.position.set(0, 0, 0); // Adjust as necessary
+
+  // Add the dome to the scene
+  scene.add(domeMesh);
+}

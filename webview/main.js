@@ -79,6 +79,11 @@ export function init() {
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.gammaFactor = 2.2; 
   renderer.gammaOutput = true;
+  renderer.setClearColor(0x808080);
+
+  // shadows
+  renderer.shadowMap.enabled = true; // Enable shadow mapping
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Shadow mapping type
 
   orbitControls = new OrbitControls(camera, renderer.domElement);
 
@@ -99,13 +104,32 @@ export function init() {
   // Ambient light affects all objects in the scene globally.
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // soft white light
   scene.add(ambientLight);
+  scene.fog = new THREE.FogExp2(0x808080, 0.002); // color and density
 
   // Directional light for more targeted illumination with direction.
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
-  directionalLight.position.set(0, 1, 1); // Adjust the position as needed
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+  directionalLight.position.set(5, 10, 5);
+  directionalLight.castShadow = true; // Enable shadows for this light
   scene.add(directionalLight);
 
+  // Set up shadow properties for the light
+  directionalLight.shadow.mapSize.width = 4096;  // Default is 512
+  directionalLight.shadow.mapSize.height = 4096; // Default is 512
+  directionalLight.shadow.camera.near = 0.1;    // Default is 0.5
+  directionalLight.shadow.camera.far = 300;     // Default is 500
 
+  // Create a floor
+  const floorGeometry = new THREE.PlaneGeometry(200, 200);
+  const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 });
+  floorMaterial.roughness = 1; // Less reflective
+  floorMaterial.metalness = 0; // Not metallic
+  const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+  floor.rotation.x = -Math.PI / 2; // Rotate the floor 90 degrees
+  floor.receiveShadow = true; // Floor can receive shadows
+  floor.position.y = -0.005; // to prevent flickering with the grid
+  scene.add(floor);
+
+  createDome(scene)
   createGrid(scene)
   gizmoCreate()
   ctx.ui.init()
