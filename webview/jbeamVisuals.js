@@ -104,17 +104,19 @@ function onReceiveData(message) {
       for (let beamId in part.beams) {
         let beam = part.beams[beamId];
         //console.log(">beam>", beam, part.nodes[beam['id1:']])
-        let startNode = part.nodes[beam['id1:']]
-        let endNode = part.nodes[beam['id2:']]
-    
-        if (startNode && endNode) {
-          lineVertices.push(startNode.pos[0])
-          lineVertices.push(startNode.pos[1])
-          lineVertices.push(startNode.pos[2])
-          lineVertices.push(endNode.pos[0])
-          lineVertices.push(endNode.pos[1])
-          lineVertices.push(endNode.pos[2])
-          //lineVertices.push(...startNode.pos, ...endNode.pos);
+        if (part.nodes && beam['id1:'] in part.nodes && beam['id2:'] in part.nodes) {
+          let startNode = part.nodes[beam['id1:']]
+          let endNode = part.nodes[beam['id2:']]
+      
+          if (startNode && endNode) {
+            lineVertices.push(startNode.pos[0])
+            lineVertices.push(startNode.pos[1])
+            lineVertices.push(startNode.pos[2])
+            lineVertices.push(endNode.pos[0])
+            lineVertices.push(endNode.pos[1])
+            lineVertices.push(endNode.pos[2])
+            //lineVertices.push(...startNode.pos, ...endNode.pos);
+          }
         }
       }
     }
@@ -168,6 +170,7 @@ function onReceiveData(message) {
   meshLibraryFull = {}
   daeFindfilesDone = false
   daeLoadingCounter = 0
+  daeLoadingCounterFull = 0
   ctx.vscode.postMessage({
     command: 'loadColladaNamespaces',
     data: Object.keys(meshFolderCache),
@@ -182,29 +185,37 @@ function tryLoad3dMesh(meshName, onDone) {
     console.error(`Mesh not found: '${meshName}'` )
     return
   }
+  daeLoadingCounterFull++
   ctx.colladaLoader.load(uri, function (collada) {
-
-    console.log("collada: ", collada)
-    for (let i in collada.scene.children) {
-      let child = collada.scene.children[i]
-      if(child.type === 'Mesh') {
-        // temp: use scene scale for the child
-        child.scale.x = collada.scene.scale.x
-        child.scale.y = collada.scene.scale.y
-        child.scale.z = collada.scene.scale.z
-        meshLibraryFull[child.name.trim()] = child;
+    daeLoadingCounterFull--
+    //console.log("collada: ", collada)
+    collada.scene.traverse((node) => {
+      if (node instanceof THREE.Object3D) {
+        // temp: use scene scale for the node
+        //console.log("SCALE: ", node.scale.z, collada.scene.scale.x)
+        node.scale.x *= collada.scene.scale.x
+        node.scale.y *= collada.scene.scale.y
+        node.scale.z *= collada.scene.scale.z
+        meshLibraryFull[node.name.trim()] = node;
+      } else {
+        console.log('ignored: ', node.name)
       }
-    }
+    })
     //console.log(">meshLibraryFull>", meshName, meshLibraryFull, meshFilenameLookupLibrary)
+    //if(!meshLibraryFull[meshName]) {
+    //  console.log('###############################################')
+    //  console.log(meshLibraryFull, meshName)
+    //}
     onDone(meshLibraryFull[meshName])
   }, undefined, function (error) {
+    daeLoadingCounterFull--
     console.error('An error happened during loading:', error);
   });
 }
 
 function finalizeMeshes() {
-  console.log(">>>> finalizeMeshes <<<<")
-  console.log('Adding meshes to scene ...')
+  //console.log(">>>> finalizeMeshes <<<<")
+  //console.log('Adding meshes to scene ...')
 
   // update cache on the extension side of things ...
   ctx.vscode.postMessage({
@@ -217,8 +228,8 @@ function finalizeMeshes() {
   for (let ns in meshFolderCache) {
     Object.assign(meshFilenameLookupLibrary, meshFolderCache[ns])
   }
-  console.log("meshFolderCache = ", meshFolderCache)
-  console.log("meshFilenameLookupLibrary = ", meshFilenameLookupLibrary)
+  //console.log("meshFolderCache = ", meshFolderCache)
+  //console.log("meshFilenameLookupLibrary = ", meshFilenameLookupLibrary)
 
   console.log(jbeamData)
 
@@ -266,7 +277,7 @@ function finalizeMeshes() {
 }
 
 function loadMeshShallow(uri, namespace) {
-  console.log(">loadMeshShallow>", uri, namespace)
+  //console.log(">loadMeshShallow>", uri, namespace)
   daeLoadingCounter++;
   ctx.colladaLoader.load(uri, function (collada) {
     daeLoadingCounter--
@@ -274,9 +285,10 @@ function loadMeshShallow(uri, namespace) {
       collada.scene.traverse(function (node) {
         if (node instanceof THREE.Object3D) {
           if(node.name) {
-            //console.log("NODE?", node.name)
+            //console.log("NODE?", node.name, node)
             if(!meshFolderCache[namespace]) meshFolderCache[namespace] = {}
             meshFolderCache[namespace][node.name.trim()] = uri
+            //console.log(">> ASSIGN", namespace, node.name.trim(), uri)
           }
         }
       });

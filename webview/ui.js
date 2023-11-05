@@ -84,10 +84,10 @@ function drawWindow() {
     ImGui.TextUnformatted(ns + ' - ' + Object.keys(meshFolderCache[ns]).length)
   }
   ImGui.TextUnformatted(Object.keys(meshLibraryFull).length + ' meshes fully loaded')
-  if(daeLoadingCounter > 0) {
-    ImGui.TextUnformatted(daeLoadingCounter + ' files loading ...')
+  if(daeLoadingCounter + daeLoadingCounterFull > 0) {
+    ImGui.TextUnformatted((daeLoadingCounter + daeLoadingCounterFull) + ' files loading ...')
   }
-
+  
   ImGui.End();
 }
 
