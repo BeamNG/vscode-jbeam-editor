@@ -45,7 +45,7 @@ function focusNodeIdx(closestPointIdx, triggerEditor = true) {
     const sizesAttribute = geometryNodes.getAttribute('size');
     alphasAttribute.setX(selectedNodeIdx, 2)
     sizesAttribute.setX(selectedNodeIdx, 0.11)
-    colorsAttribute.setXYZ(selectedNodeIdx, 255, 0, 255)
+    colorsAttribute.setXYZ(selectedNodeIdx, 1, 0, 1)
     alphasAttribute.needsUpdate = true;
     colorsAttribute.needsUpdate = true;
     sizesAttribute.needsUpdate = true;
@@ -137,7 +137,7 @@ export function onReceiveData(message) {
   // Fill arrays with data for each node
   for (let i = 0; i < nodeCounter; i++) {
     alphas.push(1);
-    colors.push(255, 0, 0);
+    colors.push(1, 0, 0);
     sizes.push(0.1);
   }
 

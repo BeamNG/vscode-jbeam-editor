@@ -1,9 +1,18 @@
 let jbeamData = null
 let linesObject
 
+let lineGeometry
+
+let positions = []
+let alphas = [];
+let colors = [];
+let sizes = [];
+
 function onReceiveData(message) {
   jbeamData = message.data
-  let lineVertices = []
+  
+  positions = []
+  let beamCounter = 0
   for (let partName in jbeamData) {
     let part = jbeamData[partName]
 
@@ -16,13 +25,13 @@ function onReceiveData(message) {
           let endNode = part.nodes[beam['id2:']]
       
           if (startNode && endNode) {
-            lineVertices.push(startNode.pos[0])
-            lineVertices.push(startNode.pos[1])
-            lineVertices.push(startNode.pos[2])
-            lineVertices.push(endNode.pos[0])
-            lineVertices.push(endNode.pos[1])
-            lineVertices.push(endNode.pos[2])
-            //lineVertices.push(...startNode.pos, ...endNode.pos);
+            beamCounter+=2
+            positions.push(startNode.pos[0])
+            positions.push(startNode.pos[1])
+            positions.push(startNode.pos[2])
+            positions.push(endNode.pos[0])
+            positions.push(endNode.pos[1])
+            positions.push(endNode.pos[2])
           }
         }
       }
@@ -35,16 +44,86 @@ function onReceiveData(message) {
   //  if (linesObject.material) linesObject.material.dispose();
     scene.remove(linesObject);
   }
-  const lineGeometry = new THREE.BufferGeometry();
-  lineGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(lineVertices), 3));
-  let lineMaterial = new THREE.LineBasicMaterial({ color: 0x00FF00 });
-  lineMaterial.depthTest = true;
-  lineMaterial.depthWrite = true;
 
-  //const lineMaterial = new THREE.LineBasicMaterial({ color: 0x00FF00 });
+  // Fill arrays with data for each node
+  for (let i = 0; i < beamCounter; i++) {
+    alphas.push(1)
+    colors.push(1, 1, 0)
+    sizes.push(0.1)
+  }
+  
+  lineGeometry = new THREE.BufferGeometry()
+
+  let positionsBuffer = lineGeometry.getAttribute('position')
+  if(positionsBuffer) {
+    positionsBuffer.array = new Float32Array(positions)
+    positionsBuffer.needsUpdate = true
+  } else {
+    positionsBuffer = new THREE.BufferAttribute(new Float32Array(positions), 3)
+    //positionsBuffer.setUsage(THREE.DynamicDrawUsage)
+    lineGeometry.setAttribute('position', positionsBuffer)
+  }
+
+  let alphaBuffer = lineGeometry.getAttribute('alpha')
+  if(alphaBuffer) {
+    alphaBuffer.array = new Float32Array(alphas)
+    alphaBuffer.needsUpdate = true
+  } else {
+    alphaBuffer = new THREE.BufferAttribute(new Float32Array(alphas), 1)
+    alphaBuffer.setUsage(THREE.DynamicDrawUsage)
+    lineGeometry.setAttribute('alpha', alphaBuffer)
+  }
+
+  let colorBuffer = lineGeometry.getAttribute('color')
+  if(colorBuffer) {
+    colorBuffer.array = new Float32Array(colors)
+    colorBuffer.needsUpdate = true
+  } else {
+    colorBuffer = new THREE.BufferAttribute(new Float32Array(colors), 3)
+    colorBuffer.setUsage(THREE.DynamicDrawUsage)
+    lineGeometry.setAttribute('color', colorBuffer)
+  }
+
+  let sizeBuffer = lineGeometry.getAttribute('size')
+  if(sizeBuffer) {
+    sizeBuffer.array = new Float32Array(sizes)
+    sizeBuffer.needsUpdate = true
+  } else {
+    sizeBuffer = new THREE.BufferAttribute(new Float32Array(sizes), 1)
+    sizeBuffer.setUsage(THREE.DynamicDrawUsage)
+    lineGeometry.setAttribute('size', sizeBuffer)
+  }
+
+  let lineMaterial = new THREE.ShaderMaterial({
+    vertexShader: `
+      attribute float alpha;
+      attribute vec3 color;
+      attribute float size;
+      varying float vAlpha;
+      varying vec3 vColor;
+
+      void main() {
+        vAlpha = alpha;
+        vColor = color;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      varying float vAlpha;
+      varying vec3 vColor;
+
+      void main() {
+        gl_FragColor = vec4(vColor, vAlpha);
+      }
+    `,
+    transparent: true,
+    depthTest: true,
+    //side: THREE.DoubleSide
+  });
+
+
   linesObject = new THREE.LineSegments(lineGeometry, lineMaterial);
   scene.add(linesObject);
-
 }
 
 function onReceiveMessage(event) {
