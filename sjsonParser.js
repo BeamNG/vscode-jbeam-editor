@@ -9,6 +9,7 @@ class SJSONException extends Error {
 
 function decodeSJSON(s) {
   let lineNumber = 0;
+  let columnNumber = 0;
 
   const escapes = {
     't': '\t',
@@ -38,35 +39,43 @@ function decodeSJSON(s) {
         //console.log('1Line: ', lineNumber, s.substring(lastNewline + 1, i))
         lastNewline = i
         i++;
+        columnNumber = 0
         continue;
       }
       if (s[i] <= ' ' || s[i] === ',') {
         i++;
+        columnNumber++;
         continue;
       }
       if (s[i] === '/') {
         if (s[i + 1] === '/') {
           // Single-line comment
           i += 2; // Skip '//' characters
+          columnNumber += 2;
           while (i < s.length && s[i] !== '\n') {
             i++;
+            columnNumber++;
           }
           continue;
         } else if (s[i + 1] === '*') {
           // Multi-line comment
           i += 2; // Skip the '/*'
+          columnNumber += 2;
           while (i < s.length && !(s[i] === '*' && s[i + 1] === '/')) {
             if (s[i] === '\n') {
               lineNumber++; // Increment line number inside multi-line comment
+              columnNumber = 0
               //console.log('3Line: ', lineNumber, s.substring(lastNewline + 1, i))
               lastNewline = i
             }
             i++;
+            columnNumber++;
           }
           if (i >= s.length) {
             jsonError('Unterminated comment');
           }
           i += 2; // Skip the '*/'
+          columnNumber+=2;
           continue;
         } else {
           jsonError('Invalid comment');
@@ -82,6 +91,7 @@ function decodeSJSON(s) {
     // TODO: Add support for escape characters and unicode
     let result = '';
     i++; // Skip the initial quote
+    columnNumber++;
     while (i < s.length && s[i] !== '"') {
       const ch = s[i];
       if (ch === '\\') {
@@ -89,6 +99,7 @@ function decodeSJSON(s) {
         if (esc) {
           result += esc;
           i++;
+          columnNumber++;
         } else {
           result += '\\';
         }
@@ -96,8 +107,10 @@ function decodeSJSON(s) {
         result += ch;
       }
       i++;
+      columnNumber++;
     }
     i++; // Skip the ending quote
+    columnNumber++;
     return result;
   }
 
@@ -128,8 +141,10 @@ function decodeSJSON(s) {
   function parseArray() {
     const arr = {};
     i++; // skip '['
+    columnNumber++;
     skipWhiteSpace();
-    arr.__line = lineNumber + 1
+    let startLineNo = lineNumber + 1
+    let startCol = columnNumber
     arr.__isarray = true
     let idx = 0
     while (s[i] !== ']') {
@@ -137,32 +152,41 @@ function decodeSJSON(s) {
       skipWhiteSpace();
       if (s[i] === ',') {
         i++; // skip ','
+        columnNumber++;
         skipWhiteSpace();
       }
     }
     i++; // skip ']'
+    columnNumber++;
+    arr.__range = [startLineNo, startCol, lineNumber + 1, columnNumber]
     return arr;
   }
 
   function parseObject() {
     const obj = {};
     i++; // skip '{'
+    columnNumber++;
     skipWhiteSpace();
-    obj.__line = lineNumber + 1
+    let startLineNo = lineNumber + 1
+    let startCol = columnNumber    
     while (s[i] !== '}') {
       if (s[i] !== '"') jsonError('Expected key');
       const key = readString();
       skipWhiteSpace();
       if (s[i] !== ':' && s[i] !== '=') jsonError('Expected ":" or "="');
       i++; // skip ':' or '='
+      columnNumber++;
       obj[key] = parseValue();
       skipWhiteSpace();
       if (s[i] === ',') {
         i++; // skip ','
+        columnNumber++;
         skipWhiteSpace();
       }
     }
     i++; // skip '}'
+    columnNumber++;
+    obj.__range = [startLineNo, startCol, lineNumber + 1, columnNumber]
     return obj;
   }
 

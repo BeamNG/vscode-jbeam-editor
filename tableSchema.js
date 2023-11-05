@@ -24,6 +24,9 @@ const typeIds = {
   REVERSELIGHT: 32
 };
 
+const excludedKeys = ['__range', '__isarray'];
+
+
 function replaceSpecialValues(val) {
   return val;
 }
@@ -45,7 +48,7 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, omitWarning
     return -1;
   }
 
-  let headerSize = Object.keys(header).filter(key => key !== '__line' && key !== '__isarray').length;
+  let headerSize = Object.keys(header).filter(key => !excludedKeys.includes(key)).length;
   let headerSize1 = headerSize;
   let newListSize = 0;
   let newList = {}
@@ -57,7 +60,7 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, omitWarning
 
   // Walk the list entries
   let newRowId = 0
-  let keys = Object.keys(jbeamTable).filter(rowKey => rowKey !== '__line' && rowKey !== '__isarray')
+  let keys = Object.keys(jbeamTable).filter(key => !excludedKeys.includes(key))
   for (const rowKey of keys) {
     let rowValue = jbeamTable[rowKey];
     if (typeof rowValue !== "object") {
@@ -72,7 +75,7 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, omitWarning
     } else {
       let newID = newRowId++
 
-      const rowSize = Object.keys(rowValue).filter(key => key !== '__line' && key !== '__isarray').length
+      const rowSize = Object.keys(rowValue).filter(key => !excludedKeys.includes(key)).length
       if (rowSize > headerSize + 1) {
         if (!omitWarnings) {
           console.warn(`*** Invalid table header, must be as long as all table cells (plus one additional options column):`);
@@ -84,10 +87,13 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, omitWarning
 
       // Walk the table row
       let newRow = Object.assign({}, localOptions);
+      excludedKeys.forEach(key => {
+        delete newRow[key];
+      });
 
       // Check if inline options are provided, merge them then
       // Assuming `headerSize1` is the number of keys to skip
-      const allKeys = Object.keys(rowValue).filter(key => key !== '__line' && key !== '__isarray'); // Get all keys of the rowValue object
+      const allKeys = Object.keys(rowValue).filter(key => !excludedKeys.includes(key)); // Get all keys of the rowValue object
       const relevantKeys = allKeys.slice(headerSize1); // Get the keys after the first `headerSize1` keys
 
       // Iterate over the remaining keys
@@ -102,7 +108,7 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, omitWarning
       //newRow.__astNodeIdx = rowValue.__astNodeIdx;
 
       // Now care about the rest
-      const allKeys2 = Object.keys(rowValue).filter(key => key !== '__line' && key !== '__isarray');
+      const allKeys2 = Object.keys(rowValue).filter(key => !excludedKeys.includes(key));
       //for (let [rk, _] of Object.entries(rowValue)) {
       for (let rk in allKeys2) {
         //console.log('KEYY:::', rk)
@@ -115,8 +121,8 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, omitWarning
           newRow[header[rk]] = replaceSpecialValues(rowValue[rk]);
         }
       }
-      if(rowValue.hasOwnProperty('__line')) {
-        newRow.__line = rowValue.__line
+      if(rowValue.hasOwnProperty('__range')) {
+        newRow.__range = rowValue.__range
       }
       if(rowValue.hasOwnProperty('__isarray')) {
         newRow.__isarray = rowValue.__isarray

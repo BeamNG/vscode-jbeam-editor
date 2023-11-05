@@ -115,9 +115,18 @@ function activate(context) {
         return editor.document.uri.toString() === message.uri;
       })
       if (targetEditor) {
-        const range = targetEditor.document.lineAt(message.line - 1).range;
-        targetEditor.selection = new vscode.Selection(range.start, range.end);
-        targetEditor.revealRange(range);
+        if(message.col) {
+          // Create a position for the cursor
+          console.log('goto:', message.range)
+          const position = new vscode.Position(message.range[0] - 1, message.range[1] - 1);
+          targetEditor.selection = new vscode.Selection(position, position);
+          targetEditor.revealRange(new vscode.Range(position, position));
+        } else {
+          // full line
+          const range = targetEditor.document.lineAt(message.range[0] - 1).range;
+          targetEditor.selection = new vscode.Selection(range.start, range.end);
+          targetEditor.revealRange(range);
+        }
       }
     }
     webPanel.webview.onDidReceiveMessage(
@@ -156,7 +165,7 @@ function activate(context) {
         let parsedData = sjsonParser.decodeSJSON(text);
         //console.log("PARSED:", parsedData);
         let tableInterpretedData = {}
-        const keys = Object.keys(parsedData).filter(key => key !== '__line' && key !== '__isarray')
+        const keys = Object.keys(parsedData).filter(key => key !== '__range' && key !== '__isarray')
         for (let partNameIdx in keys) {
           let partName = keys[partNameIdx]
           if (!parsedData.hasOwnProperty(partName)) continue;
@@ -205,11 +214,11 @@ function activate(context) {
 
     vscode.window.onDidChangeTextEditorSelection(event => {
       if (event.textEditor === vscode.window.activeTextEditor) {
-        let newLineNumber = event.selections[0].start.line + 1; // Line numbers are 0-based
         if (webPanel && webPanel.visible) {
           webPanel.webview.postMessage({
-            command: 'lineChanged',
-            lineNumber: newLineNumber
+            command: 'cursorChanged',
+            line: event.selections[0].start.line + 1,
+            col: event.selections[0].start.character + 1,
           });
         }
       }

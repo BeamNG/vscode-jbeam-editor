@@ -45,30 +45,29 @@ function moveCameraCenter(pos) {
 }
 
 function focusNodeIdx(closestPointIdx, triggerEditor = true) {
-  if (closestPointIdx) {
+  if (closestPointIdx !== null) {
     const node = pointsCache[closestPointIdx]
 
     //console.log('hit node:', node)
     selectedNodeIdx = closestPointIdx
 
-    if(node.hasOwnProperty('__line') && triggerEditor) {
+    if(node.hasOwnProperty('__range') && triggerEditor) {
       ctx.vscode.postMessage({
         command: 'selectLine',
-        line: node.__line,
+        range: node.__range,
         uri: uri,
       });
-      //console.log(">postMessage>", node.__line)
+      //console.log(">postMessage>", node.__range)
     }
     moveCameraCenter(node.pos3d)
   }
 }
 
 
-function onLineChangeEditor(message) {
+function onCursorChangeEditor(message) {
   if(!pointsCache) return
-  //console.log('>>> onLineChangeEditor >>>', message)
   for (let i = 0; i < pointsCache.length; i++) {
-    if(pointsCache[i].__line == message.lineNumber) {
+    if(message.line == pointsCache[i].__range[0]) {
       focusNodeIdx(i, false)
       return
     }
@@ -284,49 +283,51 @@ function finalizeMeshes() {
 
   //console.log('jbeamData = ', jbeamData)
 
-  for (let partName in jbeamData) {
-    let part = jbeamData[partName]
+  if(false) {
+    for (let partName in jbeamData) {
+      let part = jbeamData[partName]
 
-    if(!part.hasOwnProperty('flexbodies')) continue
+      if(!part.hasOwnProperty('flexbodies')) continue
 
-    for (let flexBodyId in part.flexbodies) {
-      let flexbody = part.flexbodies[flexBodyId]
-      //console.log('Fexbody: ', flexbody)
+      for (let flexBodyId in part.flexbodies) {
+        let flexbody = part.flexbodies[flexBodyId]
+        //console.log('Fexbody: ', flexbody)
 
-      tryLoad3dMesh(flexbody.mesh, (node) => {
-        if(!node) {
-          console.error(`Flexbody mesh not found: ${flexbody.mesh}`)
-          return
-        }
-        node.traverse((mesh) => {
-          if(mesh && mesh instanceof THREE.Mesh) {
-            mesh.material = new THREE.MeshStandardMaterial({
-              color: 0x808080, // Grey color
-              metalness: 0.5,
-              roughness: 0.5
-            });
-    
-            // Create a wireframe geometry from the mesh's geometry
-            const wireframeGeometry = new THREE.WireframeGeometry(mesh.geometry);
-            const wireframeMaterial = new THREE.LineBasicMaterial({
-              color: 0xaaaaaa, // Color of the wireframe
-              linewidth: 1 // Thickness of the wireframe lines
-            });
-            const wireframe = new THREE.LineSegments(wireframeGeometry, wireframeMaterial);
-            mesh.add(wireframe);
-    
+        tryLoad3dMesh(flexbody.mesh, (node) => {
+          if(!node) {
+            console.error(`Flexbody mesh not found: ${flexbody.mesh}`)
+            return
           }
-          node.rotation.x = -Math.PI / 2;
+          node.traverse((mesh) => {
+            if(mesh && mesh instanceof THREE.Mesh) {
+              mesh.material = new THREE.MeshStandardMaterial({
+                color: 0x808080, // Grey color
+                metalness: 0.5,
+                roughness: 0.5
+              });
+      
+              // Create a wireframe geometry from the mesh's geometry
+              const wireframeGeometry = new THREE.WireframeGeometry(mesh.geometry);
+              const wireframeMaterial = new THREE.LineBasicMaterial({
+                color: 0xaaaaaa, // Color of the wireframe
+                linewidth: 1 // Thickness of the wireframe lines
+              });
+              const wireframe = new THREE.LineSegments(wireframeGeometry, wireframeMaterial);
+              mesh.add(wireframe);
+      
+            }
+            node.rotation.x = -Math.PI / 2;
 
-          node.traverse((n) => {
-            n.castShadow = true
+            node.traverse((n) => {
+              n.castShadow = true
+            })
+            scene.add(node)
+            loadedMeshes.push(mesh)
+            return
           })
-          scene.add(node)
-          loadedMeshes.push(mesh)
-          return
+          //console.log(`Added Flexbody mesh to scene: ${flexbody.mesh}`)
         })
-        //console.log(`Added Flexbody mesh to scene: ${flexbody.mesh}`)
-      })
+      }
     }
   }
 }
@@ -369,8 +370,8 @@ function onReceiveMessage(event) {
     case 'jbeamData':
       onReceiveData(message);
       break;
-    case 'lineChanged':
-      onLineChangeEditor(message)
+    case 'cursorChanged':
+      onCursorChangeEditor(message)
       break
     case 'loadDaeFinal':
       loadMeshShallow(message.uri, message.namespace)
@@ -415,7 +416,7 @@ function checkIntersection() {
     }
   }
   // If the closest point is within the desired threshold, we have a hit
-  if(closestPointIdx && closestDistance < 0.1) focusNodeIdx(closestPointIdx)
+  if(closestPointIdx !== null && closestDistance < 0.1) focusNodeIdx(closestPointIdx)
 }
 
 function onMouseDown(event) {
