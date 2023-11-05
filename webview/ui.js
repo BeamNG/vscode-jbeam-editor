@@ -79,15 +79,22 @@ function drawWindow() {
     ImGui.EndCombo();  
   }
 
-  ImGui.TextUnformatted('MeshCache')
-  for (let ns in meshFolderCache) {
-    ImGui.TextUnformatted(ns + ' - ' + Object.keys(meshFolderCache[ns]).length)
-  }
-  ImGui.TextUnformatted(Object.keys(meshLibraryFull).length + ' meshes fully loaded')
-  if(daeLoadingCounter + daeLoadingCounterFull > 0) {
-    ImGui.TextUnformatted((daeLoadingCounter + daeLoadingCounterFull) + ' files loading ...')
-  }
+  if(loadedMeshes.length == 0) {
+    if(ImGui.SmallButton('Load 3d Meshes')) {
+      ctx.jbeamVisuals.load3DMeshes()
+    }
   
+  } else {
+
+    ImGui.TextUnformatted('MeshCache')
+    for (let ns in meshFolderCache) {
+      ImGui.TextUnformatted(ns + ' - ' + Object.keys(meshFolderCache[ns]).length)
+    }
+    ImGui.TextUnformatted(Object.keys(meshLibraryFull).length + ' meshes fully loaded')
+    if(daeLoadingCounter + daeLoadingCounterFull > 0) {
+      ImGui.TextUnformatted((daeLoadingCounter + daeLoadingCounterFull) + ' files loading ...')
+    }
+  }  
   ImGui.End();
 }
 

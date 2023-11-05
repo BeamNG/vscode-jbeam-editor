@@ -12,6 +12,7 @@ let meshLibraryFull = {}
 let meshFolderCache = {}
 let daeLoadingCounter = 0
 let daeLoadingCounterFull = 0
+let loadedMeshes = []
 
 const raycaster = new THREE.Raycaster()
 const mouse = new THREE.Vector2()

@@ -7,7 +7,7 @@ let selectedNodeIdx = null
 
 let daeFindfilesDone = false
 
-let loadedMeshes = []
+
 
 function createCircleTexture(radius, color) {
   const canvas = document.createElement('canvas');
@@ -72,6 +72,18 @@ function onCursorChangeEditor(message) {
       return
     }
   }
+}
+
+export function load3DMeshes() {
+  loadedMeshes = []
+  daeFindfilesDone = false
+  daeLoadingCounter = 0
+  daeLoadingCounterFull = 0
+  ctx.vscode.postMessage({
+    command: 'loadColladaNamespaces',
+    data: Object.keys(meshFolderCache),
+    uri: uri,
+  });
 }
 
 function onReceiveData(message) {
@@ -209,15 +221,7 @@ function onReceiveData(message) {
     scene.remove(mesh);
   }
 
-  loadedMeshes = []
-  daeFindfilesDone = false
-  daeLoadingCounter = 0
-  daeLoadingCounterFull = 0
-  ctx.vscode.postMessage({
-    command: 'loadColladaNamespaces',
-    data: Object.keys(meshFolderCache),
-    uri: uri,
-  });
+  //load3DMeshes()
 }
 
 function tryLoad3dMesh(meshName, onDone) {
@@ -283,7 +287,7 @@ function finalizeMeshes() {
 
   //console.log('jbeamData = ', jbeamData)
 
-  if(false) {
+  if(true) {
     for (let partName in jbeamData) {
       let part = jbeamData[partName]
 
