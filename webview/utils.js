@@ -163,3 +163,39 @@ function createLegend(scene) {
   scene.add(planeMesh);
 
 }
+
+function createWheelPlaceholder(node1Pos, node2Pos, wheelSettings) {
+  // Calculate the midpoint for the cylinder position
+  const midpoint = new THREE.Vector3().addVectors(node1Pos, node2Pos).multiplyScalar(0.5);
+
+  // Calculate the cylinder's height as the distance between the two nodes
+  const height = node1Pos.distanceTo(node2Pos) - wheelSettings.hubRadius * 2; // Subtract the hub radius from both ends
+
+  // Create the cylinder geometry
+  // The radius is the hubRadius, height is calculated above, and 32 is the number of radial segments (can be changed)
+  const geometry = new THREE.CylinderGeometry(wheelSettings.hubRadius, wheelSettings.hubRadius, height, wheelSettings.numRays);
+
+  // Create a material for the cylinder
+  const material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
+
+  // Create the cylinder mesh
+  const cylinder = new THREE.Mesh(geometry, material);
+
+  // Compute the axis and the angle for the orientation
+  const axis = new THREE.Vector3().subVectors(node2Pos, node1Pos).normalize();
+  const angle = Math.acos(axis.dot(new THREE.Vector3(0, 1, 0)));
+
+  // Orient the cylinder to align with the nodes
+  const upVector = new THREE.Vector3(0, 1, 0);
+  cylinder.quaternion.setFromUnitVectors(upVector, axis);
+
+  // Set the position of the cylinder
+  cylinder.position.copy(midpoint);
+
+  // Correct the rotation if necessary
+  if (axis.cross(upVector).lengthSq() > 0) {
+    cylinder.rotateOnAxis(axis.cross(upVector).normalize(), angle);
+  }
+
+  return cylinder;
+}
