@@ -149,10 +149,10 @@ class JBeamHoverProvider {
     let parsedData = sjsonParser.decodeSJSON(text);
     if(parsedData) {
       // not table unrolled, useful for documentation and alike
-      const results = findObjectsWithRange(parsedData, position.line, position.character, document.uri.toString());
-      if(results && results.length > 0) {
-        let foundObjClean = deepCloneAndRemoveKeys(results[0].obj, keysToRemove)
-        const finalBreadCrumb = (`${results[0].breadcrumbPlainText} > ${word.slice(0, 40)}`)
+      const resultsRawData = findObjectsWithRange(parsedData, position.line, position.character, document.uri.toString());
+      if(resultsRawData && resultsRawData.length > 0) {
+        let foundObjClean = deepCloneAndRemoveKeys(resultsRawData[0].obj, keysToRemove)
+        const finalBreadCrumb = (`${resultsRawData[0].breadcrumbPlainText} > ${word.slice(0, 40)}`)
         let doc = docHelper.jbeamDocumentation[finalBreadCrumb]
         if(doc) {
           contents.appendMarkdown(`## Documentation\n${finalBreadCrumb}\n\n`);
@@ -165,11 +165,17 @@ class JBeamHoverProvider {
       // fully unrolled data
       let [tableInterpretedData, diagnostics] = tableSchema.processAllParts(parsedData)
       if(tableInterpretedData) {
-        const results = findObjectsWithRange(tableInterpretedData, position.line, position.character, document.uri.toString());
-        if(results && results.length > 0) {
-          let foundObjClean = deepCloneAndRemoveKeys(results[0].obj, keysToRemove)
-          contents.appendMarkdown(`## Data\n\n ${results[0].breadcrumbMarkdown}\n`);
-          contents.appendCodeblock(JSON.stringify(foundObjClean, null, 2), 'json');
+        const resultsStructuredData = findObjectsWithRange(tableInterpretedData, position.line, position.character, document.uri.toString());
+        if(resultsStructuredData && resultsStructuredData.length > 0) {
+          let foundObjClean = deepCloneAndRemoveKeys(resultsStructuredData[0].obj, keysToRemove)
+          contents.appendMarkdown(`## Data\n\n ${resultsStructuredData[0].breadcrumbMarkdown}\n`);
+
+          console.log(">>> ", resultsRawData.length, resultsStructuredData.length)
+          if(resultsStructuredData && resultsStructuredData && (resultsRawData.length - 2 < resultsStructuredData.length)) {
+            contents.appendCodeblock(JSON.stringify(foundObjClean, null, 2), 'json');
+          } else {
+            // this element was present in the raw data and merged in the structured version, so it's gone ...
+          }
         }
       }
     }
