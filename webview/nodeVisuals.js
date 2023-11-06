@@ -18,6 +18,8 @@ let colorBuffer
 let sizes = [];
 let sizeBuffer
 
+let wasWindowOutOfFocus = false
+
 function moveCameraCenter(pos) {
   const offset = new THREE.Vector3().subVectors(pos, orbitControls.target);
   const newCameraPosition = new THREE.Vector3().addVectors(camera.position, offset);
@@ -30,6 +32,19 @@ function moveCameraCenter(pos) {
     .to(newCameraPosition, 120)
     .easing(Easing.Quadratic.Out)
     .start()
+}
+
+function highlightNodeinTextEditor() {
+  if(!selectedNodeIdx) return
+  const node = pointsCache[selectedNodeIdx]
+  if(node.hasOwnProperty('__range')) {
+    ctx.vscode.postMessage({
+      command: 'selectLine',
+      range: node.__range,
+      uri: uri,
+    });
+    //console.log(">postMessage>", node.__range)
+  }
 }
 
 function focusNodeIdx(closestPointIdx, triggerEditor = true) {
@@ -56,13 +71,8 @@ function focusNodeIdx(closestPointIdx, triggerEditor = true) {
     colorsAttribute.needsUpdate = true;
     sizesAttribute.needsUpdate = true;
 
-    if(node.hasOwnProperty('__range') && triggerEditor) {
-      ctx.vscode.postMessage({
-        command: 'selectLine',
-        range: node.__range,
-        uri: uri,
-      });
-      //console.log(">postMessage>", node.__range)
+    if(triggerEditor) {
+      highlightNodeinTextEditor()
     }
     moveCameraCenter(node.pos3d)
   }
@@ -234,6 +244,13 @@ function onMouseDown(event) {
 }
 
 function onMouseMove(event) {
+
+  if(wasWindowOutOfFocus) {
+    // re-apply any text editor highlighting
+    highlightNodeinTextEditor()
+    wasWindowOutOfFocus = false
+  }
+
   const rect = renderer.domElement.getBoundingClientRect();
   mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
   mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -286,7 +303,8 @@ function onMouseOut(event) {
   ctx.vscode.postMessage({
     command: 'resetSelection',
     uri: uri,
-  });
+  })
+  wasWindowOutOfFocus = true
 }
 
 export function init() {
