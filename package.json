@@ -9,19 +9,29 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onCommand:jbeam-editor.show3DScene",
+    "onLanguage:jsonc"
+  ],  
   "main": "./extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "jbeam-editor.helloWorld",
-        "title": "Hello World"
-      },
-      {
         "command": "jbeam-editor.show3DScene",
-        "title": "Show 3D Scene"
+        "title": "Show 3D Scene",
+        "icon": "$(open-preview)"
       }
-    ]
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "when": "resourceLangId == jsonc",
+          "command": "jbeam-editor.show3DScene",
+          "group": "navigation",
+          "icon": "$(open-preview)"
+        }
+      ]
+    }
   },
   "webview": {
     "scripts": [
