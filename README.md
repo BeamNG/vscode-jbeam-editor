@@ -26,7 +26,9 @@ This is the README for your extension "jbeam-editor". After writing up a brief d
 
   ![Hover](assets/hover.png)
 
-  ![Hover](assets/hoverBreadcrumbs.gif)
+  ![Hover breadcrumbs](assets/hoverBreadcrumbs.gif)
+
+  ![Hover documentation](assets/hoverDocs.png)
 
 * 3D Preview of the JBeam
 

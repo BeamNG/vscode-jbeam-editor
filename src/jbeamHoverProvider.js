@@ -2,6 +2,8 @@ const vscode = require('vscode');
 const sjsonParser = require('./sjsonParser');
 const tableSchema = require('./tableSchema');
 
+const docHelper = require('./docHelper');
+
 const highlightDecorationType = vscode.window.createTextEditorDecorationType({
   backgroundColor: 'rgba(255, 255, 0, 0.1)', // yellow background for highlighting
 });  
@@ -150,7 +152,14 @@ class JBeamHoverProvider {
       const results = findObjectsWithRange(parsedData, position.line, position.character, document.uri.toString());
       if(results && results.length > 0) {
         let foundObjClean = deepCloneAndRemoveKeys(results[0].obj, keysToRemove)
-        contents.appendMarkdown(`#### ${results[0].breadcrumbPlainText} > ${word}\n`);
+        const finalBreadCrumb = (`${results[0].breadcrumbPlainText} > ${word}`).toLowerCase()
+        let doc = docHelper.jbeamDocumentation[finalBreadCrumb]
+        if(doc) {
+          contents.appendMarkdown(`## Documentation\n${finalBreadCrumb}\n\n`);
+          contents.appendMarkdown(doc + '\n');
+        } else {
+          console.log(`No documentation found for: ${finalBreadCrumb}`)
+        }
       }
 
       // fully unrolled data
@@ -159,7 +168,7 @@ class JBeamHoverProvider {
         const results = findObjectsWithRange(tableInterpretedData, position.line, position.character, document.uri.toString());
         if(results && results.length > 0) {
           let foundObjClean = deepCloneAndRemoveKeys(results[0].obj, keysToRemove)
-          contents.appendMarkdown(`#### ${results[0].breadcrumbMarkdown}\n`);
+          contents.appendMarkdown(`## Data\n\n ${results[0].breadcrumbMarkdown}\n`);
           contents.appendCodeblock(JSON.stringify(foundObjClean, null, 2), 'json');
         }
       }

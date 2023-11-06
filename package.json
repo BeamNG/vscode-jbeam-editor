@@ -19,7 +19,8 @@
         "icon": "$(open-preview)"
       },
       {
-        "command": "jbeam-editor.gotoLine"
+        "command": "jbeam-editor.gotoLine",
+        "title": "Go to a line"
       }
     ],
     "menus": {
