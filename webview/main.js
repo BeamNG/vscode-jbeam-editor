@@ -84,8 +84,8 @@ export function init() {
   renderer.setClearColor(0x808080);
 
   // shadows
-  renderer.shadowMap.enabled = true; // Enable shadow mapping
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Shadow mapping type
+  //renderer.shadowMap.enabled = true; // Enable shadow mapping
+  //renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Shadow mapping type
 
   orbitControls = new OrbitControls(camera, renderer.domElement);
 
