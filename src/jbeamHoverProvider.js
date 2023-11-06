@@ -152,7 +152,7 @@ class JBeamHoverProvider {
       const results = findObjectsWithRange(parsedData, position.line, position.character, document.uri.toString());
       if(results && results.length > 0) {
         let foundObjClean = deepCloneAndRemoveKeys(results[0].obj, keysToRemove)
-        const finalBreadCrumb = (`${results[0].breadcrumbPlainText} > ${word}`).toLowerCase()
+        const finalBreadCrumb = (`${results[0].breadcrumbPlainText} > ${word.slice(0, 40)}`)
         let doc = docHelper.jbeamDocumentation[finalBreadCrumb]
         if(doc) {
           contents.appendMarkdown(`## Documentation\n${finalBreadCrumb}\n\n`);
