@@ -3,10 +3,10 @@ const sjsonParser = require('./sjsonParser');
 const tableSchema = require('./tableSchema');
 
 const highlightDecorationType = vscode.window.createTextEditorDecorationType({
-  backgroundColor: 'rgba(255, 255, 0, 0.3)', // yellow background for highlighting
+  backgroundColor: 'rgba(255, 255, 0, 0.1)', // yellow background for highlighting
 });  
 const fadeDecorationType = vscode.window.createTextEditorDecorationType({
-  color: 'rgba(200, 200, 200, 0.5)',
+  color: 'rgba(200, 200, 200, 0.9)',
 });
 
 function applyFadeEffectToDocument(editor, rangeToHighlight) {
@@ -23,6 +23,8 @@ function applyFadeEffectToDocument(editor, rangeToHighlight) {
   ];
 
   // Set the fade decoration for all the document except the highlighted range
+
+  // this is quite intrusive and meant for debugging only
   editor.setDecorations(fadeDecorationType, rangesToFade);
 
   // Set the highlight decoration for the range to be highlighted
@@ -122,7 +124,7 @@ function deepCloneAndRemoveKeys(obj, keysToRemove) {
   return clone;
 }
 
-const keysToRemove = []
+const keysToRemove = ['__range', '__isarray']
 
 class JBeamHoverProvider {
   provideHover(document, position, token) {
