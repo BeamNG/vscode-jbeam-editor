@@ -34,14 +34,16 @@ This is the README for your extension "jbeam-editor". After writing up a brief d
 
 ## WIP
 
+* part selection: which part is displayed
 * implementation of props
 * picking flexbodies in 3d space
 * multi-line selection of elements also selecting in 3d space
 * improved imgui info windows: click on elements and jump to the range in the text editor
-* part selection: which part is displayed
 * working slot system: part chain loading support
 * part config (PC) loading
-* better support for sections: slidenodes, rails, triangles, wheels
+* better support for sections: slidenodes, rails, triangles, wheels, refNodes, camera*, torsionbars
+* powertrain viz
+* trigger viz
 * variables debug UI
 * specific help for sections using proper error checking and links to documentation
 
