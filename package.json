@@ -17,6 +17,9 @@
         "command": "jbeam-editor.show3DScene",
         "title": "Show 3D Scene",
         "icon": "$(open-preview)"
+      },
+      {
+        "command": "jbeam-editor.gotoLine"
       }
     ],
     "menus": {
