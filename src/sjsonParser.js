@@ -27,7 +27,7 @@ function decodeSJSON(s) {
   let i = 0;
 
   function jsonError(msg) {
-    throw new SJSONException(msg, i, 0, ''); // Adjust to give correct line and snippet
+    throw new SJSONException(msg, columnNumber, lineNumber, '');
   }
 
   let lastNewline = 0

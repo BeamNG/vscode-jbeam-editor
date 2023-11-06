@@ -15,8 +15,9 @@ function validateTextDocument(textDocument) {
   
   try {
     let parsedData = sjsonParser.decodeSJSON(text);
+    let tableInterpretedData = tableSchema.processAllParts(parsedData)
   } catch (e) {
-    const position = new vscode.Position(0, 0); // Replace with actual error position if available
+    const position = new vscode.Position(e.line, e.position);
     const diagnostic = new vscode.Diagnostic(
       new vscode.Range(position, position),
       `Error parsing SJSON: ${e.message}`,
