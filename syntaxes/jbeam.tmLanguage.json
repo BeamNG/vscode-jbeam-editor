@@ -105,13 +105,13 @@
           "include": "#comments"
         },
         {
-          "begin": ":",
+          "begin": ":\\s*",
           "beginCaptures": {
             "0": {
               "name": "punctuation.separator.dictionary.key-value.json.comments"
             }
           },
-          "end": "(,)|(?=\\})",
+          "end": "\\s*([,\\s])|(?=\\})",
           "endCaptures": {
             "1": {
               "name": "punctuation.separator.dictionary.pair.json.comments"
@@ -122,16 +122,8 @@
             {
               "comment": "the JSON object value",
               "include": "#value"
-            },
-            {
-              "match": "[^\\s,]",
-              "name": "invalid.illegal.expected-dictionary-separator.json.comments"
             }
           ]
-        },
-        {
-          "match": "[^\\s\\}]",
-          "name": "invalid.illegal.expected-dictionary-separator.json.comments"
         }
       ]
     },
