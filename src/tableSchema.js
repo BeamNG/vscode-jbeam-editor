@@ -82,8 +82,11 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, diagnostics
         diagnostics.push(['error', msg, rowValue.__range])
         return -1
       } else if (rowSize < headerSize) {
-        let msg = `Row is missing arguments. Header requires ${headerSize} arguments but only ${rowSize} were provided`;
-        diagnostics.push(['warning', msg, rowValue.__range])
+        for (let i = 0; i < headerSize; i++) {
+          if(i < rowSize) continue
+          if(header[i] == 'nonFlexMaterials') continue // known problem
+          diagnostics.push(['warning', `Row is missing argument ${i + 1}: ${header[i]}`, rowValue.__range])
+        }
       }
 
       // Walk the table row

@@ -40,7 +40,14 @@
       "extensions": [".jbeam"],
       "configuration": "./language-configuration.json"
     }],
-    "documentSymbolProvider": true
+    "documentSymbolProvider": true,
+    "iconThemes": [
+      {
+        "id": "beamng-icons",
+        "label": "BeamNG Icon Theme",
+        "path": "./icons/beamng-icon-theme.json"
+      }
+    ]
   },
   "webview": {
     "scripts": [
