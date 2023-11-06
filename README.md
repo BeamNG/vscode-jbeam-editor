@@ -48,6 +48,7 @@ This is the README for your extension "jbeam-editor". After writing up a brief d
 * specific help for sections using proper error checking and links to documentation
 * Robustness and future-proofing: Add exception handling and error mitigation to the code so it will continue working in the future
 * zip mod loading?
+* convert all JS files to proper JS modules / remove hacks
 
 ## Requirements
 

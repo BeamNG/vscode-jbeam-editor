@@ -1,13 +1,9 @@
-//let cube
 let cameraCenterSphere
 
 function animate(time) {
   ctx.ui.frameBegin()
   cameraCenterSphere.position.copy(orbitControls.target);
   ctx.jbeamVisuals.animate(time)
-
-  //cube.rotation.x += 0.01;
-  //cube.rotation.y += 0.01;
 
   orbitControls.enabled = !ctx.ui.wantCaptureMouse()
 
@@ -88,11 +84,6 @@ export function init() {
   //renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Shadow mapping type
 
   orbitControls = new OrbitControls(camera, renderer.domElement);
-
-  //let geometry = new THREE.BoxGeometry();
-  //let material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
-  //cube = new THREE.Mesh(geometry, material);
-  //scene.add(cube);
 
   // the camera center
   const sphereGeometry = new THREE.SphereGeometry(0.025);
