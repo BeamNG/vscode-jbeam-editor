@@ -133,6 +133,9 @@ function gizmoCreate() {
   gizmoRenderer.gammaFactor = 2.2; 
   gizmoRenderer.gammaOutput = true;
 
+  // prevent HTML context menu
+  gizmoRenderer.domElement.addEventListener('contextmenu', function(event) { event.preventDefault(); }, false);
+
   let gizmoAspect = 1; //window.innerWidth / window.innerHeight;
   let gizmoFrustumSize = 2; // can be adjusted
   gizmoCamera = new THREE.OrthographicCamera(gizmoFrustumSize * gizmoAspect / -2, gizmoFrustumSize * gizmoAspect / 2, gizmoFrustumSize / 2, gizmoFrustumSize / -2, 1, 1000);
