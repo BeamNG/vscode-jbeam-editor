@@ -44,11 +44,13 @@ function loadColladaNamespaces(uri, loadedNamespaces) {
     findFilesPromises.push(vscode.workspace.findFiles(commonFolderPattern, null, 100).then(files => {
       files.forEach(file => {
         //console.log(`Found .dae in common folder: ${file.fsPath}`);
-        webPanel.webview.postMessage({
-          command: 'loadDaeFinal',
-          uri: convertUri(file.fsPath),
-          namespace: '/vehicles/common/',
-        })
+        if(webPanel) {
+          webPanel.webview.postMessage({
+            command: 'loadDaeFinal',
+            uri: convertUri(file.fsPath),
+            namespace: '/vehicles/common/',
+          })
+        }
       });
     }));
   }
@@ -59,19 +61,23 @@ function loadColladaNamespaces(uri, loadedNamespaces) {
     findFilesPromises.push(vscode.workspace.findFiles(vehicleFolderPattern, null, 100).then(files => {
       files.forEach(file => {
         //console.log(`Found .dae in vehicle specific folder: ${file.fsPath} > ${convertUri(file.fsPath)}`);
-        webPanel.webview.postMessage({
-          command: 'loadDaeFinal',
-          uri: convertUri(file.fsPath),
-          namespace: '/vehicles/' + vehicleSpecificPath,
-        })
+        if(webPanel) {
+          webPanel.webview.postMessage({
+            command: 'loadDaeFinal',
+            uri: convertUri(file.fsPath),
+            namespace: '/vehicles/' + vehicleSpecificPath,
+          })
+        }
       });
     }));
   }
   Promise.all(findFilesPromises).then(allFilesArrays => {
     //console.log("Find files done!")
-    webPanel.webview.postMessage({
-      command: 'daeFileLoadingDone',
-    })
+    if(webPanel) {
+      webPanel.webview.postMessage({
+        command: 'daeFileLoadingDone',
+      })
+    }
   })
 }
 
@@ -97,6 +103,8 @@ function show3DSceneCommand() {
     }
   )
   webPanel.webview.html = getWebviewContent(webPanel);
+  // Handle the webview being disposed (closed by the user)
+  webPanel.onDidDispose(() => { webPanel = null; }, null, extensionContext.subscriptions);  
 
   function applyFadeEffectToDocument(editor, rangeToHighlight) {
     const fullRange = new vscode.Range(
@@ -183,6 +191,7 @@ function show3DSceneCommand() {
   );
 
   function parseAndPostData(doc, updatedOnly = false) {
+    if(!webPanel) return
     const text = doc.getText()
     const uri = doc.uri.toString()
     try {
@@ -238,7 +247,7 @@ function show3DSceneCommand() {
 
   vscode.window.onDidChangeTextEditorSelection(event => {
     if (event.textEditor === vscode.window.activeTextEditor) {
-      if (webPanel && webPanel.visible && !webPanel.webview.isDisposed) {
+      if (webPanel && webPanel.visible) {
         webPanel.webview.postMessage({
           command: 'cursorChanged',
           line: event.selections[0].start.line + 1,
@@ -272,6 +281,7 @@ function activate(context) {
 }
 
 function getWebviewContent(webPanel) {
+  if(!webPanel) return null
   const webviewPath = path.join(__dirname, 'webview', 'index.html');
   let content = fs.readFileSync(webviewPath, 'utf8');
   content = content.replace(/<!-- LocalResource:(.*?) -->/g, (match, resourceName) => {

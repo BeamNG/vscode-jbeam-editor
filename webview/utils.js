@@ -56,9 +56,9 @@ function createGrid(scene) {
   gridXZ.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);  // Rotate around the X-axis to lay it flat
   gridXZ.material.opacity = 0.5;
   gridXZ.material.transparent = true;
-  scene.add(gridXZ);
+  //scene.add(gridXZ);
 
-  // Grid for the XY plane (Top-Bottom)
+  // Grid for the XY plane (Top-Bottom) - this is the ground plane grid
   let gridXY = new THREE.GridHelper(size, divisions, colorFront, colorBack);
   gridXY.material.opacity = 0.5;
   gridXY.material.transparent = true;

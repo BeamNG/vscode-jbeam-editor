@@ -51,8 +51,9 @@ function onResize() {
 export function init() {
   scene = new THREE.Scene();
   cameraPersp = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-  cameraPersp.position.z = 5;
-  cameraPersp.position.y = 0;
+  cameraPersp.position.x = 3;
+  cameraPersp.position.y = 3;
+  cameraPersp.position.z = 3;
   orthoCamera = new THREE.OrthographicCamera( window.innerWidth / - 16, window.innerWidth / 16, window.innerHeight / 16, window.innerHeight / - 16, 0.01, 6000 );
   {
     let aspect = window.innerWidth / window.innerHeight;
