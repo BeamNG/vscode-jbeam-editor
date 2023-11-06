@@ -99,7 +99,7 @@ function deepCloneAndRemoveKeys(obj, keysToRemove) {
   return clone;
 }
 
-const keysToRemove = []
+const keysToRemove = ['__range', '__isarray']
 
 class JBeamHoverProvider {
   provideHover(document, position, token) {
