@@ -103,12 +103,20 @@ function findObjectsWithRange(obj, line, position, uri) {
       return `[${breadcrumbPart.name}](command:${commandId}?${encodedArgs})`;
     }).join(' > ');
   
+    // Create a plain text breadcrumb trail, ignoring the first element and any array indices
+    let breadcrumbPlainText = match.breadcrumb
+      .slice(1) // This skips the first element
+      .filter(breadcrumbPart => isNaN(breadcrumbPart.name)) // This filters out any parts that are numbers (array indices)
+      .map(breadcrumbPart => breadcrumbPart.name)
+      .join(' > ');
+
     return {
       obj: match.obj,
-      breadcrumb: breadcrumbMarkdown // Markdown links for each breadcrumb part
+      breadcrumbMarkdown: breadcrumbMarkdown, // Markdown links for each breadcrumb part
+      breadcrumbPlainText: breadcrumbPlainText // Plain text for each breadcrumb part
     };
   });
-}
+  }
 
 
 function deepCloneAndRemoveKeys(obj, keysToRemove) {
@@ -137,13 +145,23 @@ class JBeamHoverProvider {
     //contents.appendMarkdown(`**You are hovering over:** ${word}\n\n`);
 
     let parsedData = sjsonParser.decodeSJSON(text);
-    let [tableInterpretedData, disagnostics] = tableSchema.processAllParts(parsedData)
-    if(tableInterpretedData) {
-      const results = findObjectsWithRange(tableInterpretedData, position.line, position.character, document.uri.toString());
+    if(parsedData) {
+      // not table unrolled, useful for documentation and alike
+      const results = findObjectsWithRange(parsedData, position.line, position.character, document.uri.toString());
       if(results && results.length > 0) {
         let foundObjClean = deepCloneAndRemoveKeys(results[0].obj, keysToRemove)
-        contents.appendMarkdown(`#### ${results[0].breadcrumb}\n`);
-        contents.appendCodeblock(JSON.stringify(foundObjClean, null, 2), 'json');
+        contents.appendMarkdown(`#### ${results[0].breadcrumbPlainText} > ${word}\n`);
+      }
+
+      // fully unrolled data
+      let [tableInterpretedData, disagnostics] = tableSchema.processAllParts(parsedData)
+      if(tableInterpretedData) {
+        const results = findObjectsWithRange(tableInterpretedData, position.line, position.character, document.uri.toString());
+        if(results && results.length > 0) {
+          let foundObjClean = deepCloneAndRemoveKeys(results[0].obj, keysToRemove)
+          contents.appendMarkdown(`#### ${results[0].breadcrumbMarkdown}\n`);
+          contents.appendCodeblock(JSON.stringify(foundObjClean, null, 2), 'json');
+        }
       }
     }
 
