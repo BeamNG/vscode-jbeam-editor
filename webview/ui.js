@@ -25,6 +25,7 @@ export async function init() {
   ImGui.StyleColorsDark();
   ImGui_Impl.Init(document.getElementById("output"))
   io = ImGui.GetIO()
+  io.ConfigFlags |= ImGui.ConfigFlags.DockingEnable
 }
 
 function drawWindow() {
@@ -104,6 +105,9 @@ export function frameBegin(time) {
   if(io === null) return
   ImGui_Impl.NewFrame(time)
   ImGui.NewFrame()
+
+  let dockspace_id = ImGui.DockSpaceOverMainViewport(ImGui.DockNodeFlags.PassthruCentralNode)
+
 }
 
 export function frameEnd() {

@@ -2,7 +2,7 @@
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('imgui-js')) :
     typeof define === 'function' && define.amd ? define(['exports', 'imgui-js'], factory) :
     (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.ImGui_Impl = {}, global.ImGui));
-})(this, (function (exports, ImGui) { 'use strict';
+}(this, (function (exports, ImGui) { 'use strict';
 
     function _interopNamespace(e) {
         if (e && e.__esModule) return e;
@@ -13,12 +13,14 @@
                     var d = Object.getOwnPropertyDescriptor(e, k);
                     Object.defineProperty(n, k, d.get ? d : {
                         enumerable: true,
-                        get: function () { return e[k]; }
+                        get: function () {
+                            return e[k];
+                        }
                     });
                 }
             });
         }
-        n["default"] = e;
+        n['default'] = e;
         return Object.freeze(n);
     }
 
@@ -63,8 +65,9 @@
     }
     function window_on_resize() {
         if (canvas !== null) {
-            canvas.width = canvas.scrollWidth;
-            canvas.height = canvas.scrollHeight;
+            const devicePixelRatio = window.devicePixelRatio || 1;
+            canvas.width = Math.floor(canvas.scrollWidth * devicePixelRatio);
+            canvas.height = Math.floor(canvas.scrollHeight * devicePixelRatio);
         }
     }
     function window_on_gamepadconnected(event /* GamepadEvent */) {
@@ -578,6 +581,7 @@
             exports.gl || exports.ctx || console.log(draw_list);
             exports.gl || exports.ctx || console.log("VtxBuffer.length", draw_list.VtxBuffer.length);
             exports.gl || exports.ctx || console.log("IdxBuffer.length", draw_list.IdxBuffer.length);
+            let idx_buffer_offset = 0;
             exports.gl && exports.gl.bindBuffer(exports.gl.ARRAY_BUFFER, g_VboHandle);
             exports.gl && exports.gl.bufferData(exports.gl.ARRAY_BUFFER, draw_list.VtxBuffer, exports.gl.STREAM_DRAW);
             exports.gl && exports.gl.bindBuffer(exports.gl.ELEMENT_ARRAY_BUFFER, g_ElementsHandle);
@@ -606,15 +610,15 @@
                         // Bind texture, Draw
                         exports.gl && exports.gl.activeTexture(exports.gl.TEXTURE0);
                         exports.gl && exports.gl.bindTexture(exports.gl.TEXTURE_2D, draw_cmd.TextureId);
-                        exports.gl && exports.gl.drawElements(exports.gl.TRIANGLES, draw_cmd.ElemCount, idx_buffer_type, draw_cmd.IdxOffset * ImGui__namespace.DrawIdxSize);
+                        exports.gl && exports.gl.drawElements(exports.gl.TRIANGLES, draw_cmd.ElemCount, idx_buffer_type, idx_buffer_offset);
                         if (exports.ctx) {
                             exports.ctx.save();
                             exports.ctx.beginPath();
                             exports.ctx.rect(clip_rect.x, clip_rect.y, clip_rect.z - clip_rect.x, clip_rect.w - clip_rect.y);
                             exports.ctx.clip();
                             const idx = ImGui__namespace.DrawIdxSize === 4 ?
-                                new Uint32Array(draw_list.IdxBuffer.buffer, draw_list.IdxBuffer.byteOffset + draw_cmd.IdxOffset * ImGui__namespace.DrawIdxSize) :
-                                new Uint16Array(draw_list.IdxBuffer.buffer, draw_list.IdxBuffer.byteOffset + draw_cmd.IdxOffset * ImGui__namespace.DrawIdxSize);
+                                new Uint32Array(draw_list.IdxBuffer.buffer, draw_list.IdxBuffer.byteOffset + idx_buffer_offset) :
+                                new Uint16Array(draw_list.IdxBuffer.buffer, draw_list.IdxBuffer.byteOffset + idx_buffer_offset);
                             for (let i = 0; i < draw_cmd.ElemCount; i += 3) {
                                 const i0 = idx[i + 0];
                                 const i1 = idx[i + 1];
@@ -695,6 +699,7 @@
                         }
                     }
                 }
+                idx_buffer_offset += draw_cmd.ElemCount * ImGui__namespace.DrawIdxSize;
             });
         });
         // Destroy the temporary VAO
@@ -830,4 +835,4 @@
 
     Object.defineProperty(exports, '__esModule', { value: true });
 
-}));
+})));
