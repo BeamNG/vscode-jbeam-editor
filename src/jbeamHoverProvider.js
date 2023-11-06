@@ -2,6 +2,33 @@ const vscode = require('vscode');
 const sjsonParser = require('./sjsonParser');
 const tableSchema = require('./tableSchema');
 
+const highlightDecorationType = vscode.window.createTextEditorDecorationType({
+  backgroundColor: 'rgba(255, 255, 0, 0.3)', // yellow background for highlighting
+});  
+const fadeDecorationType = vscode.window.createTextEditorDecorationType({
+  color: 'rgba(200, 200, 200, 0.5)',
+});
+
+function applyFadeEffectToDocument(editor, rangeToHighlight) {
+  const fullRange = new vscode.Range(
+    0,
+    0,
+    editor.document.lineCount - 1,
+    editor.document.lineAt(editor.document.lineCount - 1).text.length
+  );
+
+  const rangesToFade = [
+    new vscode.Range(fullRange.start, rangeToHighlight.start),
+    new vscode.Range(rangeToHighlight.end, fullRange.end),
+  ];
+
+  // Set the fade decoration for all the document except the highlighted range
+  editor.setDecorations(fadeDecorationType, rangesToFade);
+
+  // Set the highlight decoration for the range to be highlighted
+  editor.setDecorations(highlightDecorationType, [rangeToHighlight]);
+}
+
 function goToLineForHover(args) {
   let decodedArgsUri = decodeURIComponent(args.uri);
   let targetEditor = vscode.window.visibleTextEditors.find(editor => {
@@ -10,9 +37,11 @@ function goToLineForHover(args) {
   });
 
   if (targetEditor) {
-    const start = new vscode.Position(args.range[0] - 1, args.range[1] - 1);
-    const end = new vscode.Position(args.range[2] - 1, args.range[3]);
+    const start = new vscode.Position(args.range[0], args.range[1]);
+    const end = new vscode.Position(args.range[2], args.range[3]);
     const highlightRange = new vscode.Range(start, end);
+
+    applyFadeEffectToDocument(targetEditor, highlightRange);
 
     // Go to the line and reveal it in the center of the viewport
     targetEditor.selection = new vscode.Selection(start, start);
@@ -64,14 +93,8 @@ function findObjectsWithRange(obj, line, position, uri) {
     let breadcrumbMarkdown = match.breadcrumb.map(breadcrumbPart => {
       let commandId = 'jbeam-editor.gotoLine';
       // Adjust the range for zero-based indexing in the editor
-      let zeroBasedRange = [
-        breadcrumbPart.__range[0] - 1,
-        breadcrumbPart.__range[1] - 1,
-        breadcrumbPart.__range[2] - 1,
-        breadcrumbPart.__range[3] - 1,
-      ];
       let args = {
-        range: zeroBasedRange,
+        range: breadcrumbPart.__range,
         uri: uri
       };
       let encodedArgs = encodeURIComponent(JSON.stringify(args));
@@ -99,7 +122,7 @@ function deepCloneAndRemoveKeys(obj, keysToRemove) {
   return clone;
 }
 
-const keysToRemove = ['__range', '__isarray']
+const keysToRemove = []
 
 class JBeamHoverProvider {
   provideHover(document, position, token) {
@@ -114,7 +137,7 @@ class JBeamHoverProvider {
     let parsedData = sjsonParser.decodeSJSON(text);
     let [tableInterpretedData, disagnostics] = tableSchema.processAllParts(parsedData)
     if(tableInterpretedData) {
-      const results = findObjectsWithRange(tableInterpretedData, position.line + 1, position.character + 1, document.uri.toString());
+      const results = findObjectsWithRange(tableInterpretedData, position.line, position.character, document.uri.toString());
       if(results && results.length > 0) {
         let foundObjClean = deepCloneAndRemoveKeys(results[0].obj, keysToRemove)
         contents.appendMarkdown(`#### ${results[0].breadcrumb}\n`);

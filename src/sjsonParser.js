@@ -139,12 +139,11 @@ function decodeSJSON(s) {
 
   function parseArray() {
     const arr = {};
+    arr.__isarray = true
+    arr.__range = [lineNumber, columnNumber, 0, 0]
     i++; // skip '['
     columnNumber++;
     skipWhiteSpace();
-    let startLineNo = lineNumber + 1
-    let startCol = columnNumber
-    arr.__isarray = true
     let idx = 0
     while (s[i] !== ']') {
       arr[idx++] = parseValue();
@@ -157,17 +156,17 @@ function decodeSJSON(s) {
     }
     i++; // skip ']'
     columnNumber++;
-    arr.__range = [startLineNo, startCol, lineNumber + 1, columnNumber]
+    arr.__range[2] = lineNumber
+    arr.__range[3] = columnNumber
     return arr;
   }
 
   function parseObject() {
     const obj = {};
+    obj.__range = [lineNumber, columnNumber, 0, 0]
     i++; // skip '{'
     columnNumber++;
     skipWhiteSpace();
-    let startLineNo = lineNumber + 1
-    let startCol = columnNumber    
     while (s[i] !== '}') {
       if (s[i] !== '"') jsonError('Expected key');
       const key = readString();
@@ -185,7 +184,8 @@ function decodeSJSON(s) {
     }
     i++; // skip '}'
     columnNumber++;
-    obj.__range = [startLineNo, startCol, lineNumber + 1, columnNumber]
+    obj.__range[2] = lineNumber
+    obj.__range[3] = columnNumber
     return obj;
   }
 
