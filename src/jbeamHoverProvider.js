@@ -169,8 +169,6 @@ class JBeamHoverProvider {
         if(resultsStructuredData && resultsStructuredData.length > 0) {
           let foundObjClean = deepCloneAndRemoveKeys(resultsStructuredData[0].obj, keysToRemove)
           contents.appendMarkdown(`## Data\n\n ${resultsStructuredData[0].breadcrumbMarkdown}\n`);
-
-          console.log(">>> ", resultsRawData.length, resultsStructuredData.length)
           if(resultsStructuredData && resultsStructuredData && (resultsRawData.length - 2 < resultsStructuredData.length)) {
             contents.appendCodeblock(JSON.stringify(foundObjClean, null, 2), 'json');
           } else {
