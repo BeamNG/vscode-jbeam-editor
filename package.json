@@ -31,7 +31,18 @@
           "icon": "$(open-preview)"
         }
       ]
-    }
+    },
+    "languages": [{
+      "id": "jbeam",
+      "aliases": ["JBeam", "jbeam"],
+      "extensions": [".jbeam"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "jbeam",
+      "scopeName": "source.jbeam",
+      "path": "./syntaxes/jbeam.tmLanguage.json"
+    }]    
   },
   "webview": {
     "scripts": [
