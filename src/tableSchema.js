@@ -26,7 +26,6 @@ const typeIds = {
 
 const excludedKeys = ['__range', '__isarray'];
 
-
 function replaceSpecialValues(val) {
   return val;
 }
@@ -134,6 +133,9 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, omitWarning
         newRow.id = null;
       }
 
+      newList.__range = jbeamTable.__range
+      newList.__isarray = jbeamTable.__isarray
+
       newList[newID] = newRow;
       newListSize++;
     }
@@ -219,6 +221,24 @@ function processPart(part, processSlotsTable, omitWarnings) {
   return true;
 }
 
+function processAllParts(parsedData) {
+  let tableInterpretedData = {}
+  const keys = Object.keys(parsedData).filter(key => key !== '__range' && key !== '__isarray')
+  for (let partNameIdx in keys) {
+    let partName = keys[partNameIdx]
+    if (!parsedData.hasOwnProperty(partName)) continue;
+    let part = parsedData[partName];
+    let result = processPart(part, false, false);
+      
+    if (result !== true) {
+      console.error("An error occurred while processing the data.");
+    }
+    tableInterpretedData[partName] = part
+  }
+  return tableInterpretedData
+}
+
 module.exports = {
-  processPart
+  processPart,
+  processAllParts,
 };

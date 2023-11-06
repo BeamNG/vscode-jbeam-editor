@@ -10,7 +10,7 @@
     "Other"
   ],
   "activationEvents": [],  
-  "main": "./extension.js",
+  "main": "./src/extension.js",
   "contributes": {
     "commands": [
       {
@@ -29,17 +29,18 @@
         }
       ]
     },
+    "grammars": [{
+      "language": "jbeam",
+      "scopeName": "source.jbeam",
+      "path": "./syntaxes/jbeam.tmLanguage.json"
+    }],
     "languages": [{
       "id": "jbeam",
       "aliases": ["JBeam", "jbeam"],
       "extensions": [".jbeam"],
       "configuration": "./language-configuration.json"
     }],
-    "grammars": [{
-      "language": "jbeam",
-      "scopeName": "source.jbeam",
-      "path": "./syntaxes/jbeam.tmLanguage.json"
-    }]    
+    "documentSymbolProvider": true
   },
   "webview": {
     "scripts": [
@@ -80,8 +81,6 @@
     "typescript": "^5.2.2"
   },
   "files": [
-    "webviewContent.html",
-    "webview/three.module.min.js",
-    "webview/OrbitControls.js"
+    "src/webview/*"
   ]
 }

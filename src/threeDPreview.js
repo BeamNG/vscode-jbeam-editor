@@ -206,25 +206,14 @@ function show3DSceneCommand() {
     try {
       let parsedData = sjsonParser.decodeSJSON(text);
       //console.log("PARSED:", parsedData);
-      let tableInterpretedData = {}
-      const keys = Object.keys(parsedData).filter(key => key !== '__range' && key !== '__isarray')
-      for (let partNameIdx in keys) {
-        let partName = keys[partNameIdx]
-        if (!parsedData.hasOwnProperty(partName)) continue;
-        let part = parsedData[partName];
-        let result = tableSchema.processPart(part, false, false);
-          
-        if (result !== true) {
-          console.error("An error occurred while processing the data.");
-        }
-        tableInterpretedData[partName] = part
-      }
+      let tableInterpretedData = tableSchema.processAllParts(parsedData)
+
       // Do something with the parsed data, like show it in an information message
       //vscode.window.showInformationMessage('Document parsed successfully. Check the console for the data.');
       //console.log("table expanded:", parsedData);
       webPanel.webview.postMessage({
         command: 'jbeamData',
-        data: parsedData,
+        data: tableInterpretedData,
         uri: uri,
         meshCache: meshCache,
         updatedOnly: updatedOnly,
