@@ -15,8 +15,8 @@ function validateTextDocument(textDocument) {
   
   try {
     let parsedData = sjsonParser.decodeSJSON(text);
-    let [tableInterpretedData, disagnostics] = tableSchema.processAllParts(parsedData)
-    for (const w of disagnostics) {
+    let [tableInterpretedData, diagnostics] = tableSchema.processAllParts(parsedData)
+    for (const w of diagnostics) {
       // w[0] = type: error/warning
       // w[1] = message
       // w[2] = range = [linefrom, positionfrom, lineto, positionto]

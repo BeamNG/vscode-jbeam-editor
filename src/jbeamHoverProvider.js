@@ -154,7 +154,7 @@ class JBeamHoverProvider {
       }
 
       // fully unrolled data
-      let [tableInterpretedData, disagnostics] = tableSchema.processAllParts(parsedData)
+      let [tableInterpretedData, diagnostics] = tableSchema.processAllParts(parsedData)
       if(tableInterpretedData) {
         const results = findObjectsWithRange(tableInterpretedData, position.line, position.character, document.uri.toString());
         if(results && results.length > 0) {
