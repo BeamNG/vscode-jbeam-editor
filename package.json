@@ -9,10 +9,7 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [
-    "onCommand:jbeam-editor.show3DScene",
-    "onLanguage:jsonc"
-  ],  
+  "activationEvents": [],  
   "main": "./extension.js",
   "contributes": {
     "commands": [
@@ -25,7 +22,7 @@
     "menus": {
       "editor/title": [
         {
-          "when": "resourceLangId == jsonc",
+          "when": "resourceLangId == jbeam",
           "command": "jbeam-editor.show3DScene",
           "group": "navigation",
           "icon": "$(open-preview)"

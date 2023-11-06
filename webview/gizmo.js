@@ -98,11 +98,11 @@ function animateCameraMovement(targetCameraPosition) {
 
 function switchCameraBasedOnFace(materialIndex) {
   if (materialIndex === 0) {
-    animateCameraMovement(new THREE.Vector3(10, 0, 0)); // Right
-    selectedViewName = 'Right'
-  } else if (materialIndex === 1) {
-    animateCameraMovement(new THREE.Vector3(-10, 0, 0)); // Left
+    animateCameraMovement(new THREE.Vector3(10, 0, 0)); // Left
     selectedViewName = 'Left'
+  } else if (materialIndex === 1) {
+    animateCameraMovement(new THREE.Vector3(-10, 0, 0)); // Right
+    selectedViewName = 'Right'
   } else if (materialIndex === 2) {
     animateCameraMovement(new THREE.Vector3(0, 10, 0)); // Top
     selectedViewName = 'Top'
@@ -142,8 +142,8 @@ function gizmoCreate() {
   let gizmoCubeGeometry = new THREE.BoxGeometry(1, 1, 1);
 
   gizmoMaterials = [
-    new THREE.MeshBasicMaterial({ map: createTextTexture('Right', faceColors.Right) }),
     new THREE.MeshBasicMaterial({ map: createTextTexture('Left', faceColors.Left) }),
+    new THREE.MeshBasicMaterial({ map: createTextTexture('Right', faceColors.Right) }),
     new THREE.MeshBasicMaterial({ map: createTextTexture('Top', faceColors.Top) }),
     new THREE.MeshBasicMaterial({ map: createTextTexture('Bottom', faceColors.Bottom) }),
     new THREE.MeshBasicMaterial({ map: createTextTexture('Front', faceColors.Front) }),
