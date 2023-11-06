@@ -22,6 +22,12 @@ This is the README for your extension "jbeam-editor". After writing up a brief d
 
   ![JBeam errors](assets/errJBeam.png)
 
+* Extensive hover information: the parsed object and a clickable breadcrumb
+
+  ![Hover](assets/hover.png)
+
+  ![Hover](assets/hoverBreadcrumbs.gif)
+
 * 3D Preview of the JBeam
 
   ![](assets/previewButton.png)
