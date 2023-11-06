@@ -105,7 +105,7 @@ export function onReceiveData(message) {
           node.pos3d = new THREE.Vector3(node.pos[0], node.pos[1], node.pos[2])
           pointsCache.push(node)
         } else {
-          console.log("ERR", node)
+          //console.log("ERR", node)
         }
       }
 

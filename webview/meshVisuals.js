@@ -1,6 +1,7 @@
 let jbeamData = null
 let uri = null
 let daeFindfilesDone = false
+let wasLoaded = false
 
 export function load3DMeshes() {
   loadedMeshes = []
@@ -12,13 +13,14 @@ export function load3DMeshes() {
     data: Object.keys(meshFolderCache),
     uri: uri,
   });
+  wasLoaded = true
 }
 
 function onReceiveData(message) {
   jbeamData = message.data
   uri = message.uri
   meshFolderCache = message.meshCache
-  //console.log("onReceiveData", message);
+  console.log("meshVisuals.onReceiveData", message);
 
   // trigger loading dae
 
@@ -27,10 +29,13 @@ function onReceiveData(message) {
     scene.remove(mesh);
   }
 
-  //load3DMeshes()
+  if(wasLoaded) {
+    load3DMeshes()
+  }
 }
 
 function tryLoad3dMesh(meshName, onDone) {
+  if(!meshName) return
 
   // check if the mesh is by chance already full loaded ...
   if(meshLibraryFull[meshName]) {
