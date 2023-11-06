@@ -30,21 +30,17 @@ function replaceSpecialValues(val) {
   return val;
 }
 
-function processTableWithSchemaDestructive(jbeamTable, inputOptions, omitWarnings) {
+function processTableWithSchemaDestructive(jbeamTable, inputOptions, diagnostics) {
   // Its a list, so verify that the first row is the header
   let header = jbeamTable[0];
   if (typeof header !== "object" || !header.hasOwnProperty('__isarray') || !header.__isarray) {
-    if (!omitWarnings) {
-      console.warn(`*** Invalid table header: ${JSON.stringify(header, null, 2)}`);
-    }
-    return -1;
+    diagnostics.push(['error', 'Invalid table header', header.__range])
+    return -1
   }
 
   if (!header.hasOwnProperty('__isarray') || !header.__isarray) {
-    if (!omitWarnings) {
-      console.warn(`*** Invalid table header, must be a list, not a dict: ${JSON.stringify(header)}`);
-    }
-    return -1;
+    diagnostics.push(['error', 'Invalid table header. Must be a list, not a dict', header.__range])
+    return -1
   }
 
   let headerSize = Object.keys(header).filter(key => !excludedKeys.includes(key)).length;
@@ -63,10 +59,9 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, omitWarning
   for (const rowKey of keys) {
     let rowValue = jbeamTable[rowKey];
     if (typeof rowValue !== "object") {
-      console.warn(`*** Invalid table row: ${JSON.stringify(rowValue)}`);
-      return -1;
+      diagnostics.push(['error', 'Invalid table row', rowValue.__range])
+      return -1
     }
-    //console.log(">>>>", rowValue, rowValue.__isarray)
     if (!rowValue.hasOwnProperty('__isarray') || !rowValue.__isarray) {
       // Case where options is a dict on its own, filling a whole line
       Object.assign(localOptions, replaceSpecialValues(rowValue));
@@ -75,13 +70,20 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, omitWarning
       let newID = newRowId++
 
       const rowSize = Object.keys(rowValue).filter(key => !excludedKeys.includes(key)).length
-      if (rowSize > headerSize + 1) {
-        if (!omitWarnings) {
-          console.warn(`*** Invalid table header, must be as long as all table cells (plus one additional options column):`);
-          console.warn(`*** Table header: ${JSON.stringify(header)}`);
-          console.warn(`*** Mismatched row: ${JSON.stringify(rowValue)}`);
+      if (rowSize == headerSize + 1) {
+        console.log(rowValue[headerSize], typeof rowValue[headerSize])
+        if(typeof rowValue[headerSize] !== 'object') {
+          diagnostics.push(['error', `Inline option (argument ${headerSize + 1}) need to be a dict, not a ${typeof rowValue[headerSize]}: ${rowValue[headerSize]}`, rowValue.__range])  
         }
-        return -1;
+      } else if (rowSize > headerSize + 1) {
+        let msg = 1`Invalid table header, must be as long as all table cells (plus one additional options column):\n`;
+        msg += `Table header: ${JSON.stringify(header)}\n`
+        msg += `Mismatched row: ${JSON.stringify(rowValue)}`
+        diagnostics.push(['error', msg, rowValue.__range])
+        return -1
+      } else if (rowSize < headerSize) {
+        let msg = `Row is missing arguments. Header requires ${headerSize} arguments but only ${rowSize} were provided`;
+        diagnostics.push(['warning', msg, rowValue.__range])
       }
 
       // Walk the table row
@@ -110,13 +112,12 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, omitWarning
       const allKeys2 = Object.keys(rowValue).filter(key => !excludedKeys.includes(key));
       //for (let [rk, _] of Object.entries(rowValue)) {
       for (let rk in allKeys2) {
-        //console.log('KEYY:::', rk)
         if (header[rk] === null) {
-          console.error(`*** Unable to parse row, header for entry is missing: `);
-          console.error(`*** Header: ${JSON.stringify(header)} missing key: ${rk} -- is the section header too short?`);
-          console.error(`*** Row: ${JSON.stringify(rowValue)}`);
+          let msg = `*** Unable to parse row, header for entry is missing: \n`
+          msg += `*** Header: ${JSON.stringify(header)} missing key: ${rk} -- is the section header too short?\n`
+          msg += `*** Row: ${JSON.stringify(rowValue)}`
+          diagnostics.push(['error', msg, rowValue.__range])
         } else {
-          //console.log('@@@@@@@', rk, header[rk], rowValue, rowValue[rk])
           newRow[header[rk]] = replaceSpecialValues(rowValue[rk]);
         }
       }
@@ -146,7 +147,7 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, omitWarning
   return newList;
 }
 
-function processPart(part, processSlotsTable, omitWarnings) {
+function processPart(part, processSlotsTable, diagnostics) {
   part.maxIDs = {};
   part.validTables = {};
   part.beams = part.beams || {};
@@ -174,8 +175,8 @@ function processPart(part, processSlotsTable, omitWarnings) {
 
     // Verify key names to be properly formatted
     if (!/^[a-zA-Z_]+[a-zA-Z0-9_]*$/.test(sectionName)) {
-      console.error(`*** Invalid attribute name '${sectionName}'`);
-      return false;
+      diagnostics.push(['error', `Invalid attribute name '${sectionName}'`, section.__range])
+      return false
     }
 
     // Init max
@@ -189,7 +190,7 @@ function processPart(part, processSlotsTable, omitWarnings) {
           part.validTables[sectionName] = true;
         } else {
           if (!part.validTables[sectionName]) {
-            let newList = processTableWithSchemaDestructive(section, part.options, omitWarnings);
+            let newList = processTableWithSchemaDestructive(section, part.options, diagnostics);
 
             if (newList.length > 0) {
               part.validTables[sectionName] = true;
@@ -211,10 +212,9 @@ function processPart(part, processSlotsTable, omitWarnings) {
         try {
           node.pos = [node.posX, node.posZ, -node.posY] // FLIP!
         } catch (e) {
-          console.error(e.message)
+          diagnostics.push(['error', e.message, node.__range])
         }
       }
-      //console.log(node)
     }
   }
 
@@ -223,19 +223,20 @@ function processPart(part, processSlotsTable, omitWarnings) {
 
 function processAllParts(parsedData) {
   let tableInterpretedData = {}
+  let diagnostics = [] // contains parsing errors and warnings
   const keys = Object.keys(parsedData).filter(key => key !== '__range' && key !== '__isarray')
   for (let partNameIdx in keys) {
     let partName = keys[partNameIdx]
     if (!parsedData.hasOwnProperty(partName)) continue;
     let part = parsedData[partName];
-    let result = processPart(part, false, false);
+    let result = processPart(part, false, diagnostics);
       
     if (result !== true) {
-      console.error("An error occurred while processing the data.");
+      diagnostics.push(['error', `Unable to process part '${partName}'`, part.__range])
     }
     tableInterpretedData[partName] = part
   }
-  return tableInterpretedData
+  return [tableInterpretedData, diagnostics]
 }
 
 module.exports = {

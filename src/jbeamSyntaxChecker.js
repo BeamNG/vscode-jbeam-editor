@@ -15,11 +15,21 @@ function validateTextDocument(textDocument) {
   
   try {
     let parsedData = sjsonParser.decodeSJSON(text);
-    let tableInterpretedData = tableSchema.processAllParts(parsedData)
+    let [tableInterpretedData, disagnostics] = tableSchema.processAllParts(parsedData)
+    for (const w of disagnostics) {
+      // w[0] = type: error/warning
+      // w[1] = message
+      // w[2] = range = [linefrom, positionfrom, lineto, positionto]
+      const diagnostic = new vscode.Diagnostic(
+        new vscode.Range(new vscode.Position(w[2][0]-1, w[2][1]-1), new vscode.Position(w[2][2]-1, w[2][3])),
+        `Error interpreting table schema: ${w[1]}`,
+        w[0] == 'warning' ? vscode.DiagnosticSeverity.Warning : vscode.DiagnosticSeverity.Error
+      );
+      diagnostics.push(diagnostic);      
+    }
   } catch (e) {
-    const position = new vscode.Position(e.line, e.position);
     const diagnostic = new vscode.Diagnostic(
-      new vscode.Range(position, position),
+      new vscode.Range(new vscode.Position(e.range[0]-1, e.range[1]-1), new vscode.Position(e.range[2]-1, e.range[3])),
       `Error parsing SJSON: ${e.message}`,
       vscode.DiagnosticSeverity.Error
     );

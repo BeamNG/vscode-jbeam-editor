@@ -91,10 +91,10 @@ const fadeDecorationType = vscode.window.createTextEditorDecorationType({
 
 function getWebviewContent(webPanel) {
   if(!webPanel) return null
-  const webviewPath = path.join(__dirname, 'webview', 'index.html');
+  const webviewPath = path.join(extensionContext.extensionPath, 'webview', 'index.html');
   let content = fs.readFileSync(webviewPath, 'utf8');
   content = content.replace(/<!-- LocalResource:(.*?) -->/g, (match, resourceName) => {
-    return webPanel.webview.asWebviewUri(vscode.Uri.file(path.join(__dirname, 'webview', resourceName)));
+    return webPanel.webview.asWebviewUri(vscode.Uri.file(path.join(extensionContext.extensionPath, 'webview', resourceName)));
   });
   return content;
 }
@@ -206,7 +206,7 @@ function show3DSceneCommand() {
     try {
       let parsedData = sjsonParser.decodeSJSON(text);
       //console.log("PARSED:", parsedData);
-      let tableInterpretedData = tableSchema.processAllParts(parsedData)
+      let [tableInterpretedData, diagnostics] = tableSchema.processAllParts(parsedData)
 
       // Do something with the parsed data, like show it in an information message
       //vscode.window.showInformationMessage('Document parsed successfully. Check the console for the data.');

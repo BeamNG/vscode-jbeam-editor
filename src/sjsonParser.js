@@ -1,9 +1,7 @@
 class SJSONException extends Error {
-  constructor(message, position, line, snippet) {
-    super(`${message} near line ${line}, '${snippet}'`);
-    this.position = position;
-    this.line = line;
-    this.snippet = snippet;
+  constructor(message, range) {
+    super(`${message} near ${range[0]}:${range[1]}`);
+    this.range = range;
   }
 }
 
@@ -27,7 +25,7 @@ function decodeSJSON(s) {
   let i = 0;
 
   function jsonError(msg) {
-    throw new SJSONException(msg, columnNumber, lineNumber, '');
+    throw new SJSONException(msg, [lineNumber, columnNumber, lineNumber, columnNumber])
   }
 
   let lastNewline = 0

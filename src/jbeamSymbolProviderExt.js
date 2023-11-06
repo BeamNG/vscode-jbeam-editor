@@ -34,7 +34,7 @@ class JBeamSymbolProvider {
 
     const text = document.getText()
     let parsedData = sjsonParser.decodeSJSON(text);
-    let tableInterpretedData = tableSchema.processAllParts(parsedData)
+    let [tableInterpretedData, diagnostics] = tableSchema.processAllParts(parsedData)
 
     for (const [partName, part] of Object.entries(tableInterpretedData)) {
       if(!part.__range) continue
@@ -73,8 +73,8 @@ class JBeamSymbolProvider {
           new vscode.Position(section.__range[2] - 1, section.__range[3] - 1)
         )
         let infoText = ''
-        if(section.__isarray) {
-          infoText = Object.keys(section).filter(key => !excludedKeys.includes(key)).length + ' rows'
+        if(true) {
+          infoText += Object.keys(section).filter(key => !excludedKeys.includes(key)).length
         }
         const subSymbol = new vscode.DocumentSymbol(
           sectionName,

@@ -10,7 +10,6 @@ function activate(context) {
   jbeamSymbolProviderExt.activate(context)
 }
 
-
 function deactivate() {
   threeDPreview.deactivate()
   jbeamSyntaxChecker.deactivate()
