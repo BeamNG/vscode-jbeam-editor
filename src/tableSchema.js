@@ -71,7 +71,6 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, diagnostics
 
       const rowSize = Object.keys(rowValue).filter(key => !excludedKeys.includes(key)).length
       if (rowSize == headerSize + 1) {
-        console.log(rowValue[headerSize], typeof rowValue[headerSize])
         if(typeof rowValue[headerSize] !== 'object') {
           diagnostics.push(['error', `Inline option (argument ${headerSize + 1}) need to be a dict, not a ${typeof rowValue[headerSize]}: ${rowValue[headerSize]}`, rowValue.__range])  
         }
@@ -132,9 +131,9 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, diagnostics
       }
 
       if (newRow.hasOwnProperty('id') && newRow.id !== null) {
-        newID = newRow.id;
-        newRow.name = newRow.id;
-        newRow.id = null;
+        newID = newRow.id
+        newRow.name = newRow.id
+        delete newRow.id
       }
 
       newList.__range = jbeamTable.__range
