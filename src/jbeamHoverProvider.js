@@ -134,6 +134,10 @@ function deepCloneAndRemoveKeys(obj, keysToRemove) {
   return clone;
 }
 
+function getKeyByValue(object, value) {
+  return Object.keys(object).find(key => object[key] === value);
+}
+
 const keysToRemove = ['__range', '__isarray']
 
 class JBeamHoverProvider {
@@ -150,6 +154,30 @@ class JBeamHoverProvider {
     if(parsedData) {
       // not table unrolled, useful for documentation and alike
       const resultsRawData = findObjectsWithRange(parsedData, position.line, position.character, document.uri.toString());
+      let foundObjCleanRaw
+      if(resultsRawData && resultsRawData.length > 0) {
+        foundObjCleanRaw = deepCloneAndRemoveKeys(resultsRawData[0].obj, keysToRemove)
+      }
+
+      // fully unrolled data
+      let [tableInterpretedData, diagnostics] = tableSchema.processAllParts(parsedData)
+      let resultsStructuredData
+      let foundObjCleanStructured
+      if(tableInterpretedData) {
+        resultsStructuredData = findObjectsWithRange(tableInterpretedData, position.line, position.character, document.uri.toString());
+        if(resultsStructuredData && resultsStructuredData.length > 0) {
+          foundObjCleanStructured = deepCloneAndRemoveKeys(resultsStructuredData[0].obj, keysToRemove)
+          contents.appendMarkdown(`## Data\n\n ${resultsStructuredData[0].breadcrumbMarkdown}\n`);
+          // check for removed entries
+          if(resultsStructuredData && resultsStructuredData && (resultsRawData.length - 2 < resultsStructuredData.length)) {
+            contents.appendCodeblock(JSON.stringify(foundObjCleanStructured, null, 2), 'json');
+          } else {
+            // this element was present in the raw data and merged in the structured version, so it's gone ...
+          }
+        }
+      }
+
+      // no try to get the docs with both data being present ...
       if(resultsRawData && resultsRawData.length > 0) {
         let foundObjClean = deepCloneAndRemoveKeys(resultsRawData[0].obj, keysToRemove)
         const shortWord = word.slice(0, 40) // because there can be a lot of garbage in there, like half the document ...
@@ -159,31 +187,33 @@ class JBeamHoverProvider {
           contents.appendMarkdown(`## Documentation\n### ${finalBreadCrumb}\n\n`);
           contents.appendMarkdown(doc + '\n');
         } else {
-          // retry with the word only
-          doc = docHelper.jbeamDocumentation[shortWord]
+          console.log(`1) No documentation found for: ${finalBreadCrumb}`)
+
+          // try to find the key of the thing hovered
+          let keyOfEntry = getKeyByValue(foundObjCleanStructured, shortWord)
+          if(keyOfEntry && resultsStructuredData && resultsStructuredData.length > 0) {
+            keyOfEntry = keyOfEntry.replace(/:.*$/, ''); // remove trailing : for the docs ... - btw, this is the namespace separator and empty means 'nodes'
+            keyOfEntry = `${resultsStructuredData[0].breadcrumbPlainText} > ${keyOfEntry}`
+          }
+          doc = docHelper.jbeamDocumentation[keyOfEntry]
           if(doc) {
-            contents.appendMarkdown(`## Documentation\n### ${shortWord}\n\n`);
+            contents.appendMarkdown(`## Documentation\n### ${keyOfEntry}\n\n`);
             contents.appendMarkdown(doc + '\n');
           } else {
-            console.log(`No documentation found for: ${finalBreadCrumb}`)
+            console.log(`2) No documentation found for: ${keyOfEntry}`)
+
+            // retry with the word only
+            doc = docHelper.jbeamDocumentation[shortWord]
+            if(doc) {
+              contents.appendMarkdown(`## Documentation\n### ${shortWord}\n\n`);
+              contents.appendMarkdown(doc + '\n');
+            } else {
+              console.log(`3) No documentation found for: ${shortWord}`)
+            }
           }
         }
       }
 
-      // fully unrolled data
-      let [tableInterpretedData, diagnostics] = tableSchema.processAllParts(parsedData)
-      if(tableInterpretedData) {
-        const resultsStructuredData = findObjectsWithRange(tableInterpretedData, position.line, position.character, document.uri.toString());
-        if(resultsStructuredData && resultsStructuredData.length > 0) {
-          let foundObjClean = deepCloneAndRemoveKeys(resultsStructuredData[0].obj, keysToRemove)
-          contents.appendMarkdown(`## Data\n\n ${resultsStructuredData[0].breadcrumbMarkdown}\n`);
-          if(resultsStructuredData && resultsStructuredData && (resultsRawData.length - 2 < resultsStructuredData.length)) {
-            contents.appendCodeblock(JSON.stringify(foundObjClean, null, 2), 'json');
-          } else {
-            // this element was present in the raw data and merged in the structured version, so it's gone ...
-          }
-        }
-      }
     }
 
 
