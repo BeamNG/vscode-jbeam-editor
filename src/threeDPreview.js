@@ -152,8 +152,8 @@ function show3DSceneCommand() {
     });
 
     if (targetEditor) {
-      const start = new vscode.Position(message.range[0] - 1, message.range[1] - 1);
-      const end = new vscode.Position(message.range[2] - 1, message.range[3]);
+      const start = new vscode.Position(message.range[0], message.range[1]);
+      const end = new vscode.Position(message.range[2], message.range[3]);
       const highlightRange = new vscode.Range(start, end);
 
       // Apply the highlight and fade effects
@@ -248,8 +248,8 @@ function show3DSceneCommand() {
       if (webPanel && webPanel.visible) {
         webPanel.webview.postMessage({
           command: 'cursorChanged',
-          line: event.selections[0].start.line + 1,
-          col: event.selections[0].start.character + 1,
+          line: event.selections[0].start.line,
+          col: event.selections[0].start.character,
         });
       }
     }
