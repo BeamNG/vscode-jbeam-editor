@@ -102,7 +102,7 @@ function findObjectsWithRange(obj, line, position, uri) {
         uri: uri
       };
       let encodedArgs = encodeURIComponent(JSON.stringify(args));
-      return `[${breadcrumbPart.name}](command:${commandId}?${encodedArgs})`;
+      return `[${breadcrumbPart.name}](command:${commandId}?${encodedArgs} "Goto")`;
     }).join(' > ');
   
     // Create a plain text breadcrumb trail, ignoring the first element and any array indices
@@ -141,7 +141,7 @@ function getKeyByValue(object, value) {
 const keysToRemove = ['__range', '__isarray']
 
 class JBeamHoverProvider {
-  provideHover(document, position, token) {
+  provideHover(document, position, token) { // token = CancellationToken
     const text = document.getText();
     const range = document.getWordRangeAtPosition(position);
     const word = document.getText(range);
