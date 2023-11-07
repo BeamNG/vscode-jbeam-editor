@@ -140,10 +140,32 @@ function getKeyByValueStringComparison(object, value) {
 
 const keysToRemove = ['__range', '__isarray', '__isNamed']
 
+
+// this is the same as `document.getWordRangeAtPosition(position);` but it parses $ as well.
+// this is needed as we use $ for variables in JBeam
+// TODO: improve to parse anything in quotes first, then fall back to this version
+function getWordRangeAtPositionIncludingDollar(document, position) {
+  const text = document.lineAt(position.line).text;
+  const wordPattern = /[\w$]+/g; // This regex includes word characters and the $ symbol
+
+  let wordRange;
+  let match;
+  while ((match = wordPattern.exec(text)) !== null) {
+    const start = match.index;
+    const end = start + match[0].length;
+    if (start <= position.character && position.character <= end) {
+      wordRange = new vscode.Range(position.line, start, position.line, end);
+      break;
+    }
+  }
+
+  return wordRange;
+}
+
 class JBeamHoverProvider {
   provideHover(document, position, token) { // token = CancellationToken
     const text = document.getText();
-    const range = document.getWordRangeAtPosition(position);
+    const range = getWordRangeAtPositionIncludingDollar(document, position) // document.getWordRangeAtPosition(position);
     const word = document.getText(range);
 
     const contents = new vscode.MarkdownString();
