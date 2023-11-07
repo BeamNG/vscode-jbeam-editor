@@ -162,6 +162,23 @@ function getWordRangeAtPositionIncludingDollar(document, position) {
   return wordRange;
 }
 
+function getDocEntry(key) {
+  let res = docHelper.jbeamDocumentation[key]
+  if(typeof res === 'object') {
+    let resText = ''
+    for (let k in res) {
+      let v = res[k]
+      if(k === 'description') {
+        resText += v + "\n\n"
+      } else {
+        resText += '* **' + k + '**: ' + v + "\n\n"
+      }
+    }
+    return resText
+  }
+  return docHelper.jbeamDocumentation[key]
+}
+
 class JBeamHoverProvider {
   provideHover(document, position, token) { // token = CancellationToken
     const text = document.getText();
@@ -202,7 +219,7 @@ class JBeamHoverProvider {
         const shortWord = word.slice(0, 40) // because there can be a lot of garbage in there, like half the document ...
         const finalBreadCrumb = (`${resultsRawData[0].breadcrumbPlainText} > ${shortWord}`)
         docHints.push(finalBreadCrumb)
-        let doc = docHelper.jbeamDocumentation[finalBreadCrumb]
+        let doc = getDocEntry(finalBreadCrumb)
         if(doc) {
           contents.appendMarkdown(`## Documentation\n### ${finalBreadCrumb}\n\n`);
           contents.appendMarkdown(doc + '\n\n');
@@ -218,7 +235,7 @@ class JBeamHoverProvider {
               keyOfEntry = keyOfEntry.replace(/:.*$/, ''); // remove trailing : for the docs ... - btw, this is the namespace separator and empty means 'nodes'
               keyOfEntry = `${resultsStructuredData[0].breadcrumbPlainText} > ${keyOfEntry}`
               docHints.push(keyOfEntry)
-              doc = docHelper.jbeamDocumentation[keyOfEntry]
+              doc = getDocEntry(keyOfEntry)
               if(doc) {
                 contents.appendMarkdown(`## Documentation\n### ${keyOfEntry}\n\n`);
                 contents.appendMarkdown(doc + '\n\n');
@@ -228,7 +245,7 @@ class JBeamHoverProvider {
           if(!doc) {
             // retry with the word only
             docHints.push(keyOfEntry)
-            doc = docHelper.jbeamDocumentation[shortWord]
+            doc = getDocEntry(shortWord)
             if(doc) {
               contents.appendMarkdown(`## Documentation\n### ${shortWord}\n\n`);
               contents.appendMarkdown(doc + '\n\n');

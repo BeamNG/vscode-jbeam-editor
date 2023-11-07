@@ -4,6 +4,23 @@ const jbeamDocumentation = {
   
   // nodes
   "nodes > collision": "Defines how the node collides with the world. See [here for more info](https://documentation.beamng.com/modding/vehicle/sections/nodes/#args_collision)",
+  "nodes > name": "Defines the node name. **Need to be unique** for the whole vehicle",
+  "nodes > posX": "The X (left/right) position in 3D space",
+  "nodes > posY": "The Y (forward/back) position in 3D space",
+  "nodes > posZ": "The Z (up/down) position in 3D space",
+  "nodes > nodeWeight": {
+    "description": "The weight of the node in kg",
+    "type": "number",
+    "default": "options.nodeWeight",
+    "note": "As of game version 0.30.0.0 the default weight of a node is 25 kg"
+  },
+  "nodes > collision": "If the node can collide with anything",
+  "nodes > selfCollision": "If the node can collide with the vehicle it belongs to",
+  "nodes > staticCollision": "If the node can collide with map objects and terrain",
+  "nodes > group": "Groups a set of nodes into a group that can be used later in other sections",
+  "nodes > engineGroup": "A different kind of group, related to powertrain simulation",
+  "nodes > frictionCoef": "Static friction of the node",
+  
   
   // beams
   "beams > id1": "id1 - The first node of the beam",
