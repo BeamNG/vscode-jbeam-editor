@@ -118,7 +118,7 @@ function findObjectsWithRange(obj, line, position, uri) {
       breadcrumbPlainText: breadcrumbPlainText // Plain text for each breadcrumb part
     };
   });
-  }
+}
 
 
 function deepCloneAndRemoveKeys(obj, keysToRemove) {
@@ -134,8 +134,8 @@ function deepCloneAndRemoveKeys(obj, keysToRemove) {
   return clone;
 }
 
-function getKeyByValue(object, value) {
-  return Object.keys(object).find(key => object[key] === value);
+function getKeyByValueStringComparison(object, value) {
+  return Object.keys(object).find(key => String(object[key]) === value);
 }
 
 const keysToRemove = ['__range', '__isarray']
@@ -188,7 +188,10 @@ class JBeamHoverProvider {
           // try to find the key of the thing hovered
           let keyOfEntry
           if(foundObjCleanStructured) {
-            keyOfEntry = getKeyByValue(foundObjCleanStructured, shortWord)
+            keyOfEntry = getKeyByValueStringComparison(foundObjCleanStructured, shortWord)
+            if(!keyOfEntry) {
+              keyOfEntry = getKeyByValueStringComparison(foundObjCleanRaw, shortWord)
+            }
             if(keyOfEntry && resultsStructuredData && resultsStructuredData.length > 0) {
               keyOfEntry = keyOfEntry.replace(/:.*$/, ''); // remove trailing : for the docs ... - btw, this is the namespace separator and empty means 'nodes'
               keyOfEntry = `${resultsStructuredData[0].breadcrumbPlainText} > ${keyOfEntry}`
@@ -216,9 +219,11 @@ class JBeamHoverProvider {
 
       // now add the data if available
       if(resultsStructuredData) {
-        contents.appendMarkdown(`## Data\n\n ${resultsStructuredData[0].breadcrumbMarkdown}\n`);
         if(!wasBlockMerged && foundObjCleanStructured) {
-          contents.appendCodeblock(JSON.stringify(foundObjCleanStructured, null, 2), 'json');
+          contents.appendMarkdown(`## Data\n\n ${resultsStructuredData[0].breadcrumbMarkdown}\n`)
+          contents.appendCodeblock(JSON.stringify(foundObjCleanStructured, null, 2), 'json')
+        } else {
+          contents.appendMarkdown(`Object contained in ${resultsStructuredData[0].breadcrumbMarkdown}\n`)
         }
       }
 
