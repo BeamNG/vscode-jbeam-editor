@@ -12,9 +12,9 @@ const jbeamDocumentation = {
   "beams > beamShortBound": "Please fill the documentation :)",
   "beams > beamSpring": "Please fill the documentation :)",
   "beams > beamDamp": "Please fill the documentation :)",
-  "beams > beamDeform": "Please fill the documentation :)",
+  "beamDeform": "beamDeform - Please fill the documentation :)",
   "beams > beamStrength": "Please fill the documentation :)",
-  "beams > deformGroup": "Please fill the documentation :)",
+  "deformGroup": "Deformgroup",
   "beams > deformationTriggerRatio": "Please fill the documentation :)",
 }
 

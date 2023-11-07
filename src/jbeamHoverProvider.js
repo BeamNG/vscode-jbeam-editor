@@ -152,13 +152,21 @@ class JBeamHoverProvider {
       const resultsRawData = findObjectsWithRange(parsedData, position.line, position.character, document.uri.toString());
       if(resultsRawData && resultsRawData.length > 0) {
         let foundObjClean = deepCloneAndRemoveKeys(resultsRawData[0].obj, keysToRemove)
-        const finalBreadCrumb = (`${resultsRawData[0].breadcrumbPlainText} > ${word.slice(0, 40)}`)
+        const shortWord = word.slice(0, 40) // because there can be a lot of garbage in there, like half the document ...
+        const finalBreadCrumb = (`${resultsRawData[0].breadcrumbPlainText} > ${shortWord}`)
         let doc = docHelper.jbeamDocumentation[finalBreadCrumb]
         if(doc) {
-          contents.appendMarkdown(`## Documentation\n${finalBreadCrumb}\n\n`);
+          contents.appendMarkdown(`## Documentation\n### ${finalBreadCrumb}\n\n`);
           contents.appendMarkdown(doc + '\n');
         } else {
-          console.log(`No documentation found for: ${finalBreadCrumb}`)
+          // retry with the word only
+          doc = docHelper.jbeamDocumentation[shortWord]
+          if(doc) {
+            contents.appendMarkdown(`## Documentation\n### ${shortWord}\n\n`);
+            contents.appendMarkdown(doc + '\n');
+          } else {
+            console.log(`No documentation found for: ${finalBreadCrumb}`)
+          }
         }
       }
 
