@@ -43,7 +43,7 @@ function loadColladaNamespaces(uri, loadedNamespaces, loadCommon) {
 
     findFilesPromises.push(vscode.workspace.findFiles(commonFolderPattern, null).then(files => {
       files.forEach(file => {
-        console.log(`Found .dae in common folder: ${file.fsPath}`);
+        //console.log(`Found .dae in common folder: ${file.fsPath}`);
         if(webPanel) {
           webPanel.webview.postMessage({
             command: 'loadDaeFinal',
@@ -60,7 +60,7 @@ function loadColladaNamespaces(uri, loadedNamespaces, loadCommon) {
     const vehicleFolderPattern = new vscode.RelativePattern(vehicleSpecificFolderPath, '**/*.{dae,DAE,dAe,DaE,daE,DAe,daE,dAE}');
     findFilesPromises.push(vscode.workspace.findFiles(vehicleFolderPattern, null).then(files => {
       files.forEach(file => {
-        console.log(`Found .dae in vehicle specific folder: ${file.fsPath} > ${convertUri(file.fsPath)}`);
+        //console.log(`Found .dae in vehicle specific folder: ${file.fsPath} > ${convertUri(file.fsPath)}`);
         if(webPanel) {
           webPanel.webview.postMessage({
             command: 'loadDaeFinal',

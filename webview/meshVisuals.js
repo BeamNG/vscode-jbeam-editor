@@ -8,7 +8,6 @@ let wasLoaded = false
 let selectedMeshIndices = null
 
 export function load3DMeshes() {
-  meshLibraryFull = [] // TODO: FIXME
   loadedMeshes = []
   daeFindfilesDone = false
   daeLoadingCounter = 0
@@ -35,6 +34,9 @@ function onReceiveData(message) {
     scene.remove(colladaNode);
   }
 
+  if(!wasLoaded) {
+    meshLibraryFull = [] // clear the library on file change
+  }
   if(wasLoaded) {
     load3DMeshes()
   }
@@ -57,10 +59,10 @@ function tryLoad3dMesh(meshName, onDone) {
     return
   }
   daeLoadingCounterFull++
-  console.log(`Loading dae ${uri} ...`)
+  //console.log(`Loading dae ${uri} ...`)
   let cl = new ctx.colladaLoader.ColladaLoader()
   cl.load(uri, function (collada) {
-    console.log(`Loading dae ${uri} ... DONE`)
+    //console.log(`Loading dae ${uri} ... DONE`)
     daeLoadingCounterFull--
     //console.log("collada: ", collada)
     collada.scene.traverse((node) => {
@@ -72,17 +74,17 @@ function tryLoad3dMesh(meshName, onDone) {
         node.scale.z *= collada.scene.scale.z
         meshLibraryFull[node.name.trim()] = node;
       } else {
-        console.log('ignored: ', node.name)
+        //console.log('ignored: ', node.name)
       }
     })
-    console.log(">meshLibraryFull>", meshName, meshLibraryFull, meshFilenameLookupLibrary)
-    if(!meshLibraryFull[meshName]) {
-      console.log('###############################################')
-      console.log(meshLibraryFull, meshName)
-    }
+    //console.log(">meshLibraryFull>", meshName, meshLibraryFull, meshFilenameLookupLibrary)
+    //if(!meshLibraryFull[meshName]) {
+    //  console.log('###############################################')
+    //  console.log(meshLibraryFull, meshName)
+    //}
     onDone(meshLibraryFull[meshName])
   }, undefined, function (error) {
-    console.log(`Loading dae ${uri} ... ERROR`)
+    //console.log(`Loading dae ${uri} ... ERROR`)
     daeLoadingCounterFull--
     console.error('An error happened during loading:', error);
   });
@@ -132,14 +134,16 @@ function finalizeMeshes() {
                 })
         
                 // Create a wireframe geometry from the mesh's geometry
-                const wireframeGeometry = new THREE.WireframeGeometry(mesh.geometry);
-                const wireframe = new THREE.LineSegments(wireframeGeometry, new THREE.LineBasicMaterial({
-                  color: 0xaaaaaa,
-                  linewidth: 1,
-                  transparent: true
-                }));
-                mesh.add(wireframe);
-        
+                const wireframe = colladaNode.children.find(child => child instanceof THREE.LineSegments)
+                if(!wireframe) {
+                  const wireframeGeometry = new THREE.WireframeGeometry(mesh.geometry);
+                  const wireframe = new THREE.LineSegments(wireframeGeometry, new THREE.LineBasicMaterial({
+                    color: 0xaaaaaa,
+                    linewidth: 1,
+                    transparent: true
+                  }));
+                  mesh.add(wireframe);
+                }
               }
               colladaNode.rotation.x = -Math.PI / 2;
               colladaNode.__range = flexbody.__range
@@ -174,14 +178,16 @@ function finalizeMeshes() {
                 })
         
                 // Create a wireframe geometry from the mesh's geometry
-                const wireframeGeometry = new THREE.WireframeGeometry(mesh.geometry);
-                const wireframe = new THREE.LineSegments(wireframeGeometry, new THREE.LineBasicMaterial({
-                  color: 0xaaaaaa,
-                  linewidth: 1,
-                  transparent: true
-                }));
-                mesh.add(wireframe);
-        
+                const wireframe = colladaNode.children.find(child => child instanceof THREE.LineSegments)
+                if(!wireframe) {
+                  const wireframeGeometry = new THREE.WireframeGeometry(mesh.geometry);
+                  const wireframe = new THREE.LineSegments(wireframeGeometry, new THREE.LineBasicMaterial({
+                    color: 0xaaaaaa,
+                    linewidth: 1,
+                    transparent: true
+                  }));
+                  mesh.add(wireframe);
+                }        
               }
               colladaNode.rotation.x = -Math.PI / 2;
               colladaNode.__range = prop.__range
@@ -202,10 +208,10 @@ function finalizeMeshes() {
 function loadMeshShallow(uri, namespace) {
   //console.log(">loadMeshShallow>", uri, namespace)
   daeLoadingCounter++;
-  console.log(`Load mesh shallow ${uri} ...`)
+  //console.log(`Load mesh shallow ${uri} ...`)
   let cl = new ctx.colladaLoader.ColladaLoader()
   cl.load(uri, function (collada) {
-    console.log(`Load mesh shallow ${uri} ... DONE`)
+    //console.log(`Load mesh shallow ${uri} ... DONE`)
     daeLoadingCounter--
     if(collada && collada.scene) {
       collada.scene.traverse(function (node) {
@@ -224,7 +230,7 @@ function loadMeshShallow(uri, namespace) {
       finalizeMeshes();
     }
   }, undefined, function (error) {
-    console.log(`Load mesh shallow ${uri} ... ERROR`)
+    //console.log(`Load mesh shallow ${uri} ... ERROR`)
     daeLoadingCounter--;
     console.error(error)
     if (daeLoadingCounter == 0 && daeFindfilesDone) {
@@ -239,7 +245,7 @@ function focusMeshes(meshesArrToFocus) {
   for (let i = 0; i < loadedMeshes.length; i++) {
     const selected = meshesArrToFocus.includes(i)
     const colladaNode = loadedMeshes[i]
-    console.log("focusMeshes > colladaNode", colladaNode)
+    //console.log("focusMeshes > colladaNode", colladaNode)
     if(!colladaNode) continue
     const subMeshWire = colladaNode.children.find(child => child instanceof THREE.LineSegments)
     if(subMeshWire) {
@@ -260,7 +266,7 @@ function onCursorChangeEditor(message) {
   if(!loadedMeshes) return
   let meshesFound = []
 
-  console.log(">meshes.onCursorChangeEditor ", message.range)
+  //console.log(">meshes.onCursorChangeEditor ", message.range)
   
   // Helper function to check if the cursor is within a given range
   const cursorInRange = (range) => {
@@ -269,12 +275,10 @@ function onCursorChangeEditor(message) {
   };
 
   for (let i = 0; i < loadedMeshes.length; i++) {
-    console.log("mesh range: ", loadedMeshes[i], loadedMeshes[i].__range, message.range)
     if (loadedMeshes[i].__range && cursorInRange(loadedMeshes[i].__range)) {
       meshesFound.push(i)
     }
   }
-  console.log("found meshes in range: ", meshesFound)
   focusMeshes(meshesFound, false)
 }
 

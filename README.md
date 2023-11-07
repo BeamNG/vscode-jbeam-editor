@@ -47,9 +47,18 @@ This is the README for your extension "jbeam-editor". After writing up a brief d
 
   ![](assets/nodeMultiselect.gif)
 
-* Node multi selection
+* Beam multi selection
 
   ![](assets/beamMultiselect.gif)
+
+* Mesh multi selection
+
+  ![](assets/meshMultiselect.gif)
+
+## Known Issues
+
+* All parts are displayed in a huge soup
+* mesh functions are a bit unstable still
 
 ## WIP
 
