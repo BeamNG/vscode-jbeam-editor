@@ -149,7 +149,7 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, diagnostics
   return newList;
 }
 
-function processPart(part, processSlotsTable, diagnostics) {
+function processPart(part, diagnostics) {
   part.maxIDs = {};
   part.validTables = {};
   part.beams = part.beams || {};
@@ -188,17 +188,13 @@ function processPart(part, processSlotsTable, diagnostics) {
       if(!section.hasOwnProperty('__isarray') || !section.__isarray) {
         // section dictionaries to be written
       } else {
-        if (sectionName === 'slots' && !processSlotsTable) {
-          part.validTables[sectionName] = true;
-        } else {
-          if (!part.validTables[sectionName]) {
-            let newList = processTableWithSchemaDestructive(section, part.options, diagnostics);
+        if (!part.validTables[sectionName]) {
+          let newList = processTableWithSchemaDestructive(section, part.options, diagnostics);
 
-            if (newList.length > 0) {
-              part.validTables[sectionName] = true;
-            }
-            part[sectionName] = newList;
+          if (newList.length > 0) {
+            part.validTables[sectionName] = true;
           }
+          part[sectionName] = newList;
         }
       }
     }
@@ -231,7 +227,7 @@ function processAllParts(parsedData) {
     let partName = keys[partNameIdx]
     if (!parsedData.hasOwnProperty(partName)) continue;
     let part = parsedData[partName];
-    let result = processPart(part, false, diagnostics);
+    let result = processPart(part, diagnostics);
       
     if (result !== true) {
       diagnostics.push(['error', `Unable to process part '${partName}'`, part.__range])
@@ -242,6 +238,5 @@ function processAllParts(parsedData) {
 }
 
 module.exports = {
-  processPart,
   processAllParts,
 };
