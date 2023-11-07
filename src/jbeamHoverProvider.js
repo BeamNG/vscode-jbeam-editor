@@ -181,7 +181,7 @@ class JBeamHoverProvider {
         let doc = docHelper.jbeamDocumentation[finalBreadCrumb]
         if(doc) {
           contents.appendMarkdown(`## Documentation\n### ${finalBreadCrumb}\n\n`);
-          contents.appendMarkdown(doc + '\n');
+          contents.appendMarkdown(doc + '\n\n');
         } else {
           console.log(`1) No documentation found for: ${finalBreadCrumb}`)
 
@@ -198,7 +198,7 @@ class JBeamHoverProvider {
               doc = docHelper.jbeamDocumentation[keyOfEntry]
               if(doc) {
                 contents.appendMarkdown(`## Documentation\n### ${keyOfEntry}\n\n`);
-                contents.appendMarkdown(doc + '\n');
+                contents.appendMarkdown(doc + '\n\n');
               } else {
                 console.log(`2) No documentation found for: ${keyOfEntry}`)
               }
@@ -209,7 +209,7 @@ class JBeamHoverProvider {
             doc = docHelper.jbeamDocumentation[shortWord]
             if(doc) {
               contents.appendMarkdown(`## Documentation\n### ${shortWord}\n\n`);
-              contents.appendMarkdown(doc + '\n');
+              contents.appendMarkdown(doc + '\n\n');
             } else {
               console.log(`3) No documentation found for: ${shortWord}`)
             }
