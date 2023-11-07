@@ -12,7 +12,8 @@ const jbeamDocumentation = {
     "description": "The weight of the node in kg",
     "type": "number",
     "default": "options.nodeWeight",
-    "note": "As of game version 0.30.0.0 the default weight of a node is 25 kg"
+    "note": "As of game version 0.30.0.0 the default weight of a node is 25 kg",
+    "documentation": "[here](https://documentation.beamng.com/modding/vehicle/sections/nodes/#args_nodeWeight)"
   },
   "nodes > collision": "If the node can collide with anything",
   "nodes > selfCollision": "If the node can collide with the vehicle it belongs to",
