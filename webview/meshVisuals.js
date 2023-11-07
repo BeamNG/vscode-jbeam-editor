@@ -3,7 +3,12 @@ let uri = null
 let daeFindfilesDone = false
 let wasLoaded = false
 
+// loadedMeshes is in utils
+
+let selectedMeshIndices = null
+
 export function load3DMeshes() {
+  meshLibraryFull = [] // TODO: FIXME
   loadedMeshes = []
   daeFindfilesDone = false
   daeLoadingCounter = 0
@@ -12,6 +17,7 @@ export function load3DMeshes() {
     command: 'loadColladaNamespaces',
     data: Object.keys(meshFolderCache),
     uri: uri,
+    loadCommon: false // TODO
   });
   wasLoaded = true
 }
@@ -25,8 +31,8 @@ function onReceiveData(message) {
   // trigger loading dae
 
   for (let key in loadedMeshes) {
-    let mesh = loadedMeshes[key];
-    scene.remove(mesh);
+    let colladaNode = loadedMeshes[key];
+    scene.remove(colladaNode);
   }
 
   if(wasLoaded) {
@@ -47,11 +53,14 @@ function tryLoad3dMesh(meshName, onDone) {
   meshName = meshName.trim()
   const uri = meshFilenameLookupLibrary[meshName]
   if(!uri) {
-    console.error(`Mesh not found: '${meshName}'` )
+    console.error(`Mesh not found: '${meshName}'`, meshFilenameLookupLibrary)
     return
   }
   daeLoadingCounterFull++
-  ctx.colladaLoader.load(uri, function (collada) {
+  console.log(`Loading dae ${uri} ...`)
+  let cl = new ctx.colladaLoader.ColladaLoader()
+  cl.load(uri, function (collada) {
+    console.log(`Loading dae ${uri} ... DONE`)
     daeLoadingCounterFull--
     //console.log("collada: ", collada)
     collada.scene.traverse((node) => {
@@ -66,13 +75,14 @@ function tryLoad3dMesh(meshName, onDone) {
         console.log('ignored: ', node.name)
       }
     })
-    //console.log(">meshLibraryFull>", meshName, meshLibraryFull, meshFilenameLookupLibrary)
-    //if(!meshLibraryFull[meshName]) {
-    //  console.log('###############################################')
-    //  console.log(meshLibraryFull, meshName)
-    //}
+    console.log(">meshLibraryFull>", meshName, meshLibraryFull, meshFilenameLookupLibrary)
+    if(!meshLibraryFull[meshName]) {
+      console.log('###############################################')
+      console.log(meshLibraryFull, meshName)
+    }
     onDone(meshLibraryFull[meshName])
   }, undefined, function (error) {
+    console.log(`Loading dae ${uri} ... ERROR`)
     daeLoadingCounterFull--
     console.error('An error happened during loading:', error);
   });
@@ -102,46 +112,88 @@ function finalizeMeshes() {
     for (let partName in jbeamData) {
       let part = jbeamData[partName]
 
-      if(!part.hasOwnProperty('flexbodies')) continue
+      if(part.hasOwnProperty('flexbodies')) {
+        for (let flexBodyId in part.flexbodies) {
+          let flexbody = part.flexbodies[flexBodyId]
+          //console.log('Fexbody: ', flexbody)
 
-      for (let flexBodyId in part.flexbodies) {
-        let flexbody = part.flexbodies[flexBodyId]
-        //console.log('Fexbody: ', flexbody)
-
-        tryLoad3dMesh(flexbody.mesh, (node) => {
-          if(!node) {
-            console.error(`Flexbody mesh not found: ${flexbody.mesh}`)
-            return
-          }
-          node.traverse((mesh) => {
-            if(mesh && mesh instanceof THREE.Mesh) {
-              mesh.material = new THREE.MeshStandardMaterial({
-                color: 0x808080, // Grey color
-                metalness: 0.5,
-                roughness: 0.5
-              });
-      
-              // Create a wireframe geometry from the mesh's geometry
-              const wireframeGeometry = new THREE.WireframeGeometry(mesh.geometry);
-              const wireframeMaterial = new THREE.LineBasicMaterial({
-                color: 0xaaaaaa, // Color of the wireframe
-                linewidth: 1 // Thickness of the wireframe lines
-              });
-              const wireframe = new THREE.LineSegments(wireframeGeometry, wireframeMaterial);
-              mesh.add(wireframe);
-      
+          tryLoad3dMesh(flexbody.mesh, (colladaNode) => {
+            if(!colladaNode) {
+              console.error(`Flexbody mesh not found: ${flexbody.mesh}`)
+              return
             }
-            node.rotation.x = -Math.PI / 2;
-
-            node.traverse((n) => {
-              n.castShadow = true
+            colladaNode.traverse((mesh) => {
+              if(mesh && mesh instanceof THREE.Mesh) {
+                mesh.material = new THREE.MeshStandardMaterial({
+                  color: 0x808080, // Grey color
+                  metalness: 0.5,
+                  roughness: 0.5,
+                  transparent: true
+                })
+        
+                // Create a wireframe geometry from the mesh's geometry
+                const wireframeGeometry = new THREE.WireframeGeometry(mesh.geometry);
+                const wireframe = new THREE.LineSegments(wireframeGeometry, new THREE.LineBasicMaterial({
+                  color: 0xaaaaaa,
+                  linewidth: 1,
+                  transparent: true
+                }));
+                mesh.add(wireframe);
+        
+              }
+              colladaNode.rotation.x = -Math.PI / 2;
+              colladaNode.__range = flexbody.__range
+              colladaNode.traverse((n) => {
+                n.castShadow = true
+              })
+              scene.add(colladaNode)
+              loadedMeshes.push(colladaNode)
             })
-            scene.add(node)
-            loadedMeshes.push(mesh)
-            return
+            //console.log(`Added Flexbody mesh to scene: ${flexbody.mesh}`)
           })
-          //console.log(`Added Flexbody mesh to scene: ${flexbody.mesh}`)
-        })
+        }
+      }
+
+      if(part.hasOwnProperty('props')) {
+        for (let propId in part.props) {
+          let prop = part.props[propId]
+          //console.log('Fexbody: ', flexbody)
+
+          tryLoad3dMesh(prop.mesh, (colladaNode) => {
+            if(!colladaNode) {
+              console.error(`Flexbody mesh not found: ${flexbody.mesh}`)
+              return
+            }
+            colladaNode.traverse((mesh) => {
+              if(mesh && mesh instanceof THREE.Mesh) {
+                mesh.material = new THREE.MeshStandardMaterial({
+                  color: 0x808080, // Grey color
+                  metalness: 0.5,
+                  roughness: 0.5,
+                  transparent: true
+                })
+        
+                // Create a wireframe geometry from the mesh's geometry
+                const wireframeGeometry = new THREE.WireframeGeometry(mesh.geometry);
+                const wireframe = new THREE.LineSegments(wireframeGeometry, new THREE.LineBasicMaterial({
+                  color: 0xaaaaaa,
+                  linewidth: 1,
+                  transparent: true
+                }));
+                mesh.add(wireframe);
+        
+              }
+              colladaNode.rotation.x = -Math.PI / 2;
+              colladaNode.__range = prop.__range
+              colladaNode.traverse((n) => {
+                n.castShadow = true
+              })
+              scene.add(colladaNode)
+              loadedMeshes.push(colladaNode)
+            })
+            //console.log(`Added Flexbody mesh to scene: ${flexbody.mesh}`)
+          })
+        }
       }
     }
   }
@@ -150,7 +202,10 @@ function finalizeMeshes() {
 function loadMeshShallow(uri, namespace) {
   //console.log(">loadMeshShallow>", uri, namespace)
   daeLoadingCounter++;
-  ctx.colladaLoader.load(uri, function (collada) {
+  console.log(`Load mesh shallow ${uri} ...`)
+  let cl = new ctx.colladaLoader.ColladaLoader()
+  cl.load(uri, function (collada) {
+    console.log(`Load mesh shallow ${uri} ... DONE`)
     daeLoadingCounter--
     if(collada && collada.scene) {
       collada.scene.traverse(function (node) {
@@ -169,6 +224,7 @@ function loadMeshShallow(uri, namespace) {
       finalizeMeshes();
     }
   }, undefined, function (error) {
+    console.log(`Load mesh shallow ${uri} ... ERROR`)
     daeLoadingCounter--;
     console.error(error)
     if (daeLoadingCounter == 0 && daeFindfilesDone) {
@@ -177,6 +233,51 @@ function loadMeshShallow(uri, namespace) {
     }
   }, true);
 }
+
+function focusMeshes(meshesArrToFocus) {
+  selectedMeshIndices = meshesArrToFocus
+  for (let i = 0; i < loadedMeshes.length; i++) {
+    const selected = meshesArrToFocus.includes(i)
+    const colladaNode = loadedMeshes[i]
+    console.log("focusMeshes > colladaNode", colladaNode)
+    if(!colladaNode) continue
+    const subMeshWire = colladaNode.children.find(child => child instanceof THREE.LineSegments)
+    if(subMeshWire) {
+      subMeshWire.material.color.set(selected ? 0xff69b4 : 0xaaaaaa);
+      subMeshWire.material.opacity = selected ? 1 : 0.5
+      subMeshWire.material.needsUpdate = true
+    }
+    if(colladaNode.material) {
+      colladaNode.material.opacity = selected ? 1 : 0.5
+      colladaNode.material.color.set(selected ? 0xff69b4 : 0xaaaaaa);
+      colladaNode.material.needsUpdate = true
+    }  
+  }
+  if(selectedMeshIndices == []) selectedMeshIndices = null
+}
+
+function onCursorChangeEditor(message) {
+  if(!loadedMeshes) return
+  let meshesFound = []
+
+  console.log(">meshes.onCursorChangeEditor ", message.range)
+  
+  // Helper function to check if the cursor is within a given range
+  const cursorInRange = (range) => {
+    // only check the lines for now
+    return range[0] >= message.range[0] && range[0] <= message.range[2]
+  };
+
+  for (let i = 0; i < loadedMeshes.length; i++) {
+    console.log("mesh range: ", loadedMeshes[i], loadedMeshes[i].__range, message.range)
+    if (loadedMeshes[i].__range && cursorInRange(loadedMeshes[i].__range)) {
+      meshesFound.push(i)
+    }
+  }
+  console.log("found meshes in range: ", meshesFound)
+  focusMeshes(meshesFound, false)
+}
+
 
 function onReceiveMessage(event) {
   //console.log(">>> meshVisuals.onReceiveMessage >>>", event)
@@ -194,6 +295,9 @@ function onReceiveMessage(event) {
         finalizeMeshes();
       }      
       break
+    case 'cursorChanged':
+      onCursorChangeEditor(message)
+      break      
   }
 }
 
