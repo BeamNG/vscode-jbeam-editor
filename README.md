@@ -47,6 +47,9 @@ This is the README for your extension "jbeam-editor". After writing up a brief d
 
   ![](assets/nodeMultiselect.gif)
 
+* Node multi selection
+
+  ![](assets/multiBeam.gif)
 
 ## WIP
 
