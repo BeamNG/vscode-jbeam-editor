@@ -8,7 +8,7 @@ let positions = []
 let alphas = [];
 let colors = [];
 
-let selectedBeamIdx
+let selectedBeamIndices = null
 
 function onReceiveData(message) {
   jbeamData = message.data
@@ -24,19 +24,21 @@ function onReceiveData(message) {
         let beam = part.beams[beamId];
         //console.log(">beam>", beam, part.nodes[beam['id1:']])
         if (part.nodes && beam['id1:'] in part.nodes && beam['id2:'] in part.nodes) {
-          let startNode = part.nodes[beam['id1:']]
-          let endNode = part.nodes[beam['id2:']]
+          let node1 = part.nodes[beam['id1:']]
+          beam.node1 = node1
+          let node2 = part.nodes[beam['id2:']]
+          beam.node2 = node2
       
-          if (startNode && endNode) {
-            beam.nodePos1 = new THREE.Vector3(startNode.pos[0], startNode.pos[1], startNode.pos[2])
+          if (node1 && node2) {
+            beam.nodePos1 = new THREE.Vector3(node1.pos[0], node1.pos[1], node1.pos[2])
             beamCache.push(beam)
             beamNodesCounter+=2
-            positions.push(startNode.pos[0])
-            positions.push(startNode.pos[1])
-            positions.push(startNode.pos[2])
-            positions.push(endNode.pos[0])
-            positions.push(endNode.pos[1])
-            positions.push(endNode.pos[2])
+            positions.push(node1.pos[0])
+            positions.push(node1.pos[1])
+            positions.push(node1.pos[2])
+            positions.push(node2.pos[0])
+            positions.push(node2.pos[1])
+            positions.push(node2.pos[2])
           }
         }
       }
@@ -144,7 +146,7 @@ function onMouseMove(event) {
   let maxDistance = 1 // Maximum distance to affect the alpha
   
   for (let i = 0; i < beamCache.length; i++) {
-    if(i == selectedBeamIdx) continue
+    if(selectedBeamIndices && selectedBeamIndices.includes(i)) continue
     const distance = raycaster.ray.distanceToPoint(beamCache[i].nodePos1);
 
     // Normalize the distance based on a predefined maximum distance
@@ -163,6 +165,88 @@ function onMouseMove(event) {
   colorsAttribute.needsUpdate = true
 }
 
+function moveCameraCenter(pos) {
+  const offset = new THREE.Vector3().subVectors(pos, orbitControls.target);
+  const newCameraPosition = new THREE.Vector3().addVectors(camera.position, offset);
+  new Tween(orbitControls.target)
+    .to(pos, 120)
+    .easing(Easing.Quadratic.Out)
+    .start()
+    
+  new Tween(camera.position)
+    .to(newCameraPosition, 120)
+    .easing(Easing.Quadratic.Out)
+    .start()
+}
+
+function focusBeams(beamsArrToFocus, triggerEditor = true) {
+  if (!beamsArrToFocus) return
+    
+  let sumX = 0
+  let sumY = 0
+  let sumZ = 0
+  let beamCounter = 0
+
+  //console.log('hit node:', node)
+  selectedBeamIndices = beamsArrToFocus
+
+  // color the node properly
+  const alphasAttribute = lineGeometry.getAttribute('alpha');
+  const colorsAttribute = lineGeometry.getAttribute('color');
+  for (let i = 0; i < beamCache.length; i++) {
+    const beam = beamCache[i]
+    if(selectedBeamIndices.includes(i)) {
+      alphasAttribute.setX(i*2, 1)
+      alphasAttribute.setX(i*2 + 1, 1)
+      colorsAttribute.setXYZ(i*2, 1, 0, 1)
+      colorsAttribute.setXYZ(i*2 + 1, 1, 0, 1)
+      sumX += beam.node1.pos[0]
+      sumY += beam.node1.pos[1]
+      sumZ += beam.node1.pos[2]
+      sumX += beam.node2.pos[0]
+      sumY += beam.node2.pos[1]
+      sumZ += beam.node2.pos[2]
+      beamCounter += 2 // because of 2 nodes
+      continue
+    }
+    alphasAttribute.setX(i*2, 0.1)
+    alphasAttribute.setX(i*2 + 1, 0.1)
+    colorsAttribute.setXYZ(i*2, 0, 1, 0);
+    colorsAttribute.setXYZ(i*2 + 1, 0, 1, 0);
+  }
+  alphasAttribute.needsUpdate = true;
+  colorsAttribute.needsUpdate = true;
+
+  // TODO:
+  //if(triggerEditor) {
+  //  highlightNodeinTextEditor()
+  //}
+
+  let nodesCenterPos = new THREE.Vector3(sumX / beamCounter, sumY / beamCounter, sumZ / beamCounter)
+  moveCameraCenter(nodesCenterPos)
+}
+
+function onCursorChangeEditor(message) {
+  if(!beamCache) return
+  let beamsFound = []
+  
+  // Helper function to check if the cursor is within a given range
+  const cursorInRange = (range) => {
+    // only check the lines for now
+    return range[0] >= message.range[0] && range[0] <= message.range[2]
+  };
+
+  for (let i = 0; i < beamCache.length; i++) {
+    if (cursorInRange(beamCache[i].__range)) {
+      beamsFound.push(i)
+    }
+  }
+
+  if(beamsFound.length > 0) {
+    focusBeams(beamsFound, false)
+  }
+}
+
 function onReceiveMessage(event) {
   //console.log(">>> onReceiveMessage >>>", event)
   const message = event.data;
@@ -170,6 +254,9 @@ function onReceiveMessage(event) {
     case 'jbeamData':
       onReceiveData(message);
       break;
+    case 'cursorChanged':
+      onCursorChangeEditor(message)
+      break      
   }
 }
 

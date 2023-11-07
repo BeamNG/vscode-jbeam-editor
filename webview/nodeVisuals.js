@@ -267,6 +267,22 @@ function onMouseDown(event) {
   if(closestPointIdx !== null && closestDistance < 0.1) focusNodes([closestPointIdx])
 }
 
+function resetNodeFocus() {
+  const alphasAttribute = geometryNodes.getAttribute('alpha');
+  const colorsAttribute = geometryNodes.getAttribute('color');
+  const sizesAttribute = geometryNodes.getAttribute('size');
+  
+  for (let i = 0; i < pointsCache.length; i++) {
+    if(selectedNodeIndices && selectedNodeIndices.includes(i)) continue
+    alphasAttribute.setX(i, 0.3)
+    sizesAttribute.setX(i, 0.03)
+    colorsAttribute.setXYZ(i, 1, 0.65, 0);
+  }
+  alphasAttribute.needsUpdate = true;
+  colorsAttribute.needsUpdate = true;
+  sizesAttribute.needsUpdate = true;
+}
+
 function onMouseMove(event) {
 
   if(wasWindowOutOfFocus) {
@@ -329,6 +345,7 @@ function onMouseOut(event) {
     uri: uri,
   })
   wasWindowOutOfFocus = true
+  resetNodeFocus()
 }
 
 export function init() {
