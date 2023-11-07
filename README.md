@@ -30,6 +30,11 @@ This is the README for your extension "jbeam-editor". After writing up a brief d
 
   ![Hover documentation](assets/hoverDocs.png)
 
+* Documentation integration to lookup the value, key and path of the hovered item in the docs to provide useful information.
+  Currently looks for the breadcrumb: `beams > optional`, the key of the hovered item `beams > id2` or the word itself `FLT_MAX`
+
+  ![Hover documentation](assets/hoverDocs2.png)
+
 * 3D Preview of the JBeam
 
   ![](assets/previewButton.png)
@@ -58,6 +63,7 @@ This is the README for your extension "jbeam-editor". After writing up a brief d
 * zip mod loading?
 * convert all JS files to proper JS modules / remove hacks
 * implement more providers from [here](https://code.visualstudio.com/api/language-extensions/programmatic-language-features)
+* use more icons throughout the UI: [from here](https://microsoft.github.io/vscode-codicons/dist/codicon.html)
 
 ## Requirements
 
