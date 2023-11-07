@@ -14,7 +14,7 @@ function convertUri(filePath) {
   return webviewUri.toString()
 }
 
-function loadColladaNamespaces(uri, loadedNamespaces) {
+function loadColladaNamespaces(uri, loadedNamespaces, loadCommon) {
   // Parse the URI to get the full file system path
   let filePath = vscode.Uri.parse(uri).fsPath;
 
@@ -37,18 +37,18 @@ function loadColladaNamespaces(uri, loadedNamespaces) {
   let findFilesPromises = [];
 
   // Find .dae files in the common folder
-  if(!loadedNamespaces.includes('/vehicles/common/')) {
+  if(loadCommon && !loadedNamespaces.includes('/vehicles/common')) {
     const commonFolderPath = path.join(vehiclesPath, 'common');
     const commonFolderPattern = new vscode.RelativePattern(commonFolderPath, '**/*.{dae,DAE,dAe,DaE,daE,DAe,daE,dAE}');
 
-    findFilesPromises.push(vscode.workspace.findFiles(commonFolderPattern, null, 100).then(files => {
+    findFilesPromises.push(vscode.workspace.findFiles(commonFolderPattern, null).then(files => {
       files.forEach(file => {
-        //console.log(`Found .dae in common folder: ${file.fsPath}`);
+        console.log(`Found .dae in common folder: ${file.fsPath}`);
         if(webPanel) {
           webPanel.webview.postMessage({
             command: 'loadDaeFinal',
             uri: convertUri(file.fsPath),
-            namespace: '/vehicles/common/',
+            namespace: '/vehicles/common',
           })
         }
       });
@@ -58,9 +58,9 @@ function loadColladaNamespaces(uri, loadedNamespaces) {
   if(!loadedNamespaces.includes('/vehicles/' + vehicleSpecificPath)) {
     const vehicleSpecificFolderPath = path.join(vehiclesPath, vehicleSpecificPath);
     const vehicleFolderPattern = new vscode.RelativePattern(vehicleSpecificFolderPath, '**/*.{dae,DAE,dAe,DaE,daE,DAe,daE,dAE}');
-    findFilesPromises.push(vscode.workspace.findFiles(vehicleFolderPattern, null, 100).then(files => {
+    findFilesPromises.push(vscode.workspace.findFiles(vehicleFolderPattern, null).then(files => {
       files.forEach(file => {
-        //console.log(`Found .dae in vehicle specific folder: ${file.fsPath} > ${convertUri(file.fsPath)}`);
+        console.log(`Found .dae in vehicle specific folder: ${file.fsPath} > ${convertUri(file.fsPath)}`);
         if(webPanel) {
           webPanel.webview.postMessage({
             command: 'loadDaeFinal',
@@ -177,7 +177,7 @@ function show3DSceneCommand() {
           resetSelection(message);
           break;
         case 'loadColladaNamespaces':
-          loadColladaNamespaces(message.uri, message.data)
+          loadColladaNamespaces(message.uri, message.data, message.loadCommon)
           break
         case 'loadDae':
           // this converts any file requests to proper URIs that can load inside the webview.
