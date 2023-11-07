@@ -4,7 +4,8 @@ let uri = null
 let pointsObject
 let pointsCache
 
-let selectedNodeIdx = null
+// array of selected nodes
+let selectedNodeIndices = null
 
 // Create arrays to hold the per-node data
 let geometryNodes
@@ -35,8 +36,8 @@ function moveCameraCenter(pos) {
 }
 
 function highlightNodeinTextEditor() {
-  if(!selectedNodeIdx) return
-  const node = pointsCache[selectedNodeIdx]
+  if(!selectedNodeIndices) return
+  const node = pointsCache[selectedNodeIndices[0]] // TODO
   if(node.hasOwnProperty('__range')) {
     ctx.vscode.postMessage({
       command: 'selectLine',
@@ -47,45 +48,68 @@ function highlightNodeinTextEditor() {
   }
 }
 
-function focusNodeIdx(closestPointIdx, triggerEditor = true) {
-  if (closestPointIdx !== null) {
-    const node = pointsCache[closestPointIdx]
+function focusNodes(nodesArrToFocus, triggerEditor = true) {
+  if (!nodesArrToFocus) return
+    
+  let sumX = 0
+  let sumY = 0
+  let sumZ = 0
+  let nodeCounter = 0
 
-    //console.log('hit node:', node)
-    selectedNodeIdx = closestPointIdx
+  //console.log('hit node:', node)
+  selectedNodeIndices = nodesArrToFocus
 
-    // color the node properly
-    const alphasAttribute = geometryNodes.getAttribute('alpha');
-    const colorsAttribute = geometryNodes.getAttribute('color');
-    const sizesAttribute = geometryNodes.getAttribute('size');
-    for (let i = 0; i < pointsCache.length; i++) {
-      if(i == selectedNodeIdx) continue
-      alphasAttribute.setX(i, 0.4)
-      sizesAttribute.setX(i, 0.03)
-      colorsAttribute.setXYZ(i, 1, 0.65, 0);
+  // color the node properly
+  const alphasAttribute = geometryNodes.getAttribute('alpha');
+  const colorsAttribute = geometryNodes.getAttribute('color');
+  const sizesAttribute = geometryNodes.getAttribute('size');
+  for (let i = 0; i < pointsCache.length; i++) {
+    const node = pointsCache[i]
+    if(selectedNodeIndices.includes(i)) {
+      alphasAttribute.setX(i, 1)
+      sizesAttribute.setX(i, 0.11)
+      colorsAttribute.setXYZ(i, 1, 0, 1)
+      sumX += node.pos[0]
+      sumY += node.pos[1]
+      sumZ += node.pos[2]
+      nodeCounter++
+      continue
     }
-    alphasAttribute.setX(selectedNodeIdx, 1)
-    sizesAttribute.setX(selectedNodeIdx, 0.11)
-    colorsAttribute.setXYZ(selectedNodeIdx, 1, 0, 1)
-    alphasAttribute.needsUpdate = true;
-    colorsAttribute.needsUpdate = true;
-    sizesAttribute.needsUpdate = true;
-
-    if(triggerEditor) {
-      highlightNodeinTextEditor()
-    }
-    moveCameraCenter(node.pos3d)
+    alphasAttribute.setX(i, 0.4)
+    sizesAttribute.setX(i, 0.03)
+    colorsAttribute.setXYZ(i, 1, 0.65, 0);
   }
+  alphasAttribute.needsUpdate = true;
+  colorsAttribute.needsUpdate = true;
+  sizesAttribute.needsUpdate = true;
+
+  if(triggerEditor) {
+    highlightNodeinTextEditor()
+  }
+
+  let nodesCenterPos = new THREE.Vector3(sumX / nodeCounter, sumY / nodeCounter, sumZ / nodeCounter)
+  moveCameraCenter(nodesCenterPos)
 }
 
 
 function onCursorChangeEditor(message) {
   if(!pointsCache) return
+  let nodesFound = []
+  
+  // Helper function to check if the cursor is within a given range
+  const cursorInRange = (range) => {
+    // only check the lines for now
+    return range[0] >= message.range[0] && range[0] <= message.range[2]
+  };
+
   for (let i = 0; i < pointsCache.length; i++) {
-    if(message.line == pointsCache[i].__range[0]) {
-      focusNodeIdx(i, false)
-      return
+    if (cursorInRange(pointsCache[i].__range)) {
+      nodesFound.push(i)
     }
+  }
+
+  if(nodesFound.length > 0) {
+    focusNodes(nodesFound, false)
   }
 }
 
@@ -125,7 +149,7 @@ export function onReceiveData(message) {
     }
   }
   if(message.updatedOnly === false) {
-    selectedNodeIdx = null
+    selectedNodeIndices = null
     for (let partName in jbeamData) {
       let part = jbeamData[partName]
       if(part.__centerPosition) {
@@ -240,7 +264,7 @@ function onMouseDown(event) {
     }
   }
   // If the closest point is within the desired threshold, we have a hit
-  if(closestPointIdx !== null && closestDistance < 0.1) focusNodeIdx(closestPointIdx)
+  if(closestPointIdx !== null && closestDistance < 0.1) focusNodes([closestPointIdx])
 }
 
 function onMouseMove(event) {
@@ -266,7 +290,7 @@ function onMouseMove(event) {
   let maxDistance = 1; // Maximum distance to affect the alpha
   
   for (let i = 0; i < pointsCache.length; i++) {
-    if(i == selectedNodeIdx) continue
+    if(selectedNodeIndices && selectedNodeIndices.includes(i)) continue
     const distance = raycaster.ray.distanceToPoint(pointsCache[i].pos3d);
 
     // Normalize the distance based on a predefined maximum distance
@@ -317,16 +341,22 @@ export function init() {
 export function animate(time) {
   if(jbeamData === null) return
 
-  if(selectedNodeIdx !== null) {
-    const selectedNode = pointsCache[selectedNodeIdx]
-    if(selectedNode) {
-      const prettyJson = JSON.stringify(selectedNode, null, 2)
-      ImGui.Begin("Node Data##nodedata");
-      ImGui.TextUnformatted(prettyJson ? prettyJson : "");
-      if(ImGui.SmallButton('deselect')) {
-        selectedNodeIdx = null
-      }
-      ImGui.End();
+  if(selectedNodeIndices !== null) {
+    ImGui.Begin("Node Data##nodedata");
+    if(selectedNodeIndices.length > 1) {
+      ImGui.TextUnformatted(`${selectedNodeIndices.length} selected. Showing first:`);
     }
+    for (let idx of selectedNodeIndices) {
+      const selectedNode = pointsCache[idx]
+      if(selectedNode) {
+        const prettyJson = JSON.stringify(selectedNode, null, 2)
+        ImGui.TextUnformatted(prettyJson ? prettyJson : "");
+      }
+      break
+    }
+    if(ImGui.SmallButton('deselect')) {
+      selectedNodeIndices = null
+    }
+    ImGui.End();
   }
 }

@@ -248,8 +248,7 @@ function show3DSceneCommand() {
       if (webPanel && webPanel.visible) {
         webPanel.webview.postMessage({
           command: 'cursorChanged',
-          line: event.selections[0].start.line,
-          col: event.selections[0].start.character,
+          range: [event.selections[0].start.line, event.selections[0].start.character, event.selections[0].end.line, event.selections[0].end.character]
         });
       }
     }
