@@ -38,7 +38,7 @@ function moveCameraCenter(pos) {
 function highlightNodeinTextEditor() {
   if(!selectedNodeIndices) return
   const node = pointsCache[selectedNodeIndices[0]] // TODO
-  if(node.hasOwnProperty('__range')) {
+  if(node && node.hasOwnProperty('__range')) {
     ctx.vscode.postMessage({
       command: 'selectLine',
       range: node.__range,
@@ -270,6 +270,7 @@ function onMouseDown(event) {
 }
 
 function resetNodeFocus() {
+  if(!geometryNodes) return
   const alphasAttribute = geometryNodes.getAttribute('alpha');
   const colorsAttribute = geometryNodes.getAttribute('color');
   const sizesAttribute = geometryNodes.getAttribute('size');
