@@ -217,13 +217,16 @@ function focusBeams(beamsArrToFocus, triggerEditor = true) {
   alphasAttribute.needsUpdate = true;
   colorsAttribute.needsUpdate = true;
 
+  if(selectedBeamIndices == []) selectedBeamIndices = null
   // TODO:
   //if(triggerEditor) {
   //  highlightNodeinTextEditor()
   //}
 
-  let nodesCenterPos = new THREE.Vector3(sumX / beamCounter, sumY / beamCounter, sumZ / beamCounter)
-  moveCameraCenter(nodesCenterPos)
+  if(beamCounter > 0) {
+    let beamCenterPos = new THREE.Vector3(sumX / beamCounter, sumY / beamCounter, sumZ / beamCounter)
+    moveCameraCenter(beamCenterPos)
+  }
 }
 
 function onCursorChangeEditor(message) {
@@ -242,9 +245,7 @@ function onCursorChangeEditor(message) {
     }
   }
 
-  if(beamsFound.length > 0) {
-    focusBeams(beamsFound, false)
-  }
+  focusBeams(beamsFound, false)
 }
 
 function onReceiveMessage(event) {

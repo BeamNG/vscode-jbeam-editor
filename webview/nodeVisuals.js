@@ -87,8 +87,12 @@ function focusNodes(nodesArrToFocus, triggerEditor = true) {
     highlightNodeinTextEditor()
   }
 
-  let nodesCenterPos = new THREE.Vector3(sumX / nodeCounter, sumY / nodeCounter, sumZ / nodeCounter)
-  moveCameraCenter(nodesCenterPos)
+  if(selectedNodeIndices == []) selectedNodeIndices = null
+
+  if(nodeCounter > 0) {
+    let nodesCenterPos = new THREE.Vector3(sumX / nodeCounter, sumY / nodeCounter, sumZ / nodeCounter)
+    moveCameraCenter(nodesCenterPos)
+  }
 }
 
 
@@ -108,9 +112,7 @@ function onCursorChangeEditor(message) {
     }
   }
 
-  if(nodesFound.length > 0) {
-    focusNodes(nodesFound, false)
-  }
+  focusNodes(nodesFound, false)
 }
 
 export function onReceiveData(message) {
@@ -358,6 +360,7 @@ export function init() {
 export function animate(time) {
   if(jbeamData === null) return
 
+  /*
   if(selectedNodeIndices !== null) {
     ImGui.Begin("Node Data##nodedata");
     if(selectedNodeIndices.length > 1) {
@@ -376,4 +379,5 @@ export function animate(time) {
     }
     ImGui.End();
   }
+  */
 }
