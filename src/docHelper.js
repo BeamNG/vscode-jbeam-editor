@@ -6,6 +6,7 @@ const jbeamDocumentation = {
   "nodes > collision": "Defines how the node collides with the world. See [here for more info](https://documentation.beamng.com/modding/vehicle/sections/nodes/#args_collision)",
   
   // beams
+  "beams > id1": "id1 - The first node of the beam",
   "beams > beamPrecompression": "Please fill the documentation :)",
   "beams > beamType": "Please fill the documentation :)",
   "beams > beamLongBound": "Please fill the documentation :)",

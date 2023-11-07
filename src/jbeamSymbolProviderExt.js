@@ -37,10 +37,10 @@ class JBeamSymbolProvider {
     let [tableInterpretedData, diagnostics] = tableSchema.processAllParts(parsedData)
 
     for (const [partName, part] of Object.entries(tableInterpretedData)) {
-      if(!part.__range) continue
+      if(!part.__range && part.__range[0] > 0) continue
       const range = new vscode.Range(
-        new vscode.Position(part.__range[0] - 1, part.__range[1] - 1),
-        new vscode.Position(part.__range[2] - 1, part.__range[3] - 1)
+        new vscode.Position(part.__range[0], part.__range[1]),
+        new vscode.Position(part.__range[2], part.__range[3])
       )
       
       let infoText = ''

@@ -163,23 +163,19 @@ class JBeamHoverProvider {
       let [tableInterpretedData, diagnostics] = tableSchema.processAllParts(parsedData)
       let resultsStructuredData
       let foundObjCleanStructured
+      let wasBlockMerged = false
       if(tableInterpretedData) {
         resultsStructuredData = findObjectsWithRange(tableInterpretedData, position.line, position.character, document.uri.toString());
         if(resultsStructuredData && resultsStructuredData.length > 0) {
           foundObjCleanStructured = deepCloneAndRemoveKeys(resultsStructuredData[0].obj, keysToRemove)
-          contents.appendMarkdown(`## Data\n\n ${resultsStructuredData[0].breadcrumbMarkdown}\n`);
           // check for removed entries
-          if(resultsStructuredData && resultsStructuredData && (resultsRawData.length - 2 < resultsStructuredData.length)) {
-            contents.appendCodeblock(JSON.stringify(foundObjCleanStructured, null, 2), 'json');
-          } else {
-            // this element was present in the raw data and merged in the structured version, so it's gone ...
-          }
+          wasBlockMerged = !(resultsStructuredData && resultsStructuredData && (resultsRawData.length - 2 < resultsStructuredData.length))
+          // this element was present in the raw data and merged in the structured version, so it's gone ...
         }
       }
 
       // no try to get the docs with both data being present ...
       if(resultsRawData && resultsRawData.length > 0) {
-        let foundObjClean = deepCloneAndRemoveKeys(resultsRawData[0].obj, keysToRemove)
         const shortWord = word.slice(0, 40) // because there can be a lot of garbage in there, like half the document ...
         const finalBreadCrumb = (`${resultsRawData[0].breadcrumbPlainText} > ${shortWord}`)
         let doc = docHelper.jbeamDocumentation[finalBreadCrumb]
@@ -190,18 +186,22 @@ class JBeamHoverProvider {
           console.log(`1) No documentation found for: ${finalBreadCrumb}`)
 
           // try to find the key of the thing hovered
-          let keyOfEntry = getKeyByValue(foundObjCleanStructured, shortWord)
-          if(keyOfEntry && resultsStructuredData && resultsStructuredData.length > 0) {
-            keyOfEntry = keyOfEntry.replace(/:.*$/, ''); // remove trailing : for the docs ... - btw, this is the namespace separator and empty means 'nodes'
-            keyOfEntry = `${resultsStructuredData[0].breadcrumbPlainText} > ${keyOfEntry}`
+          let keyOfEntry
+          if(foundObjCleanStructured) {
+            keyOfEntry = getKeyByValue(foundObjCleanStructured, shortWord)
+            if(keyOfEntry && resultsStructuredData && resultsStructuredData.length > 0) {
+              keyOfEntry = keyOfEntry.replace(/:.*$/, ''); // remove trailing : for the docs ... - btw, this is the namespace separator and empty means 'nodes'
+              keyOfEntry = `${resultsStructuredData[0].breadcrumbPlainText} > ${keyOfEntry}`
+              doc = docHelper.jbeamDocumentation[keyOfEntry]
+              if(doc) {
+                contents.appendMarkdown(`## Documentation\n### ${keyOfEntry}\n\n`);
+                contents.appendMarkdown(doc + '\n');
+              } else {
+                console.log(`2) No documentation found for: ${keyOfEntry}`)
+              }
+            }
           }
-          doc = docHelper.jbeamDocumentation[keyOfEntry]
-          if(doc) {
-            contents.appendMarkdown(`## Documentation\n### ${keyOfEntry}\n\n`);
-            contents.appendMarkdown(doc + '\n');
-          } else {
-            console.log(`2) No documentation found for: ${keyOfEntry}`)
-
+          if(!doc) {
             // retry with the word only
             doc = docHelper.jbeamDocumentation[shortWord]
             if(doc) {
@@ -211,6 +211,14 @@ class JBeamHoverProvider {
               console.log(`3) No documentation found for: ${shortWord}`)
             }
           }
+        }
+      }
+
+      // now add the data if available
+      if(resultsStructuredData) {
+        contents.appendMarkdown(`## Data\n\n ${resultsStructuredData[0].breadcrumbMarkdown}\n`);
+        if(!wasBlockMerged && foundObjCleanStructured) {
+          contents.appendCodeblock(JSON.stringify(foundObjCleanStructured, null, 2), 'json');
         }
       }
 
