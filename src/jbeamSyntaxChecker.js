@@ -28,7 +28,10 @@ function validateTextDocument(textDocument) {
       diagnostics.push(diagnostic);      
     }
   } catch (e) {
-    const pos = new vscode.Position(e.line || 0, e.column || 0)
+    const pos = new vscode.Position(
+      e.range ? e.range[0] : e.line ? e.line : 0,
+      e.range ? e.range[1] : e.column ? e.column : 0
+    )
     const diagnostic = new vscode.Diagnostic(
       new vscode.Range(pos, pos),
       `Exception while parsing SJSON: ${e.message}`,

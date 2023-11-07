@@ -24,7 +24,7 @@ const typeIds = {
   REVERSELIGHT: 32
 };
 
-const excludedKeys = ['__range', '__isarray'];
+const excludedKeys = ['__range', '__isarray', '__isNamed'];
 
 function replaceSpecialValues(val) {
   return val;
@@ -134,6 +134,7 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, diagnostics
         newID = newRow.id
         newRow.name = newRow.id
         delete newRow.id
+        newRow.__isNamed = true
       }
 
       newList.__range = jbeamTable.__range

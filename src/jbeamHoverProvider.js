@@ -68,7 +68,7 @@ function findObjectsWithRange(obj, line, position, uri) {
       matches.push({
         obj: obj,
         depth: currentDepth,
-        breadcrumb: breadcrumbTrail.map(b => ({ name: b.name, __range: b.__range }))
+        breadcrumb: breadcrumbTrail.map(b => ({ name: b.name, __isNamed: b.__isNamed, __range: b.__range }))
       });
     }
 
@@ -78,7 +78,7 @@ function findObjectsWithRange(obj, line, position, uri) {
         const value = obj[key];
         if (typeof value === 'object' && value !== null && value.__range) {
           // Add the current object to the breadcrumb trail before going deeper
-          breadcrumbTrail.push({ name: key, __range: value.__range });
+          breadcrumbTrail.push({ name: key, __isNamed: value.__isNamed, __range: value.__range });
           search(value, currentDepth + 1);
           // Pop the current object from the breadcrumb trail as we backtrack
           breadcrumbTrail.pop();
@@ -108,7 +108,7 @@ function findObjectsWithRange(obj, line, position, uri) {
     // Create a plain text breadcrumb trail, ignoring the first element and any array indices
     let breadcrumbPlainText = match.breadcrumb
       .slice(1) // This skips the first element
-      .filter(breadcrumbPart => isNaN(breadcrumbPart.name)) // This filters out any parts that are numbers (array indices)
+      .filter(breadcrumbPart => breadcrumbPart.__isNamed !== true && isNaN(breadcrumbPart.name)) // This filters out any parts that are numbers (array indices)
       .map(breadcrumbPart => breadcrumbPart.name)
       .join(' > ');
 
@@ -138,7 +138,7 @@ function getKeyByValueStringComparison(object, value) {
   return Object.keys(object).find(key => String(object[key]) === value);
 }
 
-const keysToRemove = ['__range', '__isarray']
+const keysToRemove = ['__range', '__isarray', '__isNamed']
 
 class JBeamHoverProvider {
   provideHover(document, position, token) { // token = CancellationToken
@@ -150,6 +150,7 @@ class JBeamHoverProvider {
     contents.isTrusted = true; // Allows for command links and other Markdown features
     //contents.appendMarkdown(`**You are hovering over:** ${word}\n\n`);
 
+    let docHints = []
     let parsedData = sjsonParser.decodeSJSON(text);
     if(parsedData) {
       // not table unrolled, useful for documentation and alike
@@ -178,13 +179,12 @@ class JBeamHoverProvider {
       if(resultsRawData && resultsRawData.length > 0) {
         const shortWord = word.slice(0, 40) // because there can be a lot of garbage in there, like half the document ...
         const finalBreadCrumb = (`${resultsRawData[0].breadcrumbPlainText} > ${shortWord}`)
+        docHints.push(finalBreadCrumb)
         let doc = docHelper.jbeamDocumentation[finalBreadCrumb]
         if(doc) {
           contents.appendMarkdown(`## Documentation\n### ${finalBreadCrumb}\n\n`);
           contents.appendMarkdown(doc + '\n\n');
         } else {
-          console.log(`1) No documentation found for: ${finalBreadCrumb}`)
-
           // try to find the key of the thing hovered
           let keyOfEntry
           if(foundObjCleanStructured) {
@@ -195,23 +195,21 @@ class JBeamHoverProvider {
             if(keyOfEntry && resultsStructuredData && resultsStructuredData.length > 0) {
               keyOfEntry = keyOfEntry.replace(/:.*$/, ''); // remove trailing : for the docs ... - btw, this is the namespace separator and empty means 'nodes'
               keyOfEntry = `${resultsStructuredData[0].breadcrumbPlainText} > ${keyOfEntry}`
+              docHints.push(keyOfEntry)
               doc = docHelper.jbeamDocumentation[keyOfEntry]
               if(doc) {
                 contents.appendMarkdown(`## Documentation\n### ${keyOfEntry}\n\n`);
                 contents.appendMarkdown(doc + '\n\n');
-              } else {
-                console.log(`2) No documentation found for: ${keyOfEntry}`)
               }
             }
           }
           if(!doc) {
             // retry with the word only
+            docHints.push(keyOfEntry)
             doc = docHelper.jbeamDocumentation[shortWord]
             if(doc) {
               contents.appendMarkdown(`## Documentation\n### ${shortWord}\n\n`);
               contents.appendMarkdown(doc + '\n\n');
-            } else {
-              console.log(`3) No documentation found for: ${shortWord}`)
             }
           }
         }
@@ -227,7 +225,14 @@ class JBeamHoverProvider {
         }
       }
 
+      if(docHints.length > 0) {
+        contents.appendMarkdown('#### Documentation hints\n\n')
+        contents.appendMarkdown(docHints.join('\n\n'))
+      }
+
     }
+
+
 
 
     return new vscode.Hover(contents, range);

@@ -26,7 +26,7 @@ const vscode = require('vscode');
 const sjsonParser = require('./sjsonParser');
 const tableSchema = require('./tableSchema');
 
-const excludedKeys = ['__range', '__isarray'];
+const excludedKeys = ['__range', '__isarray', '__isNamed'];
 
 class JBeamSymbolProvider {
   provideDocumentSymbols(document, token) {
@@ -67,7 +67,7 @@ class JBeamSymbolProvider {
       );
 
       for (const [sectionName, section] of Object.entries(part)) {
-        if(sectionName === '__isarray' || sectionName === '__range' || !section.__range) continue
+        if(sectionName === '__isarray' || sectionName === '__range'  || sectionName === '__isNamed' || !section.__range) continue
         const range = new vscode.Range(
           new vscode.Position(section.__range[0] - 1, section.__range[1] - 1),
           new vscode.Position(section.__range[2] - 1, section.__range[3] - 1)
