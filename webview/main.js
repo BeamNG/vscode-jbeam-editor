@@ -68,7 +68,7 @@ export function init() {
 
   camera = cameraPersp;
 
-  const canvas = document.getElementById("output");
+  const canvas = document.getElementById("canvas3D");
   renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
   document.body.appendChild(renderer.domElement);
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -125,7 +125,8 @@ export function init() {
 
   // Renderer settings for gamma correction
   renderer.gammaFactor = 2.2;
-  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.outputColorSpace = THREE.SRGBColorSpace; // optional with post-processing
+  THREE.ColorManagement.enabled = true;
 
   // After adding lights, always update the scene graph
   scene.updateMatrixWorld(true);
@@ -142,7 +143,7 @@ export function init() {
 
   createDome(scene)
   createGrid(scene)
-  //createLegend(scene)
+  createLegend(scene)
   gizmoCreate()
   ctx.ui.init()
   ctx.jbeamVisuals.init()

@@ -12,12 +12,14 @@ export function load3DMeshes() {
   daeFindfilesDone = false
   daeLoadingCounter = 0
   daeLoadingCounterFull = 0
-  ctx.vscode.postMessage({
-    command: 'loadColladaNamespaces',
-    data: Object.keys(meshFolderCache),
-    uri: uri,
-    loadCommon: false // TODO
-  });
+  if(ctx.vscode) {
+    ctx.vscode.postMessage({
+      command: 'loadColladaNamespaces',
+      data: Object.keys(meshFolderCache),
+      uri: uri,
+      loadCommon: false // TODO
+    });
+  }
   wasLoaded = true
 }
 

@@ -91,7 +91,7 @@ const fadeDecorationType = vscode.window.createTextEditorDecorationType({
 
 function getWebviewContent(webPanel) {
   if(!webPanel) return null
-  const webviewPath = path.join(extensionContext.extensionPath, 'webview', 'index.html');
+  const webviewPath = path.join(extensionContext.extensionPath, 'webview', 'index_vscode.html');
   let content = fs.readFileSync(webviewPath, 'utf8');
   content = content.replace(/<!-- LocalResource:(.*?) -->/g, (match, resourceName) => {
     return webPanel.webview.asWebviewUri(vscode.Uri.file(path.join(extensionContext.extensionPath, 'webview', resourceName)));

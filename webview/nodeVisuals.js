@@ -343,10 +343,12 @@ function onReceiveMessage(event) {
 }
 
 function onMouseOut(event) {
-  ctx.vscode.postMessage({
-    command: 'resetSelection',
-    uri: uri,
-  })
+  if(ctx && ctx.vscode) {
+    ctx.vscode.postMessage({
+      command: 'resetSelection',
+      uri: uri,
+    })
+  }
   wasWindowOutOfFocus = true
   resetNodeFocus()
 }
