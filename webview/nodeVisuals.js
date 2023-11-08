@@ -252,7 +252,7 @@ function onMouseDown(event) {
   const rect = renderer.domElement.getBoundingClientRect();
   mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
   mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-  if(ctx.ui.wantCaptureMouse() || !pointsCache) return
+  if(!pointsCache) return
 
   raycaster.setFromCamera(mouse, camera);
   
@@ -297,7 +297,7 @@ function onMouseMove(event) {
   const rect = renderer.domElement.getBoundingClientRect();
   mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
   mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-  if(ctx.ui.wantCaptureMouse() || !pointsCache) return
+  if(!pointsCache) return
 
   raycaster.setFromCamera(mouse, camera);
 

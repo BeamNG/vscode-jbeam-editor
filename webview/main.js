@@ -1,11 +1,9 @@
 let cameraCenterSphere
 
 function animate(time) {
-  ctx.ui.frameBegin()
   cameraCenterSphere.position.copy(orbitControls.target);
   ctx.jbeamVisuals.animate(time)
-
-  orbitControls.enabled = !ctx.ui.wantCaptureMouse()
+  ctx.ui.animate(time)
 
   orbitControls.update();
   
@@ -20,8 +18,6 @@ function animate(time) {
   gizmoAnimate()
 
   requestAnimationFrame(animate);
-
-  ctx.ui.frameEnd()
 }
 
 function onResize() {

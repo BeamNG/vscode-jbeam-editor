@@ -18,8 +18,6 @@
 <script src="<!-- LocalResource:libs/tween.js -->"></script>
 <script src="<!-- LocalResource:gizmo.js -->"></script>
 <script type="module">
-import * as ImGui from "<!-- LocalResource:libs/imgui.umd.js -->";
-import * as ImGui_Impl from "<!-- LocalResource:libs/imgui_impl.umd.js -->";
 import * as ui from '<!-- LocalResource:ui.js -->';
 import * as main from '<!-- LocalResource:main.js -->';
 import * as jbeamVisuals from '<!-- LocalResource:jbeamVisuals.js -->';
@@ -27,10 +25,12 @@ import * as nodeVisuals from '<!-- LocalResource:nodeVisuals.js -->';
 import * as beamVisuals from '<!-- LocalResource:beamVisuals.js -->';
 import * as meshVisuals from '<!-- LocalResource:meshVisuals.js -->';
 import * as colladaLoader from '<!-- LocalResource:libs/ColladaLoader.js -->';
+import * as tweakPane from '<!-- LocalResource:libs/tweakpane.min.js -->';
 
 const vscode = acquireVsCodeApi();
 ctx.ui = ui
 ctx.vscode = vscode
+ctx.tweakPane = tweakPane
 ctx.jbeamVisuals = jbeamVisuals
 ctx.beamVisuals = beamVisuals
 ctx.nodeVisuals = nodeVisuals
