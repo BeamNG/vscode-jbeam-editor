@@ -22,6 +22,7 @@ let sizeBuffer
 let nodesMin
 let nodesMax
 let nodesCenter
+let nodeCounter
 
 let wasWindowOutOfFocus = false
 
@@ -58,7 +59,7 @@ function focusNodes(nodesArrToFocus, triggerEditor = true) {
   let sumX = 0
   let sumY = 0
   let sumZ = 0
-  let nodeCounter = 0
+  let ncount = 0
 
   //console.log('hit node:', node)
   selectedNodeIndices = nodesArrToFocus
@@ -76,7 +77,7 @@ function focusNodes(nodesArrToFocus, triggerEditor = true) {
       sumX += node.pos[0]
       sumY += node.pos[1]
       sumZ += node.pos[2]
-      nodeCounter++
+      ncount++
       continue
     }
     alphasAttribute.setX(i, 0.4)
@@ -93,8 +94,8 @@ function focusNodes(nodesArrToFocus, triggerEditor = true) {
 
   if(selectedNodeIndices == []) selectedNodeIndices = null
 
-  if(nodeCounter > 0) {
-    let nodesCenterPos = new THREE.Vector3(sumX / nodeCounter, sumY / nodeCounter, sumZ / nodeCounter)
+  if(ncount > 0) {
+    let nodesCenterPos = new THREE.Vector3(sumX / ncount, sumY / ncount, sumZ / ncount)
     moveCameraCenter(nodesCenterPos)
   }
 
@@ -124,36 +125,72 @@ function onCursorChangeEditor(message) {
 function redrawGroundPlane() {
   // create a fancy ground plane
   const defaultfont = 'bold 60px "Roboto Mono", monospace'
+
+  const freeBox = {x: Math.round(nodesMin.x) - 1, y: 0, z: Math.round(nodesMin.z) - 1}
+  const freeBoxText = {x: Math.round(nodesMin.x), y: 0, z: Math.round(nodesMin.z) - 1}
+  console.log("freeBox", freeBox)
   const items = [
     //{ type: 'arrow', start: new THREE.Vector3(0, 0, 0), end: new THREE.Vector3(1, 1, 1), color: '#999999', width: 30, label: 'Hello world' },
-    { type: 'arrow', start: new THREE.Vector3(0.04, 0, 0.04), end: new THREE.Vector3(0.96, 0, 0.04), color: '#444444', width: 20, label: '1m', font: defaultfont },
-    { type: 'arrow', start: new THREE.Vector3(0.04, 0, 0.04), end: new THREE.Vector3(0.04, 0, 0.96), color: '#444444', width: 20, label: '1m', font: defaultfont },
+    { type: 'arrow', start: new THREE.Vector3(freeBox.x + 0.04, 0, freeBox.z + 0.04), end: new THREE.Vector3(freeBox.x + 0.96, 0, freeBox.z + 0.04), color: '#444444', width: 20, label: '1m', font: defaultfont },
+    { type: 'arrow', start: new THREE.Vector3(freeBox.x + 0.04, 0, freeBox.z + 0.04), end: new THREE.Vector3(freeBox.x + 0.04, 0, freeBox.z + 0.96), color: '#444444', width: 20, label: '1m', font: defaultfont },
     { type: 'text', position: new THREE.Vector3(0, 0, 0), font: 'bold 30px "Roboto Mono", monospace', color: '#444444', text: 'origin' },
     
   ]
-  if(selectedNodeIndices && selectedNodeIndices.length > 0) {
-    const node = pointsCache[selectedNodeIndices[0]]
-    if(node) {
-      items.push({ type: 'arrow', start: new THREE.Vector3(0, 0, 0), end: node.pos3d, color: '#448844', width: 5, label: node.name || "", font: defaultfont })
+
+  if(selectedNodeIndices) {
+    if(selectedNodeIndices.length == 1) {
+      const node = pointsCache[selectedNodeIndices[0]]
+      if(node) {
+        //items.push({ type: 'arrow', start: new THREE.Vector3(0, 0, 0), end: node.pos3d, color: '#448844', width: 5, label: node.name || "", font: defaultfont })
+        items.push({ type: 'text', position: node.pos3d, font: 'bold 40px "Roboto Mono", monospace', color: '#448844', text: node.name || ""})
+      }
+    } else if(selectedNodeIndices.length == 2) {
+      const nodeA = pointsCache[selectedNodeIndices[0]]
+      const nodeB = pointsCache[selectedNodeIndices[1]]
+      if(nodeA && nodeB) {
+        // calculate the distance between nodeposA.pos3d and nodeposB.pos3d
+        const distance = Math.round(nodeA.pos3d.distanceTo(nodeB.pos3d) * 1000) / 1000 + 'm'
+        // add some distance to nodea.pos3d
+        items.push({ type: 'arrow', start: nodeA.pos3d, end: nodeB.pos3d, color: '#448844', width: 5, label: distance, font: defaultfont })
+        items.push({ type: 'text', position: nodeA.pos3d, font: 'bold 40px "Roboto Mono", monospace', color: '#448844', text: nodeA.name || "", textAlign: 'right'})
+        items.push({ type: 'text', position: nodeB.pos3d, font: 'bold 40px "Roboto Mono", monospace', color: '#448844', text: nodeB.name || "", textAlign: 'left'})
+      }
     }
   }
 
-  let leftStart = new THREE.Vector3(nodesMin.x, nodesMin.y, nodesMin.z)
-  let leftEnd = new THREE.Vector3(nodesMin.x, nodesMin.y, nodesMax.z)
-  // calulcate the length of the arrow and round it to one decimal place
+  // the bounds of the nodes
+  let leftStart = new THREE.Vector3(nodesMin.x, nodesMin.y, nodesMax.z)
+  let leftEnd = new THREE.Vector3(nodesMin.x, nodesMin.y, nodesMin.z)
   let leftLength = Math.round(leftStart.distanceTo(leftEnd) * 10) / 10
-  items.push({ type: 'arrow', start: leftStart, end: leftEnd, color: 'rgba(0.3, 0.3, 0.3, 0.3)', width: 8, label: leftLength + 'm', font: defaultfont })
+  let labelSize = Math.max(60, leftLength * 80)
+  items.push({ type: 'arrow', start: leftStart, end: leftEnd, color: 'rgba(0.3, 0.3, 0.3, 0.3)', width: labelSize / 10, label: leftLength + 'm', font: `bold ${labelSize}px "Roboto Mono", monospace` })
   let topStart = new THREE.Vector3(nodesMin.x, nodesMin.y, nodesMin.z)
   let topEnd = new THREE.Vector3(nodesMax.x, nodesMin.y, nodesMin.z)
   let topLength = Math.round(topStart.distanceTo(topEnd) * 10) / 10
-  items.push({ type: 'arrow', start: topStart, end: topEnd, color: 'rgba(0.3, 0.3, 0.3, 0.3)', width: 8, label: topLength + 'm', font: defaultfont})
+  items.push({ type: 'arrow', start: topStart, end: topEnd, color: 'rgba(0.3, 0.3, 0.3, 0.3)', width: labelSize / 10, label: topLength + 'm', font: `bold ${labelSize}px "Roboto Mono", monospace`})
+
+  // the title of the file: TODO: improve
+  for (let partName in jbeamData) {
+    if(partName) {
+      let part = jbeamData[partName]
+      if(part) {
+        let nodeCount = 
+        // position the text above the min/max box
+
+        items.push({ type: 'text', position: new THREE.Vector3(freeBoxText.x, 0, freeBoxText.z), font: 'bold 120px "Roboto Mono", monospace', color: '#aaaaaa', text: partName, textAlign: 'left', textBaseline: 'top'})
+        items.push({ type: 'text', position: new THREE.Vector3(freeBoxText.x, 0, freeBoxText.z + 0.2), font: 'bold 60px "Roboto Mono", monospace', color: '#aaaaaa', text: `${nodeCounter} nodes`, textAlign: 'left', textBaseline: 'top'})
+        break
+      }
+    }
+  }
+
   updateProjectionPlane(scene, items);
 }
 
 export function onReceiveData(message) {
   jbeamData = message.data
   uri = message.uri
-  let nodeCounter = 0
+  nodeCounter = 0
   let nodeVertices = []
   pointsCache = []
   let sum = {x: 0, y: 0, z: 0}

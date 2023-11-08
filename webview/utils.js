@@ -207,8 +207,8 @@ drawPrimitives['text'] = function(context, env, item) {
   const pos2D = map3Dto2D(item.position, env)
   context.fillStyle = item.color // Set the text color
   context.font = item.font // Set the font (including size and style)
-  context.textAlign = item.align || 'center'; // Default to center if not specified
-  context.textBaseline = item.baseline || 'middle'; // Default to middle if not specified
+  context.textAlign = item.textAlign || 'center'
+  context.textBaseline = item.textBaseline || 'middle'
   context.fillText(item.text, pos2D.x, pos2D.y);
 }
 

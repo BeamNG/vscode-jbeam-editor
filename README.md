@@ -55,6 +55,13 @@ This is the README for your extension "jbeam-editor". After writing up a brief d
 
   ![](assets/meshMultiselect.gif)
 
+* Ground smart helper
+
+  ![](assets/groundHelper1.png)
+  
+  ![](assets/groundHelper2.gif)
+ 
+
 ## Known Issues
 
 * All parts are displayed in a huge soup
