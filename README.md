@@ -71,8 +71,7 @@ This is the README for your extension "jbeam-editor". After writing up a brief d
 * part selection: which part is displayed
 * implementation of props
 * picking flexbodies in 3d space
-* multi-line selection of elements also selecting in 3d space
-* improved imgui info windows: click on elements and jump to the range in the text editor
+* improved ui info windows: click on elements and jump to the range in the text editor
 * working slot system: part chain loading support
 * part config (PC) loading
 * better support for sections: slidenodes, rails, triangles, wheels, refNodes, camera*, torsionbars
@@ -85,6 +84,7 @@ This is the README for your extension "jbeam-editor". After writing up a brief d
 * convert all JS files to proper JS modules / remove hacks
 * implement more providers from [here](https://code.visualstudio.com/api/language-extensions/programmatic-language-features)
 * use more icons throughout the UI: [from here](https://microsoft.github.io/vscode-codicons/dist/codicon.html)
+* multi-line selection of elements also working in 3d space
 
 ## Requirements
 
