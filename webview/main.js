@@ -139,7 +139,15 @@ export function init() {
 
   createDome(scene)
   createGrid(scene)
-  createLegend(scene)
+
+  const arrows = [
+    { start: new THREE.Vector3(0, 0, 0), end: new THREE.Vector3(1, 1, 1), color: 'red', width: 3, label: 'left' },
+    { start: new THREE.Vector3(0, 0, 0), end: new THREE.Vector3(-1, 1, 0), color: 'green', width: 1, label: 'foobar' }
+  ]
+
+  createArrowsMesh(scene, arrows);
+
+
   gizmoCreate()
   ctx.ui.init()
   ctx.jbeamVisuals.init()

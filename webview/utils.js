@@ -108,95 +108,100 @@ function createDome(scene) {
   scene.add(domeMesh);
 }
 
-function createLegend(scene) {
-  // Create a canvas element
-  const canvas = document.createElement('canvas');
-  const context = canvas.getContext('2d');
-  canvas.width = 1024; // The size can be adjusted based on the scale
-  canvas.height = 1024;
+// Draw an arrow between two points
+function drawArrow(context, arrow) {
+  // Calculate midpoint for the label
+  const midX = (arrow.start2d.x + arrow.end2d.x) / 2;
+  const midY = (arrow.start2d.y + arrow.end2d.y) / 2;
 
-  // Calculate the size and position for your arrow and text
-  let size = 10; //Math.abs(maxX - minX); // The width you want to display
-  let scaleFactor = 100; // How much to scale your measurements by for the canvas
+  // Calculate the angle of the line
+  const angle = Math.atan2(arrow.end2d.y - arrow.start2d.y, arrow.end2d.x - arrow.start2d.x);
 
-  // Draw arrow line
+  // Calculate the end points for the line to avoid overlapping with arrowheads
+  const endLineX = arrow.end2d.x - arrow.width * Math.cos(angle);
+  const endLineY = arrow.end2d.y - arrow.width * Math.sin(angle);
+  const startLineX = arrow.start2d.x + arrow.width * Math.cos(angle);
+  const startLineY = arrow.start2d.y + arrow.width * Math.sin(angle);
+
+  // Line
   context.beginPath();
-  context.moveTo(512 - (size * scaleFactor) / 2, 512);
-  context.lineTo(512 + (size * scaleFactor) / 2, 512);
-  context.strokeStyle = '#000';
-  context.lineWidth = 10;
+  context.moveTo(startLineX, startLineY);
+  context.lineTo(endLineX, endLineY);
+  context.strokeStyle = arrow.color;
+  context.lineWidth = arrow.width; // Line thickness
   context.stroke();
 
-  // Draw arrowheads
+  const arrowSize = arrow.width * 3
+
+  // Right arrowhead
   context.beginPath();
-  context.moveTo(512 + (size * scaleFactor) / 2, 512);
-  context.lineTo(512 + (size * scaleFactor) / 2 - 20, 507);
-  context.lineTo(512 + (size * scaleFactor) / 2 - 20, 517);
+  context.moveTo(arrow.end2d.x, arrow.end2d.y);
+  context.lineTo(arrow.end2d.x - arrowSize * Math.cos(angle - Math.PI / 6), arrow.end2d.y - arrowSize * Math.sin(angle - Math.PI / 6));
+  context.lineTo(arrow.end2d.x - arrowSize * Math.cos(angle + Math.PI / 6), arrow.end2d.y - arrowSize * Math.sin(angle + Math.PI / 6));
+  context.lineTo(arrow.end2d.x, arrow.end2d.y);
+  context.fillStyle = arrow.color;
   context.fill();
 
+  // Left arrowhead
   context.beginPath();
-  context.moveTo(512 - (size * scaleFactor) / 2, 512);
-  context.lineTo(512 - (size * scaleFactor) / 2 + 20, 507);
-  context.lineTo(512 - (size * scaleFactor) / 2 + 20, 517);
+  context.moveTo(arrow.start2d.x, arrow.start2d.y);
+  context.lineTo(arrow.start2d.x + arrowSize * Math.cos(angle - Math.PI / 6), arrow.start2d.y + arrowSize * Math.sin(angle - Math.PI / 6));
+  context.lineTo(arrow.start2d.x + arrowSize * Math.cos(angle + Math.PI / 6), arrow.start2d.y + arrowSize * Math.sin(angle + Math.PI / 6));
+  context.lineTo(arrow.start2d.x, arrow.start2d.y);
   context.fill();
 
-  // Draw text
-  context.font = '48px Arial';
-  context.textAlign = 'center';
-  context.fillText(size.toFixed(2) + 'm', 512, 552);
-
-  // Create a texture from the canvas
-  const texture = new THREE.CanvasTexture(canvas);
-
-  // Create a material
-  const material = new THREE.MeshBasicMaterial({ map: texture });
-  material.transparent = true;
-
-  // Create a mesh with a plane geometry
-  const planeGeometry = new THREE.PlaneGeometry(2, 2); // Size of the plane
-  const planeMesh = new THREE.Mesh(planeGeometry, material);
-
-  // Adjust the plane to lay flat on the ground
-  planeMesh.rotation.x = -Math.PI / 2;
-  planeMesh.position.y = 0.01; // slightly above the ground to avoid z-fighting
-
-  // Add the plane to the scene
-  scene.add(planeMesh);
-
+  // Label
+  context.fillStyle = 'white'; // Text color
+  context.font = '20px Arial'; // Text size and font
+  context.textAlign = 'center'; // Center the text over the midpoint
+  context.textBaseline = 'middle'; // Align the middle of the text with the midpoint
+  context.fillText(arrow.label, midX, midY); // Add text label at midpoint
 }
 
-function createWheelPlaceholder(node1Pos, node2Pos, wheelSettings) {
-  // Calculate the midpoint for the cylinder position
-  const midpoint = new THREE.Vector3().addVectors(node1Pos, node2Pos).multiplyScalar(0.5);
+// Map 3D coordinates to the 2D canvas
+function map3Dto2D(point3D, planeOrigin, planeWidth, planeHeight, canvasWidth, canvasHeight) {
+  const normalizedX = (point3D.x - planeOrigin.x + planeWidth / 2) / planeWidth;
+  const normalizedZ = (point3D.z - planeOrigin.z + planeHeight / 2) / planeHeight;
+  const canvasX = normalizedX * canvasWidth;
+  const canvasY = (1 - normalizedZ) * canvasHeight; // Invert y-axis to match the canvas' y-direction
+  return {x: canvasX, y: canvasY};
+}
 
-  // Calculate the cylinder's height as the distance between the two nodes
-  const height = node1Pos.distanceTo(node2Pos) - wheelSettings.hubRadius * 2; // Subtract the hub radius from both ends
+// Create a mesh with all arrows drawn on a canvas
+function createArrowsMesh(scene, arrows) {
+  const planeOrigin = {x: 0, y: 0, z: 0}
+  const planeWidth = 5; // Width of the plane in 3D units
+  const planeHeight = 5; // Height of the plane in 3D units
+  const canvasWidth = 1024; // Width of the canvas in pixels
+  const canvasHeight = 1024; // Height of the canvas in pixels
+  const canvas = document.createElement('canvas');
+  canvas.width = canvasWidth;
+  canvas.height = canvasHeight;
+  const context = canvas.getContext('2d');
 
-  // Create the cylinder geometry
-  // The radius is the hubRadius, height is calculated above, and 32 is the number of radial segments (can be changed)
-  const geometry = new THREE.CylinderGeometry(wheelSettings.hubRadius, wheelSettings.hubRadius, height, wheelSettings.numRays);
+  // Fill the canvas with blue for testing
+  context.fillStyle = 'blue';
+  context.fillRect(0, 0, canvasWidth, canvasHeight);
 
-  // Create a material for the cylinder
-  const material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
+  // Draw each arrow on the canvas
+  arrows.forEach((arrow) => {
+    arrow.start2d = map3Dto2D(arrow.start, planeOrigin, planeWidth, planeHeight, canvasWidth, canvasHeight);
+    arrow.end2d = map3Dto2D(arrow.end, planeOrigin, planeWidth, planeHeight, canvasWidth, canvasHeight);
+    drawArrow(context, arrow)
+  });
 
-  // Create the cylinder mesh
-  const cylinder = new THREE.Mesh(geometry, material);
+  // Create texture and material from the canvas
+  const texture = new THREE.CanvasTexture(canvas);
+  const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
 
-  // Compute the axis and the angle for the orientation
-  const axis = new THREE.Vector3().subVectors(node2Pos, node1Pos).normalize();
-  const angle = Math.acos(axis.dot(new THREE.Vector3(0, 1, 0)));
+  // Create a mesh with a plane geometry matching the plane size in 3D
+  const planeGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
+  const planeMesh = new THREE.Mesh(planeGeometry, material);
 
-  // Orient the cylinder to align with the nodes
-  const upVector = new THREE.Vector3(0, 1, 0);
-  cylinder.quaternion.setFromUnitVectors(upVector, axis);
+  // Position the plane according to the 3D space
+  planeMesh.position.set(planeOrigin.x, planeOrigin.y, planeOrigin.z);
+  planeMesh.rotation.x = -Math.PI / 2;
+  planeMesh.position.y = 0.01
 
-  // Set the position of the cylinder
-  cylinder.position.copy(midpoint);
-
-  // Correct the rotation if necessary
-  if (axis.cross(upVector).lengthSq() > 0) {
-    cylinder.rotateOnAxis(axis.cross(upVector).normalize(), angle);
-  }
-
-  return cylinder;
+  scene.add(planeMesh);
 }
