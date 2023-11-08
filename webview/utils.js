@@ -137,9 +137,15 @@ drawPrimitives['arrow'] = function(context, env, arrow) {
   // Text padding from the line
   const textPadding = 10; // You can adjust this value as needed
 
+  const lineLength = Math.sqrt(Math.pow(arrow.end2d.x - arrow.start2d.x, 2) + Math.pow(arrow.end2d.y - arrow.start2d.y, 2));
+
   // Calculate start and end points for the line segments
   // Create a gap for the text based on its width
-  const gap = (textWidth / 2) + textPadding;
+  let gap = (textWidth / 2) + textPadding;
+  if(gap * 2 > lineLength * 0.8) {
+    gap = 0
+  }
+  let overSizedText = (textWidth > lineLength * 0.7) // can text fit on the line?
 
   const startGapX = textMidX - gap * Math.cos(angle);
   const startGapY = textMidY - gap * Math.sin(angle);
@@ -193,8 +199,8 @@ drawPrimitives['arrow'] = function(context, env, arrow) {
 
   // Draw the text
   context.fillStyle = arrow.color
-  context.textAlign = 'center'; // Center the text horizontally
-  context.textBaseline = 'middle'; // Center the text vertically
+  context.textAlign = 'center'
+  context.textBaseline = overSizedText ? 'bottom' : 'middle'
 
   context.fillText(arrow.label, 0, 0); // Draw the text at the new (0, 0)
 

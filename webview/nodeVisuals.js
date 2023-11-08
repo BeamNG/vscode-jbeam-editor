@@ -128,12 +128,11 @@ function redrawGroundPlane() {
 
   const freeBox = {x: Math.round(nodesMin.x) - 1, y: 0, z: Math.round(nodesMin.z) - 1}
   const freeBoxText = {x: Math.round(nodesMin.x), y: 0, z: Math.round(nodesMin.z) - 1}
-  console.log("freeBox", freeBox)
   const items = [
     //{ type: 'arrow', start: new THREE.Vector3(0, 0, 0), end: new THREE.Vector3(1, 1, 1), color: '#999999', width: 30, label: 'Hello world' },
     { type: 'arrow', start: new THREE.Vector3(freeBox.x + 0.04, 0, freeBox.z + 0.04), end: new THREE.Vector3(freeBox.x + 0.96, 0, freeBox.z + 0.04), color: '#444444', width: 20, label: '1m', font: defaultfont },
     { type: 'arrow', start: new THREE.Vector3(freeBox.x + 0.04, 0, freeBox.z + 0.04), end: new THREE.Vector3(freeBox.x + 0.04, 0, freeBox.z + 0.96), color: '#444444', width: 20, label: '1m', font: defaultfont },
-    { type: 'text', position: new THREE.Vector3(0, 0, 0), font: 'bold 30px "Roboto Mono", monospace', color: '#444444', text: 'origin' },
+    { type: 'text', position: new THREE.Vector3(0, 0, 0), font: 'bold 50px "Roboto Mono", monospace', color: '#444444', text: 'Origin', textAlign: 'left', textBaseline: 'bottom' },
     
   ]
 
@@ -406,7 +405,7 @@ function onMouseMove(event) {
 
     // Set alpha based on distance (closer points are less transparent)
     alphasAttribute.setX(i, 1.0 - (normalizedDistance * alphaDecay))
-    sizesAttribute.setX(i, (1.0 - (normalizedDistance * 0.7)) * 0.08)
+    sizesAttribute.setX(i, (1.0 - (normalizedDistance * 0.7)) * 0.05)
 
     let color = getColorFromDistance(distance, maxDistance);
     colorsAttribute.setXYZ(i, color.r, color.g, color.b);

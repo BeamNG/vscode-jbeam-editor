@@ -163,7 +163,8 @@ function finalizeMeshes() {
       if(part.hasOwnProperty('props')) {
         for (let propId in part.props) {
           let prop = part.props[propId]
-          //console.log('Fexbody: ', flexbody)
+          //console.log('Prop: ', flexbody)
+          if(prop.mesh == 'SPOTLIGHT') continue
 
           tryLoad3dMesh(prop.mesh, (colladaNode) => {
             if(!colladaNode) {
