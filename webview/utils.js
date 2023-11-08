@@ -108,30 +108,65 @@ function createDome(scene) {
   scene.add(domeMesh);
 }
 
+
+// Map 3D coordinates to the 2D canvas
+function map3Dto2D(point3D, env) {
+  const normalizedX = (point3D.x - env.planeOrigin.x + env.planeWidth / 2) / env.planeWidth
+  const normalizedZ = (point3D.z - env.planeOrigin.z + env.planeHeight / 2) / env.planeHeight
+  const canvasX = normalizedX * env.canvasWidth
+  const canvasY = (1 - normalizedZ) * env.canvasHeight // Invert y-axis to match the canvas' y-direction
+  return {x: canvasX, y: canvasY};
+}
+
 // Draw an arrow between two points
-function drawArrow(context, arrow) {
-  // Calculate midpoint for the label
-  const midX = (arrow.start2d.x + arrow.end2d.x) / 2;
-  const midY = (arrow.start2d.y + arrow.end2d.y) / 2;
+let drawPrimitives = {}
+drawPrimitives['arrow'] = function(context, env, arrow) {
+  arrow.start2d = map3Dto2D(arrow.start, env);
+  arrow.end2d = map3Dto2D(arrow.end, env);
 
   // Calculate the angle of the line
   const angle = Math.atan2(arrow.end2d.y - arrow.start2d.y, arrow.end2d.x - arrow.start2d.x);
 
-  // Calculate the end points for the line to avoid overlapping with arrowheads
-  const endLineX = arrow.end2d.x - arrow.width * Math.cos(angle);
-  const endLineY = arrow.end2d.y - arrow.width * Math.sin(angle);
-  const startLineX = arrow.start2d.x + arrow.width * Math.cos(angle);
-  const startLineY = arrow.start2d.y + arrow.width * Math.sin(angle);
+  // Set the context font and calculate text width
+  context.font = 'bold 30px "Roboto Mono", monospace';
+  const textWidth = context.measureText(arrow.label).width;
 
-  // Line
+  // Calculate the position to draw the text so that it's centered along the line
+  const textMidX = (arrow.start2d.x + arrow.end2d.x) / 2;
+  const textMidY = (arrow.start2d.y + arrow.end2d.y) / 2;
+
+  // Text padding from the line
+  const textPadding = 10; // You can adjust this value as needed
+
+  // Calculate start and end points for the line segments
+  // Create a gap for the text based on its width
+  const gap = (textWidth / 2) + textPadding;
+
+  const startGapX = textMidX - gap * Math.cos(angle);
+  const startGapY = textMidY - gap * Math.sin(angle);
+  const endGapX = textMidX + gap * Math.cos(angle);
+  const endGapY = textMidY + gap * Math.sin(angle);
+
+  // Calculate the end points for the line to avoid overlapping with arrowheads
+  const arrowSize = arrow.width * 3; // Size of the arrowhead
+  const endLineX = arrow.end2d.x - arrowSize * Math.cos(angle);
+  const endLineY = arrow.end2d.y - arrowSize * Math.sin(angle);
+  const startLineX = arrow.start2d.x + arrowSize * Math.cos(angle);
+  const startLineY = arrow.start2d.y + arrowSize * Math.sin(angle);
+
+  // Draw the first line segment
   context.beginPath();
   context.moveTo(startLineX, startLineY);
-  context.lineTo(endLineX, endLineY);
+  context.lineTo(startGapX, startGapY);
   context.strokeStyle = arrow.color;
   context.lineWidth = arrow.width; // Line thickness
   context.stroke();
 
-  const arrowSize = arrow.width * 3
+  // Draw the second line segment
+  context.beginPath();
+  context.moveTo(endGapX, endGapY);
+  context.lineTo(endLineX, endLineY);
+  context.stroke();
 
   // Right arrowhead
   context.beginPath();
@@ -150,56 +185,68 @@ function drawArrow(context, arrow) {
   context.lineTo(arrow.start2d.x, arrow.start2d.y);
   context.fill();
 
-  // Label
-  context.fillStyle = 'white'; // Text color
-  context.font = '20px Arial'; // Text size and font
-  context.textAlign = 'center'; // Center the text over the midpoint
-  context.textBaseline = 'middle'; // Align the middle of the text with the midpoint
-  context.fillText(arrow.label, midX, midY); // Add text label at midpoint
+  // Save the context's current state
+  context.save();
+
+  // Translate and rotate the canvas to draw the text along the line angle
+  context.translate(textMidX, textMidY);
+  context.rotate(angle);
+
+  // Draw the text
+  context.fillStyle = arrow.color
+  context.textAlign = 'center'; // Center the text horizontally
+  context.textBaseline = 'middle'; // Center the text vertically
+
+  context.fillText(arrow.label, 0, 0); // Draw the text at the new (0, 0)
+
+  // Restore the context to its original state
+  context.restore();
 }
 
-// Map 3D coordinates to the 2D canvas
-function map3Dto2D(point3D, planeOrigin, planeWidth, planeHeight, canvasWidth, canvasHeight) {
-  const normalizedX = (point3D.x - planeOrigin.x + planeWidth / 2) / planeWidth;
-  const normalizedZ = (point3D.z - planeOrigin.z + planeHeight / 2) / planeHeight;
-  const canvasX = normalizedX * canvasWidth;
-  const canvasY = (1 - normalizedZ) * canvasHeight; // Invert y-axis to match the canvas' y-direction
-  return {x: canvasX, y: canvasY};
+// Function to draw 2D text
+drawPrimitives['text'] = function(context, env, item) {
+  const pos2D = map3Dto2D(item.position, env)
+  context.fillStyle = item.color // Set the text color
+  context.font = item.font // Set the font (including size and style)
+  context.textAlign = item.align || 'center'; // Default to center if not specified
+  context.textBaseline = item.baseline || 'middle'; // Default to middle if not specified
+  context.fillText(item.text, pos2D.x, pos2D.y);
 }
 
 // Create a mesh with all arrows drawn on a canvas
-function createArrowsMesh(scene, arrows) {
-  const planeOrigin = {x: 0, y: 0, z: 0}
-  const planeWidth = 5; // Width of the plane in 3D units
-  const planeHeight = 5; // Height of the plane in 3D units
-  const canvasWidth = 1024; // Width of the canvas in pixels
-  const canvasHeight = 1024; // Height of the canvas in pixels
+function createProjectionPlane(scene, items) {
+  const env = {
+    planeOrigin: {x: 0, y: 0, z: 0},
+    planeWidth: 10, // Width of the plane in 3D units
+    planeHeight: 10, // Height of the plane in 3D units
+    canvasWidth: 4096, // Width of the canvas in pixels
+    canvasHeight: 4096, // Height of the canvas in pixels
+  }
   const canvas = document.createElement('canvas');
-  canvas.width = canvasWidth;
-  canvas.height = canvasHeight;
+  canvas.width = env.canvasWidth;
+  canvas.height = env.canvasHeight;
   const context = canvas.getContext('2d');
 
   // Fill the canvas with blue for testing
-  context.fillStyle = 'blue';
-  context.fillRect(0, 0, canvasWidth, canvasHeight);
+  //context.fillStyle = 'blue';
+  //context.fillRect(0, 0, canvasWidth, canvasHeight);
 
   // Draw each arrow on the canvas
-  arrows.forEach((arrow) => {
-    arrow.start2d = map3Dto2D(arrow.start, planeOrigin, planeWidth, planeHeight, canvasWidth, canvasHeight);
-    arrow.end2d = map3Dto2D(arrow.end, planeOrigin, planeWidth, planeHeight, canvasWidth, canvasHeight);
-    drawArrow(context, arrow)
+  items.forEach((item) => {
+    drawPrimitives[item.type](context, env, item)
   });
 
   // Create texture and material from the canvas
   const texture = new THREE.CanvasTexture(canvas);
-  const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
+  texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, side: THREE.DoubleSide });
 
   // Create a mesh with a plane geometry matching the plane size in 3D
-  const planeGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
+  const planeGeometry = new THREE.PlaneGeometry(env.planeWidth, env.planeHeight);
   const planeMesh = new THREE.Mesh(planeGeometry, material);
 
   // Position the plane according to the 3D space
-  planeMesh.position.set(planeOrigin.x, planeOrigin.y, planeOrigin.z);
+  planeMesh.position.set(env.planeOrigin.x, env.planeOrigin.y, env.planeOrigin.z);
   planeMesh.rotation.x = -Math.PI / 2;
   planeMesh.position.y = 0.01
 
