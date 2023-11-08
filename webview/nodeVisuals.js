@@ -41,7 +41,7 @@ function moveCameraCenter(pos) {
 }
 
 function highlightNodeinTextEditor() {
-  if(!selectedNodeIndices || selectedNodeIndices.length == 0) return
+  if(!selectedNodeIndices || selectedNodeIndices.length != 1) return
   const node = pointsCache[selectedNodeIndices[0]] // TODO
   if(node && node.hasOwnProperty('__range')) {
     ctx.vscode.postMessage({
