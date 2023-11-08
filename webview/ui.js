@@ -17,6 +17,8 @@ const settings = {
   meshStats: ''
 }
 
+// see https://cocopon.github.io/tweakpane/quick-tour/
+
 export async function init() {
   let pane = new ctx.tweakPane.Pane( { width: 80, title:'Settings', autoplace: false } )
 

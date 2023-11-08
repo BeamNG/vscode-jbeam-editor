@@ -127,7 +127,7 @@ function gizmoCreate() {
   // Position the gizmoRenderer's canvas in the top right corner
   gizmoRenderer.domElement.style.position = 'absolute';
   gizmoRenderer.domElement.style.top = '10px';
-  gizmoRenderer.domElement.style.right = '10px';
+  gizmoRenderer.domElement.style.left = '10px';
   //gizmoRenderer.domElement.style.border = '1px solid red';
   gizmoRenderer.setPixelRatio(window.devicePixelRatio * 1.2);
   gizmoRenderer.gammaFactor = 2.2; 
