@@ -131,7 +131,7 @@ function redrawGroundPlane() {
   const items = [
     //{ type: 'arrow', start: new THREE.Vector3(0, 0, 0), end: new THREE.Vector3(1, 1, 1), color: '#999999', width: 30, label: 'Hello world' },
     { type: 'arrow', start: new THREE.Vector3(freeBox.x + 0.04, 0, freeBox.z + 0.04), end: new THREE.Vector3(freeBox.x + 0.96, 0, freeBox.z + 0.04), color: '#444444', width: 20, label: '1m', font: defaultfont },
-    { type: 'arrow', start: new THREE.Vector3(freeBox.x + 0.04, 0, freeBox.z + 0.04), end: new THREE.Vector3(freeBox.x + 0.04, 0, freeBox.z + 0.96), color: '#444444', width: 20, label: '1m', font: defaultfont },
+    { type: 'arrow', start: new THREE.Vector3(freeBox.x + 0.04, 0, freeBox.z + 0.96), end: new THREE.Vector3(freeBox.x + 0.04, 0, freeBox.z + 0.04), color: '#444444', width: 20, label: '1m', font: defaultfont },
     { type: 'text', position: new THREE.Vector3(0, 0, 0), font: 'bold 50px "Roboto Mono", monospace', color: '#444444', text: 'Origin', textAlign: 'left', textBaseline: 'bottom' },
     
   ]
