@@ -127,7 +127,7 @@ drawPrimitives['arrow'] = function(context, env, arrow) {
   const angle = Math.atan2(arrow.end2d.y - arrow.start2d.y, arrow.end2d.x - arrow.start2d.x);
 
   // Set the context font and calculate text width
-  context.font = 'bold 30px "Roboto Mono", monospace';
+  context.font = arrow.font
   const textWidth = context.measureText(arrow.label).width;
 
   // Calculate the position to draw the text so that it's centered along the line
@@ -213,17 +213,28 @@ drawPrimitives['text'] = function(context, env, item) {
 }
 
 // Create a mesh with all arrows drawn on a canvas
-function createProjectionPlane(scene, items) {
+let groundPlaneMesh = null
+let groundPlaneTexture = null
+let groundPlaneMaterial = null
+
+function updateProjectionPlane(scene, items) {
   const env = {
     planeOrigin: {x: 0, y: 0, z: 0},
     planeWidth: 10, // Width of the plane in 3D units
     planeHeight: 10, // Height of the plane in 3D units
-    canvasWidth: 4096, // Width of the canvas in pixels
-    canvasHeight: 4096, // Height of the canvas in pixels
+    canvasWidth: 8192, // Width of the canvas in pixels
+    canvasHeight: 8192, // Height of the canvas in pixels
   }
-  const canvas = document.createElement('canvas');
-  canvas.width = env.canvasWidth;
-  canvas.height = env.canvasHeight;
+  let canvas = document.getElementById('canvas2DGroundplane')
+  // remove canvas if it exists
+  if(canvas) {
+    canvas.remove();
+  }
+  if(!canvas) {
+    canvas = document.createElement('canvas');
+    canvas.width = env.canvasWidth;
+    canvas.height = env.canvasHeight;  
+  }
   const context = canvas.getContext('2d');
 
   // Fill the canvas with blue for testing
@@ -236,18 +247,23 @@ function createProjectionPlane(scene, items) {
   });
 
   // Create texture and material from the canvas
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-  const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, side: THREE.DoubleSide });
+  if(groundPlaneTexture) groundPlaneTexture.dispose()
+  groundPlaneTexture = new THREE.CanvasTexture(canvas);
+  groundPlaneTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  
+  if(groundPlaneMaterial) groundPlaneMaterial.dispose()
+  groundPlaneMaterial = new THREE.MeshBasicMaterial({ map: groundPlaneTexture, transparent: true, side: THREE.DoubleSide });
 
-  // Create a mesh with a plane geometry matching the plane size in 3D
+  if(groundPlaneMesh) {
+    scene.remove(groundPlaneMesh)
+  }
   const planeGeometry = new THREE.PlaneGeometry(env.planeWidth, env.planeHeight);
-  const planeMesh = new THREE.Mesh(planeGeometry, material);
+  groundPlaneMesh = new THREE.Mesh(planeGeometry, groundPlaneMaterial);
 
   // Position the plane according to the 3D space
-  planeMesh.position.set(env.planeOrigin.x, env.planeOrigin.y, env.planeOrigin.z);
-  planeMesh.rotation.x = -Math.PI / 2;
-  planeMesh.position.y = 0.01
+  groundPlaneMesh.position.set(env.planeOrigin.x, env.planeOrigin.y, env.planeOrigin.z);
+  groundPlaneMesh.rotation.x = -Math.PI / 2;
+  groundPlaneMesh.position.y = 0.01
 
-  scene.add(planeMesh);
+  scene.add(groundPlaneMesh);  
 }

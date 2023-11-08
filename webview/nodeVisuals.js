@@ -19,6 +19,10 @@ let colorBuffer
 let sizes = [];
 let sizeBuffer
 
+let nodesMin
+let nodesMax
+let nodesCenter
+
 let wasWindowOutOfFocus = false
 
 function moveCameraCenter(pos) {
@@ -36,7 +40,7 @@ function moveCameraCenter(pos) {
 }
 
 function highlightNodeinTextEditor() {
-  if(!selectedNodeIndices) return
+  if(!selectedNodeIndices || selectedNodeIndices.length == 0) return
   const node = pointsCache[selectedNodeIndices[0]] // TODO
   if(node && node.hasOwnProperty('__range')) {
     ctx.vscode.postMessage({
@@ -93,6 +97,8 @@ function focusNodes(nodesArrToFocus, triggerEditor = true) {
     let nodesCenterPos = new THREE.Vector3(sumX / nodeCounter, sumY / nodeCounter, sumZ / nodeCounter)
     moveCameraCenter(nodesCenterPos)
   }
+
+  redrawGroundPlane()
 }
 
 
@@ -115,19 +121,47 @@ function onCursorChangeEditor(message) {
   focusNodes(nodesFound, false)
 }
 
+function redrawGroundPlane() {
+  // create a fancy ground plane
+  const defaultfont = 'bold 60px "Roboto Mono", monospace'
+  const items = [
+    //{ type: 'arrow', start: new THREE.Vector3(0, 0, 0), end: new THREE.Vector3(1, 1, 1), color: '#999999', width: 30, label: 'Hello world' },
+    { type: 'arrow', start: new THREE.Vector3(0.04, 0, 0.04), end: new THREE.Vector3(0.96, 0, 0.04), color: '#444444', width: 20, label: '1m', font: defaultfont },
+    { type: 'arrow', start: new THREE.Vector3(0.04, 0, 0.04), end: new THREE.Vector3(0.04, 0, 0.96), color: '#444444', width: 20, label: '1m', font: defaultfont },
+    { type: 'text', position: new THREE.Vector3(0, 0, 0), font: 'bold 30px "Roboto Mono", monospace', color: '#444444', text: 'origin' },
+    
+  ]
+  if(selectedNodeIndices && selectedNodeIndices.length > 0) {
+    const node = pointsCache[selectedNodeIndices[0]]
+    if(node) {
+      items.push({ type: 'arrow', start: new THREE.Vector3(0, 0, 0), end: node.pos3d, color: '#448844', width: 5, label: node.name || "", font: defaultfont })
+    }
+  }
+
+  let leftStart = new THREE.Vector3(nodesMin.x, nodesMin.y, nodesMin.z)
+  let leftEnd = new THREE.Vector3(nodesMin.x, nodesMin.y, nodesMax.z)
+  // calulcate the length of the arrow and round it to one decimal place
+  let leftLength = Math.round(leftStart.distanceTo(leftEnd) * 10) / 10
+  items.push({ type: 'arrow', start: leftStart, end: leftEnd, color: 'rgba(0.3, 0.3, 0.3, 0.3)', width: 8, label: leftLength + 'm', font: defaultfont })
+  let topStart = new THREE.Vector3(nodesMin.x, nodesMin.y, nodesMin.z)
+  let topEnd = new THREE.Vector3(nodesMax.x, nodesMin.y, nodesMin.z)
+  let topLength = Math.round(topStart.distanceTo(topEnd) * 10) / 10
+  items.push({ type: 'arrow', start: topStart, end: topEnd, color: 'rgba(0.3, 0.3, 0.3, 0.3)', width: 8, label: topLength + 'm', font: defaultfont})
+  updateProjectionPlane(scene, items);
+}
+
 export function onReceiveData(message) {
   jbeamData = message.data
   uri = message.uri
   let nodeCounter = 0
   let nodeVertices = []
   pointsCache = []
-  let firstNodePos
-  let firstNodeLabel
+  let sum = {x: 0, y: 0, z: 0}
+  nodesMin = {x: Infinity, y: Infinity, z: Infinity}
+  nodesMax = {x: -Infinity, y: -Infinity, z: -Infinity}  
+  nodesCenter = null
   for (let partName in jbeamData) {
     let part = jbeamData[partName]
-    let sum = {x: 0, y: 0, z: 0}
-    let min = {x: Infinity, y: Infinity, z: Infinity}
-    let max = {x: -Infinity, y: -Infinity, z: -Infinity}
     if(part.hasOwnProperty('nodes')) {
       for (let nodeId in part.nodes) {
         let node = part.nodes[nodeId]
@@ -136,27 +170,23 @@ export function onReceiveData(message) {
           const x = node.pos[0]
           nodeVertices.push(x)
           sum.x += x
-          if(x < min.x) min.x = x
-          else if(x > max.x) max.x = x
+          if(x < nodesMin.x) nodesMin.x = x
+          else if(x > nodesMax.x) nodesMax.x = x
           
           const y = node.pos[1]
           nodeVertices.push(y)
           sum.y += y
-          if(y < min.y) min.y = y
-          else if(y > max.y) max.y = y
+          if(y < nodesMin.y) nodesMin.y = y
+          else if(y > nodesMax.y) nodesMax.y = y
 
           const z = node.pos[2]
           nodeVertices.push(z)
           sum.z += z
-          if(z < min.z) min.z = z
-          else if(z > max.z) max.z = z
+          if(z < nodesMin.z) nodesMin.z = z
+          else if(z > nodesMax.z) nodesMax.z = z
 
           nodeCounter++
           node.pos3d = new THREE.Vector3(x, y, z)
-          if(nodeCounter == 1) {
-            firstNodePos = node.pos3d
-            firstNodeLabel = nodeId
-          }
           pointsCache.push(node)
         } else {
           //console.log("ERR", node)
@@ -164,8 +194,8 @@ export function onReceiveData(message) {
       }
 
       if(nodeCounter > 0) {
-        let centerpos = new THREE.Vector3(sum.x / nodeCounter, sum.y / nodeCounter, sum.z / nodeCounter)
-        part.__centerPosition = centerpos
+        nodesCenter = new THREE.Vector3(sum.x / nodeCounter, sum.y / nodeCounter, sum.z / nodeCounter)
+        part.__centerPosition = nodesCenter
       }
     }
   }
@@ -255,19 +285,9 @@ export function onReceiveData(message) {
   scene.add(pointsObject);
 
 
-  // create a fancy ground plane
-  const items = [
-    //{ type: 'arrow', start: new THREE.Vector3(0, 0, 0), end: new THREE.Vector3(1, 1, 1), color: '#999999', width: 30, label: 'Hello world' },
-    { type: 'arrow', start: new THREE.Vector3(0.04, 0, 0.04), end: new THREE.Vector3(0.96, 0, 0.04), color: '#444444', width: 10, label: '1m' },
-    { type: 'arrow', start: new THREE.Vector3(0.04, 0, 0.04), end: new THREE.Vector3(0.04, 0, 0.96), color: '#444444', width: 10, label: '1m' },
-    { type: 'text', position: new THREE.Vector3(0, 0, 0), font: 'bold 30px "Roboto Mono", monospace', color: '#444444', text: 'origin' },
-    
-  ]
-  if(firstNodePos) {
-    items.push({ type: 'arrow', start: new THREE.Vector3(0, 0, 0), end: firstNodePos, color: '#448844', width: 5, label: firstNodeLabel },)
-  }
 
-  createProjectionPlane(scene, items);  
+
+  redrawGroundPlane()
 }
 
 function getColorFromDistance(distance, maxDistance) {
