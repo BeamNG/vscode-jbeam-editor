@@ -108,13 +108,12 @@ function createDome(scene) {
   scene.add(domeMesh);
 }
 
-
 // Map 3D coordinates to the 2D canvas
 function map3Dto2D(point3D, env) {
   const normalizedX = (point3D.x - env.planeOrigin.x + env.planeWidth / 2) / env.planeWidth
   const normalizedZ = (point3D.z - env.planeOrigin.z + env.planeHeight / 2) / env.planeHeight
   const canvasX = normalizedX * env.canvasWidth
-  const canvasY = (1 - normalizedZ) * env.canvasHeight // Invert y-axis to match the canvas' y-direction
+  const canvasY = normalizedZ * env.canvasHeight
   return {x: canvasX, y: canvasY};
 }
 

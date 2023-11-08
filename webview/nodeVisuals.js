@@ -121,24 +121,42 @@ export function onReceiveData(message) {
   let nodeCounter = 0
   let nodeVertices = []
   pointsCache = []
+  let firstNodePos
+  let firstNodeLabel
   for (let partName in jbeamData) {
     let part = jbeamData[partName]
-    let sumX = 0
-    let sumY = 0
-    let sumZ = 0
+    let sum = {x: 0, y: 0, z: 0}
+    let min = {x: Infinity, y: Infinity, z: Infinity}
+    let max = {x: -Infinity, y: -Infinity, z: -Infinity}
     if(part.hasOwnProperty('nodes')) {
       for (let nodeId in part.nodes) {
         let node = part.nodes[nodeId]
         // node.pos contains [x, y, z]
         if(node.hasOwnProperty('pos')) {
-          nodeVertices.push(node.pos[0])
-          sumX += node.pos[0]
-          nodeVertices.push(node.pos[1])
-          sumY += node.pos[1]
-          nodeVertices.push(node.pos[2])
-          sumZ += node.pos[2]
+          const x = node.pos[0]
+          nodeVertices.push(x)
+          sum.x += x
+          if(x < min.x) min.x = x
+          else if(x > max.x) max.x = x
+          
+          const y = node.pos[1]
+          nodeVertices.push(y)
+          sum.y += y
+          if(y < min.y) min.y = y
+          else if(y > max.y) max.y = y
+
+          const z = node.pos[2]
+          nodeVertices.push(z)
+          sum.z += z
+          if(z < min.z) min.z = z
+          else if(z > max.z) max.z = z
+
           nodeCounter++
-          node.pos3d = new THREE.Vector3(node.pos[0], node.pos[1], node.pos[2])
+          node.pos3d = new THREE.Vector3(x, y, z)
+          if(nodeCounter == 1) {
+            firstNodePos = node.pos3d
+            firstNodeLabel = nodeId
+          }
           pointsCache.push(node)
         } else {
           //console.log("ERR", node)
@@ -146,7 +164,8 @@ export function onReceiveData(message) {
       }
 
       if(nodeCounter > 0) {
-        part.__centerPosition = new THREE.Vector3(sumX / nodeCounter, sumY / nodeCounter, sumZ / nodeCounter)
+        let centerpos = new THREE.Vector3(sum.x / nodeCounter, sum.y / nodeCounter, sum.z / nodeCounter)
+        part.__centerPosition = centerpos
       }
     }
   }
@@ -174,8 +193,6 @@ export function onReceiveData(message) {
     positions.array = new Float32Array(nodeVertices); // Use the new data
     positions.needsUpdate = true;
   }
-
-  
 
   // Fill arrays with data for each node
   for (let i = 0; i < nodeCounter; i++) {
@@ -237,6 +254,20 @@ export function onReceiveData(message) {
   pointsObject = new THREE.Points(geometryNodes, nodesMaterial);
   scene.add(pointsObject);
 
+
+  // create a fancy ground plane
+  const items = [
+    //{ type: 'arrow', start: new THREE.Vector3(0, 0, 0), end: new THREE.Vector3(1, 1, 1), color: '#999999', width: 30, label: 'Hello world' },
+    { type: 'arrow', start: new THREE.Vector3(0.04, 0, 0.04), end: new THREE.Vector3(0.96, 0, 0.04), color: '#444444', width: 10, label: '1m' },
+    { type: 'arrow', start: new THREE.Vector3(0.04, 0, 0.04), end: new THREE.Vector3(0.04, 0, 0.96), color: '#444444', width: 10, label: '1m' },
+    { type: 'text', position: new THREE.Vector3(0, 0, 0), font: 'bold 30px "Roboto Mono", monospace', color: '#444444', text: 'origin' },
+    
+  ]
+  if(firstNodePos) {
+    items.push({ type: 'arrow', start: new THREE.Vector3(0, 0, 0), end: firstNodePos, color: '#448844', width: 5, label: firstNodeLabel },)
+  }
+
+  createProjectionPlane(scene, items);  
 }
 
 function getColorFromDistance(distance, maxDistance) {

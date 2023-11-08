@@ -139,17 +139,6 @@ export function init() {
 
   createDome(scene)
   createGrid(scene)
-
-  const items = [
-    { type: 'arrow', start: new THREE.Vector3(0, 0, 0), end: new THREE.Vector3(1, 1, 1), color: '#999999', width: 30, label: 'Hello world' },
-    { type: 'arrow', start: new THREE.Vector3(0.04, 0, 0.04), end: new THREE.Vector3(0.96, 0, 0.04), color: '#444444', width: 10, label: '1m' },
-    { type: 'arrow', start: new THREE.Vector3(0.04, 0, 0.04), end: new THREE.Vector3(0.04, 0, 0.96), color: '#444444', width: 10, label: '1m' },
-    { type: 'text', position: new THREE.Vector3(0, 0, 0), font: 'bold 30px "Roboto Mono", monospace', color: '#444444', text: 'origin' },
-  ]
-
-  createProjectionPlane(scene, items);
-
-
   gizmoCreate()
   ctx.ui.init()
   ctx.jbeamVisuals.init()
