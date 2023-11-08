@@ -1,23 +1,41 @@
 let cameraCenterSphere
 
+const fps = 30; // For example, 30 frames per second
+const interval = 1000 / fps; // Calculate the interval in milliseconds
+
+let lastTime = (new Date()).getTime();
+let currentTime = 0;
+let delta = 0;
+
 function animate(time) {
-  cameraCenterSphere.position.copy(orbitControls.target);
-  ctx.jbeamVisuals.animate(time)
-  ctx.ui.animate(time)
-
-  orbitControls.update();
-  
-  TweenUpdate();
-
-  //document.getElementById('info').textContent = roundNumber(camera.position.x) + ', ' + roundNumber(camera.position.y) + ', ' + roundNumber(camera.position.z);
-
-  renderer.clear();
-  renderer.render(scene, camera);
-  renderer.state.reset();
-
-  gizmoAnimate()
-
+  // Request the next frame
   requestAnimationFrame(animate);
+  
+  // Calculate the time delta since the last frame
+  currentTime = (new Date()).getTime();
+  delta = currentTime - lastTime;
+
+  // If the delta is greater than our interval, update and render
+  if (delta > interval) {
+    //console.log(1000 / delta)
+    
+    //cameraCenterSphere.position.copy(orbitControls.target);
+    orbitControls.update(time)
+    ctx.jbeamVisuals.animate(time)
+    ctx.ui.animate(time)
+  
+    TweenUpdate();
+
+    //document.getElementById('info').textContent = roundNumber(camera.position.x) + ', ' + roundNumber(camera.position.y) + ', ' + roundNumber(camera.position.z);
+
+    renderer.clear();
+    renderer.render(scene, camera);
+    renderer.state.reset();
+
+    gizmoAnimate()
+
+    lastTime = currentTime - (delta % interval);
+  }
 }
 
 function onResize() {
