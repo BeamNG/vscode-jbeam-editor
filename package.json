@@ -70,14 +70,7 @@
         "configuration": "./language-configuration.json"
       }
     ],
-    "documentSymbolProvider": true,
-    "iconThemes": [
-      {
-        "id": "beamng-icons",
-        "label": "BeamNG Icon Theme",
-        "path": "./icons/beamng-icon-theme.json"
-      }
-    ]
+    "documentSymbolProvider": true
   },
   "webview": {
     "scripts": [

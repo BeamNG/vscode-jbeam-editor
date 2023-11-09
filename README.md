@@ -8,10 +8,6 @@ This is a lightweight visualizer and tool for working with the physics definitio
 
 ## Features
 
-* custom icons for BeamNG file types
-
-  ![Custom file icons](assets/fileIcons.png)
-
 * custom syntax for jbeam that ignores missing commas
 
   ![Missing commas](assets/missingCommas.png)
