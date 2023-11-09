@@ -12,13 +12,8 @@ let nodesGeometry
 let nodesMaterial
 
 let alphas = [];
-let alphaBuffer
-
 let colors = [];
-let colorBuffer
-
 let sizes = [];
-let sizeBuffer
 
 let nodesMin
 let nodesMax
@@ -288,6 +283,8 @@ function updateNodeViz(moveCamera) {
   updateVertexBuffer(nodesGeometry, 'alpha', alphas, 1)
   updateVertexBuffer(nodesGeometry, 'color', colors, 3)
   updateVertexBuffer(nodesGeometry, 'size', sizes, 1)
+  nodesGeometry.computeBoundingBox()
+  nodesGeometry.computeBoundingSphere()
 
   if(!nodesMaterial) {
     nodesMaterial = new THREE.ShaderMaterial({

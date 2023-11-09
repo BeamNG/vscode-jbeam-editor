@@ -59,6 +59,8 @@ function updateBeamViz() {
   updateVertexBuffer(lineGeometry, 'position', vertexPositions, 3)
   updateVertexBuffer(lineGeometry, 'alpha', vertexAlphas, 1)
   updateVertexBuffer(lineGeometry, 'color', vertexColors, 3)
+  lineGeometry.computeBoundingBox()
+  lineGeometry.computeBoundingSphere()
 
   let lineMaterial
   if(linesObject && linesObject.material) {

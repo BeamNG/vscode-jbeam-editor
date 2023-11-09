@@ -289,9 +289,38 @@ function moveCameraCenter(pos) {
     .start()
 }
 
+/*
+updateVertexBuffer(geometry, attributeName, items, itemSize)
+
+Updates or creates a vertex attribute buffer associated with the provided geometry.
+
+Parameters:
+- geometry (THREE.BufferGeometry): The geometry to which the vertex attribute belongs.
+- attributeName (String): The name of the attribute to update or create.
+- items (Array or TypedArray): The new set of data to be used for the vertex attribute.
+- itemSize (Number): The number of values per vertex that are stored in the array.
+
+Behavior:
+- If the attribute specified by attributeName does not exist or if its current array's length does not match the length of the items provided, a new THREE.BufferAttribute is created and assigned to the geometry.
+- If the attribute exists and its size matches the provided items array, the existing buffer's array is updated with the new items.
+
+Notes:
+- The function ensures that the GPU memory is freed if a new buffer is created by disposing of the old buffer attribute.
+- The usage of the buffer is set to THREE.DynamicDrawUsage, indicating that the data will change frequently and should be drawn dynamically.
+- The buffer is flagged to update if only the values change without a change in the length of the array.
+
+Example Usage:
+updateVertexBuffer(mesh.geometry, 'position', newPositionsArray, 3);
+
+This will update the 'position' buffer of mesh.geometry with newPositionsArray, where each vertex is represented by 3 values (x, y, z).
+*/
 function updateVertexBuffer(geometry, attributeName, items, itemSize) {
-  let buffer = geometry.getAttribute(attributeName)
-  if(!buffer) {
+  let buffer = geometry.getAttribute(attributeName);
+  if (!buffer || buffer.array.length !== items.length) {
+    if (buffer) {
+      geometry.deleteAttribute(attributeName)
+      if (buffer.array) buffer.array = null
+    }
     buffer = new THREE.Float32BufferAttribute(items, itemSize)
     buffer.setUsage(THREE.DynamicDrawUsage)
     geometry.setAttribute(attributeName, buffer)

@@ -2,14 +2,9 @@ let jbeamData = null
 let uri
 let currentPartName = null
 
-let vertexAlphas = [];
-let vertexAlphaBuffer
-
-let vertexColors = [];
-let vertexColorBuffer
-
-let vertexHighlight = [];
-let vertexHighlightBuffer
+let vertexAlphas = []
+let vertexColors = []
+let vertexHighlight = []
 
 let triObject
 let triGeometry
@@ -66,12 +61,16 @@ function updateTriViz() {
 
   triGeometry = new THREE.BufferGeometry();
   triGeometry.setIndex(triIndices);
-  triGeometry.computeVertexNormals(); // Recompute normals for new geometry
-  
+
   updateVertexBuffer(triGeometry, 'position', triVertices, 3)
   updateVertexBuffer(triGeometry, 'alpha', vertexAlphas, 1)
   updateVertexBuffer(triGeometry, 'color', vertexColors, 3)
   updateVertexBuffer(triGeometry, 'highlight', vertexHighlight, 1)
+  triGeometry.computeVertexNormals()
+  triGeometry.computeTangents()
+  triGeometry.computeBoundingBox()
+  triGeometry.computeBoundingSphere()
+
 
   if(!triMaterial) {
     triMaterial = new THREE.ShaderMaterial({
