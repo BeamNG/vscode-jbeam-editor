@@ -64,35 +64,9 @@ function updateBeamViz() {
 
   lineGeometry = new THREE.BufferGeometry()
 
-  let positionsBuffer = lineGeometry.getAttribute('position')
-  if(positionsBuffer) {
-    positionsBuffer.array = new Float32Array(positions)
-    positionsBuffer.needsUpdate = true
-  } else {
-    positionsBuffer = new THREE.BufferAttribute(new Float32Array(positions), 3)
-    //positionsBuffer.setUsage(THREE.DynamicDrawUsage)
-    lineGeometry.setAttribute('position', positionsBuffer)
-  }
-
-  let alphaBuffer = lineGeometry.getAttribute('alpha')
-  if(alphaBuffer) {
-    alphaBuffer.array = new Float32Array(alphas)
-    alphaBuffer.needsUpdate = true
-  } else {
-    alphaBuffer = new THREE.BufferAttribute(new Float32Array(alphas), 1)
-    alphaBuffer.setUsage(THREE.DynamicDrawUsage)
-    lineGeometry.setAttribute('alpha', alphaBuffer)
-  }
-
-  let colorBuffer = lineGeometry.getAttribute('color')
-  if(colorBuffer) {
-    colorBuffer.array = new Float32Array(colors)
-    colorBuffer.needsUpdate = true
-  } else {
-    colorBuffer = new THREE.BufferAttribute(new Float32Array(colors), 3)
-    colorBuffer.setUsage(THREE.DynamicDrawUsage)
-    lineGeometry.setAttribute('color', colorBuffer)
-  }
+  updateVertexBuffer(lineGeometry, 'position', positions, 3)
+  updateVertexBuffer(lineGeometry, 'alpha', alphas, 1)
+  updateVertexBuffer(lineGeometry, 'color', colors, 3)
 
   if(!lineMaterial) {
     lineMaterial = new THREE.ShaderMaterial({

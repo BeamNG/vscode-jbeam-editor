@@ -277,14 +277,6 @@ function updateNodeViz(moveCamera) {
   }
   nodesGeometry = new THREE.BufferGeometry()
   
-  const positions = nodesGeometry.getAttribute('position');
-  if(!positions) {
-    nodesGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(nodeVertices), 3));
-  } else {
-    positions.array = new Float32Array(nodeVertices); // Use the new data
-    positions.needsUpdate = true;
-  }
-
   // Fill arrays with data for each node
   for (let i = 0; i < nodeCounter; i++) {
     alphas.push(1)
@@ -292,18 +284,10 @@ function updateNodeViz(moveCamera) {
     sizes.push(0.05)
   }
 
-  // Convert arrays to typed arrays and add as attributes to the geometry
-  alphaBuffer = new THREE.Float32BufferAttribute(alphas, 1)
-  alphaBuffer.setUsage(THREE.DynamicDrawUsage);
-  nodesGeometry.setAttribute('alpha', alphaBuffer);
-  
-  colorBuffer = new THREE.Float32BufferAttribute(colors, 3)
-  colorBuffer.setUsage(THREE.DynamicDrawUsage);
-  nodesGeometry.setAttribute('color', colorBuffer);
-
-  sizeBuffer = new THREE.Float32BufferAttribute(sizes, 1)
-  sizeBuffer.setUsage(THREE.DynamicDrawUsage);
-  nodesGeometry.setAttribute('size', sizeBuffer);
+  updateVertexBuffer(nodesGeometry, 'position', nodeVertices, 3)
+  updateVertexBuffer(nodesGeometry, 'alpha', alphas, 1)
+  updateVertexBuffer(nodesGeometry, 'color', colors, 3)
+  updateVertexBuffer(nodesGeometry, 'size', sizes, 1)
 
   if(!nodesMaterial) {
     nodesMaterial = new THREE.ShaderMaterial({

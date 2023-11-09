@@ -288,3 +288,15 @@ function moveCameraCenter(pos) {
     .easing(Easing.Quadratic.Out)
     .start()
 }
+
+function updateVertexBuffer(geometry, attributeName, items, itemSize) {
+  let buffer = geometry.getAttribute(attributeName)
+  if(!buffer) {
+    buffer = new THREE.Float32BufferAttribute(items, itemSize)
+    buffer.setUsage(THREE.DynamicDrawUsage)
+    geometry.setAttribute(attributeName, buffer)
+  } else {
+    buffer.array.set(items)
+    buffer.needsUpdate = true
+  }
+}

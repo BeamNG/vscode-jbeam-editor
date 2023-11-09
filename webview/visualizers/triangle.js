@@ -60,38 +60,18 @@ function updateTriViz() {
     scene.remove(triObject);
   }
   
+  if(triGeometry) {
+    triGeometry.dispose()
+  }
+
   triGeometry = new THREE.BufferGeometry();
-  triGeometry.setAttribute('position', new THREE.Float32BufferAttribute(triVertices, 3));
   triGeometry.setIndex(triIndices);
   triGeometry.computeVertexNormals(); // Recompute normals for new geometry
   
-  // Check if you need to update the buffers or create new ones
-  if (!vertexColorBuffer || vertexColorBuffer.count !== triVertices.length / 3) {
-    vertexColorBuffer = new THREE.Float32BufferAttribute(vertexColors, 3);
-    vertexColorBuffer.setUsage(THREE.DynamicDrawUsage)
-    triGeometry.setAttribute('color', vertexColorBuffer);
-  } else {
-    vertexColorBuffer.set(vertexColors);
-    vertexColorBuffer.needsUpdate = true;
-  }
-
-  if (!vertexAlphaBuffer || vertexAlphaBuffer.count !== triVertices.length / 3) {
-    vertexAlphaBuffer = new THREE.Float32BufferAttribute(vertexAlphas, 1);
-    vertexAlphaBuffer.setUsage(THREE.DynamicDrawUsage)
-    triGeometry.setAttribute('alpha', vertexAlphaBuffer);
-  } else {
-    vertexAlphaBuffer.set(vertexAlphas);
-    vertexAlphaBuffer.needsUpdate = true;
-  }
-
-  if (!vertexHighlightBuffer || vertexHighlightBuffer.count !== triVertices.length / 3) {
-    vertexHighlightBuffer = new THREE.Float32BufferAttribute(vertexHighlight, 1);
-    vertexHighlightBuffer.setUsage(THREE.DynamicDrawUsage)
-    triGeometry.setAttribute('highlight', vertexHighlightBuffer);
-  } else {
-    vertexHighlightBuffer.set(vertexHighlight);
-    vertexHighlightBuffer.needsUpdate = true;
-  }
+  updateVertexBuffer(triGeometry, 'position', triVertices, 3)
+  updateVertexBuffer(triGeometry, 'alpha', vertexAlphas, 1)
+  updateVertexBuffer(triGeometry, 'color', vertexColors, 3)
+  updateVertexBuffer(triGeometry, 'highlight', vertexHighlight, 1)
 
   if(!triMaterial) {
     triMaterial = new THREE.ShaderMaterial({
