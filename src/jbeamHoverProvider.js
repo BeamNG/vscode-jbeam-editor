@@ -257,16 +257,22 @@ class JBeamHoverProvider {
       // now add the data if available
       if(resultsStructuredData) {
         if(!wasBlockMerged && foundObjCleanStructured) {
-          contents.appendMarkdown(`## Data\n\n ${resultsStructuredData[0].breadcrumbMarkdown}\n`)
-          contents.appendCodeblock(JSON.stringify(foundObjCleanStructured, null, 2), 'json')
+          const text = JSON.stringify(foundObjCleanStructured, null, 2)
+          if(text.length < 32768) {
+            contents.appendMarkdown(`## Data\n\n ${resultsStructuredData[0].breadcrumbMarkdown}\n`)
+            contents.appendCodeblock(JSON.stringify(foundObjCleanStructured, null, 2), 'json')
+          }
         } else {
           contents.appendMarkdown(`Object contained in ${resultsStructuredData[0].breadcrumbMarkdown}\n`)
         }
       }
 
       if(docHints.length > 0) {
-        contents.appendMarkdown('#### Documentation hints\n\n')
-        contents.appendMarkdown(docHints.join('\n\n'))
+        docHints = docHints.filter(content => !/[^{}]*/.test(content))
+        if(docHints.length > 0) {
+          contents.appendMarkdown('#### Documentation hints\n\n')
+          contents.appendMarkdown(docHints.join('\n\n'))
+        }
       }
 
     }
