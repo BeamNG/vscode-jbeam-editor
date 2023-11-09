@@ -125,6 +125,11 @@ If all worked, it should show up like this now:
 
 ## Release Notes
 
+### 0.2.4
+* fixed leaking `options`` in the table parser
+* removed ground floor for now
+* implemented `triangles` section visualizer
+
 ### 0.2.3
 * Improved readme a bit
 
