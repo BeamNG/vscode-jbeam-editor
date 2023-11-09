@@ -104,6 +104,11 @@ Calling out known issues can help limit users opening duplicate issues against y
 
 ## Release Notes
 
-### 0.1
+### 0.2.1
+* Fixed Mesh loading crashing when the opened file is outside the workspace. Enforcing a workspace now and showing an error message.
 
+### 0.2
+* fixed documentation a bit up
+
+### 0.1
 Initial release :)
