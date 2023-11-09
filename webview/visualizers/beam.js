@@ -1,19 +1,16 @@
 let jbeamData = null
 let currentPartName = null
+let beamCache // contains the high level object info
+let selectedBeamIndices = null // arry of selected beam or null for no selection
+
+// buffers for the 3d geometry
+let vertexPositions = []
+let vertexAlphas = []
+let vertexColors = []
 let linesObject
 
-let lineGeometry
-let lineMaterial
-
-let beamCache
-let positions = []
-let alphas = []
-let colors = []
-
-let selectedBeamIndices = null
-
 function updateBeamViz() {
-  positions = []
+  vertexPositions = []
   beamCache = []
   let beamNodesCounter = 0
   for (let partName in jbeamData) {
@@ -34,41 +31,39 @@ function updateBeamViz() {
             beam.nodePos1 = new THREE.Vector3(node1.pos[0], node1.pos[1], node1.pos[2])
             beamCache.push(beam)
             beamNodesCounter+=2
-            positions.push(node1.pos[0])
-            positions.push(node1.pos[1])
-            positions.push(node1.pos[2])
-            positions.push(node2.pos[0])
-            positions.push(node2.pos[1])
-            positions.push(node2.pos[2])
+            vertexPositions.push(node1.pos[0])
+            vertexPositions.push(node1.pos[1])
+            vertexPositions.push(node1.pos[2])
+            vertexPositions.push(node2.pos[0])
+            vertexPositions.push(node2.pos[1])
+            vertexPositions.push(node2.pos[2])
           }
         }
       }
     }
   }
 
-  // beams
-  if(linesObject) {
-    if (linesObject.geometry) linesObject.geometry.dispose();
-    if (linesObject.material) linesObject.material.dispose();
-    scene.remove(linesObject);
-  }
-
   // Fill arrays with data for each node
   for (let i = 0; i < beamNodesCounter; i++) {
-    alphas.push(0.5)
-    colors.push(0, 1, 0)
-  }
-  if(lineGeometry) {
-    lineGeometry.dispose()
+    vertexAlphas.push(0.5)
+    vertexColors.push(0, 1, 0)
   }
 
-  lineGeometry = new THREE.BufferGeometry()
+  let lineGeometry
+  if(linesObject && linesObject.geometry) {
+    lineGeometry = linesObject.geometry
+  } else {
+    lineGeometry = new THREE.BufferGeometry()
+  }
 
-  updateVertexBuffer(lineGeometry, 'position', positions, 3)
-  updateVertexBuffer(lineGeometry, 'alpha', alphas, 1)
-  updateVertexBuffer(lineGeometry, 'color', colors, 3)
+  updateVertexBuffer(lineGeometry, 'position', vertexPositions, 3)
+  updateVertexBuffer(lineGeometry, 'alpha', vertexAlphas, 1)
+  updateVertexBuffer(lineGeometry, 'color', vertexColors, 3)
 
-  if(!lineMaterial) {
+  let lineMaterial
+  if(linesObject && linesObject.material) {
+    lineMaterial = linesObject.material
+  } else {
     lineMaterial = new THREE.ShaderMaterial({
       vertexShader: `
         attribute float alpha;
@@ -96,8 +91,10 @@ function updateBeamViz() {
     })
   }
 
-  linesObject = new THREE.LineSegments(lineGeometry, lineMaterial);
-  scene.add(linesObject);
+  if(!linesObject) {
+    linesObject = new THREE.LineSegments(lineGeometry, lineMaterial);
+    scene.add(linesObject)
+  }
 }
 
 //const beamColorActive = new THREE.Color(0x00ff00);
@@ -119,8 +116,8 @@ function onMouseMove(event) {
 
   raycaster.setFromCamera(mouse, camera)
 
-  const alphasAttribute = lineGeometry.getAttribute('alpha')
-  const colorsAttribute = lineGeometry.getAttribute('color')
+  const alphasAttribute = linesObject.geometry.getAttribute('alpha')
+  const colorsAttribute = linesObject.geometry.getAttribute('color')
   
   let maxDistance = 1 // Maximum distance to affect the alpha
   
@@ -156,8 +153,8 @@ function focusBeams(beamsArrToFocus, triggerEditor = true) {
   selectedBeamIndices = beamsArrToFocus
 
   // color the node properly
-  const alphasAttribute = lineGeometry.getAttribute('alpha');
-  const colorsAttribute = lineGeometry.getAttribute('color');
+  const alphasAttribute = linesObject.geometry.getAttribute('alpha');
+  const colorsAttribute = linesObject.geometry.getAttribute('color');
   for (let i = 0; i < beamCache.length; i++) {
     const beam = beamCache[i]
     if(selectedBeamIndices.includes(i)) {
@@ -242,7 +239,9 @@ export function init() {
 export function dispose() {
   window.removeEventListener('message', onReceiveMessage);
   window.removeEventListener('mousemove', onMouseMove); 
-  if (lineGeometry) lineGeometry.dispose();
-  if (lineMaterial) lineMaterial.dispose();
-  scene.remove(linesObject);
+  if(linesObject) {
+    if (linesObject.geometry) linesObject.geometry.dispose()
+    if (linesObject.geometry) linesObject.geometry.dispose()
+    scene.remove(linesObject)
+  }
 }
