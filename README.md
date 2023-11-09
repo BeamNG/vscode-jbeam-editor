@@ -68,6 +68,10 @@ This is a lightweight visualizer and tool for working with the physics definitio
 
   ![](assets/partFocus.gif)
 
+* triangle visualization
+
+  ![](assets/triDisplay.gif)
+
  
 ## Known Issues
 

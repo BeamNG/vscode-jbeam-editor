@@ -15,6 +15,7 @@ let triObject
 let triGeometry
 let triCache
 let trisMaterial
+let selectedTriIndices = null
 
 
 function updateTriViz() {
@@ -37,6 +38,10 @@ function updateTriViz() {
           triVertices.push(node2.pos3d.x, node2.pos3d.y, node2.pos3d.z);
           triVertices.push(node3.pos3d.x, node3.pos3d.y, node3.pos3d.z);
           triIndices.push(triIndexCounter++, triIndexCounter++, triIndexCounter++);
+
+          triangle.node1 = node1
+          triangle.node2 = node2
+          triangle.node3 = node3
           triCache.push(triangle)
         }
       }
@@ -44,8 +49,8 @@ function updateTriViz() {
   }
 
   for (let i = 0; i < triVertices.length; i++) {
-    vertexColors.push(0.3, 0.3, 0.3);
-    vertexAlphas.push(1)
+    vertexColors.push(0, 0, 0.65);
+    vertexAlphas.push(0.4)
     vertexHighlight.push(0)
   }
 
@@ -132,6 +137,102 @@ function updateTriViz() {
   }
 }
 
+function focusTris(trisArrToFocus) {
+  if (!trisArrToFocus) return
+    
+  let sumX = 0
+  let sumY = 0
+  let sumZ = 0
+  let tcount = 0
+
+  selectedTriIndices = trisArrToFocus
+
+  // color the tri properly
+  const alphasAttribute = triGeometry.getAttribute('alpha')
+  const colorsAttribute = triGeometry.getAttribute('color')
+  const highlightAttribute = triGeometry.getAttribute('highlight')
+  if(alphasAttribute) {
+    for (let i = 0; i < triCache.length; i++) {
+      const tri = triCache[i]
+      if(selectedTriIndices.includes(i)) {
+        alphasAttribute.setX(i*3  , 1)
+        alphasAttribute.setX(i*3+1, 1)
+        alphasAttribute.setX(i*3+2, 1)
+        highlightAttribute.setX(i*3  , 0.01)
+        highlightAttribute.setX(i*3+1, 0.01)
+        highlightAttribute.setX(i*3+2, 0.01)
+        colorsAttribute.setXYZ(i*3  , 1, 0, 1)
+        colorsAttribute.setXYZ(i*3+1, 1, 0, 1)
+        colorsAttribute.setXYZ(i*3+2, 1, 0, 1)
+        sumX += tri.node1.pos3d.x
+        sumX += tri.node2.pos3d.x
+        sumX += tri.node3.pos3d.x
+        sumY += tri.node1.pos3d.y
+        sumY += tri.node2.pos3d.y
+        sumY += tri.node3.pos3d.y
+        sumZ += tri.node1.pos3d.z
+        sumZ += tri.node2.pos3d.z
+        sumZ += tri.node3.pos3d.z
+        tcount+=3
+        continue
+      }
+      alphasAttribute.setX(i*3  , 0.4)
+      alphasAttribute.setX(i*3+1, 0.4)
+      alphasAttribute.setX(i*3+2, 0.4)
+      highlightAttribute.setX(i*3  , 0)
+      highlightAttribute.setX(i*3+1, 0)
+      highlightAttribute.setX(i*3+2, 0)
+      colorsAttribute.setXYZ(i*3  , 0, 0, 0.65)
+      colorsAttribute.setXYZ(i*3+1, 0, 0, 0.65)
+      colorsAttribute.setXYZ(i*3+2, 0, 0, 0.65)
+    }
+    
+    alphasAttribute.needsUpdate = true;
+    colorsAttribute.needsUpdate = true;
+    highlightAttribute.needsUpdate = true;
+  }
+
+  if(selectedTriIndices == []) selectedTriIndices = null
+
+  if(tcount > 0) {
+    let trisCenterPos = new THREE.Vector3(sumX / tcount, sumY / tcount, sumZ / tcount)
+    moveCameraCenter(trisCenterPos)
+  }
+}
+
+function onCursorChangeEditor(message) {
+  if(!triCache) return
+  
+  // figure out what part we are in
+  let partNameFound = null
+  for (let partName in jbeamData || {}) {
+    if (message.range[0] >= jbeamData[partName].__range[0] && message.range[0] <= jbeamData[partName].__range[2]) {
+      partNameFound = partName
+      break
+    }
+  }
+  if(partNameFound !== currentPartName) {
+    currentPartName = partNameFound
+    //console.log(`we are in part ${currentPartName}`)
+    updateTriViz(true)
+  }
+  
+  let trisFound = []
+  // Helper function to check if the cursor is within a given range
+  const cursorInRange = (range) => {
+    // only check the lines for now
+    return range[0] >= message.range[0] && range[0] <= message.range[2]
+  };
+
+  for (let i = 0; i < triCache.length; i++) {
+    if (cursorInRange(triCache[i].__range)) {
+      trisFound.push(i)
+    }
+  }
+
+  focusTris(trisFound)
+}
+
 function onReceiveMessage(event) {
   const message = event.data;
   switch (message.command) {
@@ -140,6 +241,9 @@ function onReceiveMessage(event) {
       uri = message.uri
       updateTriViz()
       break;
+    case 'cursorChanged':
+      onCursorChangeEditor(message)
+      break      
   }
 }
 
