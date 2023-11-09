@@ -280,7 +280,6 @@ function onCursorChangeEditor(message) {
   }
   if(partNameFound !== currentPartName) {
     currentPartName = partNameFound
-    //console.log(`we are in part ${currentPartName}`)
     if(wasLoaded) {
       startLoadingMeshes()
     }

@@ -104,7 +104,7 @@ function onCursorChangeEditor(message) {
   }
   if(partNameFound !== currentPartName) {
     currentPartName = partNameFound
-    //console.log(`we are in part ${currentPartName}`)
+    selectedNodeIndices = null
     updateNodeViz(true)
   }
   
@@ -281,9 +281,10 @@ function updateNodeViz(moveCamera) {
   if(pointsObject) {
     scene.remove(pointsObject);
   }
-  if(!geometryNodes) {
-    geometryNodes = new THREE.BufferGeometry()
+  if(geometryNodes) {
+    geometryNodes.dispose()
   }
+  geometryNodes = new THREE.BufferGeometry()
   
   const positions = geometryNodes.getAttribute('position');
   if(!positions) {
@@ -447,12 +448,13 @@ function onMouseMove(event) {
 
 
 function onReceiveMessage(event) {
-  //console.log(">>> onReceiveMessage >>>", event)
   const message = event.data;
   switch (message.command) {
     case 'jbeamData':
       jbeamData = message.data
       uri = message.uri
+      selectedNodeIndices = null
+      currentPartName = null
       updateNodeViz(!message.updatedOnly)
       break;
     case 'cursorChanged':

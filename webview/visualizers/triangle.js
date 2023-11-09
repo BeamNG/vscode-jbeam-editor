@@ -213,7 +213,6 @@ function onCursorChangeEditor(message) {
   }
   if(partNameFound !== currentPartName) {
     currentPartName = partNameFound
-    //console.log(`we are in part ${currentPartName}`)
     updateTriViz(true)
   }
   
@@ -239,6 +238,8 @@ function onReceiveMessage(event) {
     case 'jbeamData':
       jbeamData = message.data
       uri = message.uri
+      currentPartName = null
+      selectedTriIndices = null
       updateTriViz()
       break;
     case 'cursorChanged':

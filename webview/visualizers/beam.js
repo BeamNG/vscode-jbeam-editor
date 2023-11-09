@@ -57,9 +57,11 @@ function updateBeamViz() {
     alphas.push(0.5)
     colors.push(0, 1, 0)
   }
-  if(!lineGeometry) {
-    lineGeometry = new THREE.BufferGeometry()
+  if(lineGeometry) {
+    lineGeometry.dispose()
   }
+
+  lineGeometry = new THREE.BufferGeometry()
 
   let positionsBuffer = lineGeometry.getAttribute('position')
   if(positionsBuffer) {
@@ -253,6 +255,8 @@ function onReceiveMessage(event) {
   switch (message.command) {
     case 'jbeamData':
       jbeamData = message.data
+      selectedBeamIndices = null
+      currentPartName = null
       updateBeamViz()
       break;
     case 'cursorChanged':
