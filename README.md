@@ -97,12 +97,7 @@ This is a lightweight visualizer and tool for working with the physics definitio
 
 ## Requirements
 
-None. The parser, etc is standalone from BeamNG.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
+None
 
 ## Troubleshooting
 
