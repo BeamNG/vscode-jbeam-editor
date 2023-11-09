@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const sjsonParser = require('./sjsonParser');
 const tableSchema = require('./tableSchema');
+const utilsExt = require('./utilsExt');
 
 let webPanel
 let meshCache = {}
@@ -205,7 +206,10 @@ function show3DSceneCommand() {
     const uri = doc.uri.toString()
     try {
       let parsedData = sjsonParser.decodeSJSON(text);
-      //console.log("PARSED:", parsedData);
+      if(!parsedData) {
+        console.error("Could not parse SJSON!")
+        return
+      }
       let [tableInterpretedData, diagnostics] = tableSchema.processAllParts(parsedData)
 
       // Do something with the parsed data, like show it in an information message
@@ -258,20 +262,6 @@ function show3DSceneCommand() {
 function activate(context) {
   extensionContext = context
   extensionContext.subscriptions.push(vscode.commands.registerCommand('jbeam-editor.show3DScene', show3DSceneCommand));
-
-  vscode.window.onDidChangeTextEditorSelection(event => {
-    if(!webPanel) return
-    if (event.textEditor === vscode.window.activeTextEditor) {
-      let line = event.selections[0].start.line;
-      let text = event.textEditor.document.lineAt(line).text;
-      // Send this text to your webview
-
-      webPanel.webview.postMessage({
-        command: 'update',
-        text: text
-      });
-    }
-  });
 }
 
 module.exports = {

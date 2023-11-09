@@ -1,4 +1,5 @@
 let jbeamData = null
+let currentPartName = null
 let linesObject
 
 let lineGeometry
@@ -10,13 +11,12 @@ let colors = [];
 
 let selectedBeamIndices = null
 
-function onReceiveData(message) {
-  jbeamData = message.data
-  
+function updateBeamViz() {
   positions = []
   beamCache = []
   let beamNodesCounter = 0
   for (let partName in jbeamData) {
+    if(currentPartName && partName !== currentPartName) continue
     let part = jbeamData[partName]
 
     if(part.hasOwnProperty('beams')) {
@@ -116,9 +116,13 @@ function onReceiveData(message) {
     //side: THREE.DoubleSide
   });
 
-
   linesObject = new THREE.LineSegments(lineGeometry, lineMaterial);
   scene.add(linesObject);
+}
+
+function onReceiveData(message) {
+  jbeamData = message.data
+  updateBeamViz()
 }
 
 //const beamColorActive = new THREE.Color(0x00ff00);
@@ -231,8 +235,20 @@ function focusBeams(beamsArrToFocus, triggerEditor = true) {
 
 function onCursorChangeEditor(message) {
   if(!beamCache) return
-  let beamsFound = []
+
+  // figure out what part we are in
+  let partNameFound = null
+  for (let partName in jbeamData || {}) {
+    if (message.range[0] >= jbeamData[partName].__range[0] && message.range[0] <= jbeamData[partName].__range[2]) {
+      partNameFound = partName
+      break
+    }
+  }
+  currentPartName = partNameFound
+
+  updateBeamViz()
   
+  let beamsFound = []
   // Helper function to check if the cursor is within a given range
   const cursorInRange = (range) => {
     // only check the lines for now

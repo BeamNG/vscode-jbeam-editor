@@ -1,4 +1,5 @@
 let jbeamData = null
+let currentPartName = null
 let uri = null
 
 let pointsObject
@@ -25,6 +26,7 @@ let nodesCenter
 let nodeCounter
 
 let wasWindowOutOfFocus = false
+const excludedKeys = ['__range', '__isarray', '__isNamed'];
 
 function moveCameraCenter(pos) {
   const offset = new THREE.Vector3().subVectors(pos, orbitControls.target);
@@ -105,8 +107,21 @@ function focusNodes(nodesArrToFocus, triggerEditor = true) {
 
 function onCursorChangeEditor(message) {
   if(!pointsCache) return
-  let nodesFound = []
   
+  // figure out what part we are in
+  let partNameFound = null
+  for (let partName in jbeamData || {}) {
+    if (message.range[0] >= jbeamData[partName].__range[0] && message.range[0] <= jbeamData[partName].__range[2]) {
+      partNameFound = partName
+      break
+    }
+  }
+  currentPartName = partNameFound
+  //console.log(`we are in part ${currentPartName}`)
+
+  updateNodeViz(true)
+  
+  let nodesFound = []
   // Helper function to check if the cursor is within a given range
   const cursorInRange = (range) => {
     // only check the lines for now
@@ -126,15 +141,36 @@ function redrawGroundPlane() {
   // create a fancy ground plane
   const defaultfont = 'bold 60px "Roboto Mono", monospace'
 
-  const freeBox = {x: Math.round(nodesMin.x) - 1, y: 0, z: Math.round(nodesMin.z) - 1}
-  const freeBoxText = {x: Math.round(nodesMin.x), y: 0, z: Math.round(nodesMin.z) - 1}
-  const items = [
-    //{ type: 'arrow', start: new THREE.Vector3(0, 0, 0), end: new THREE.Vector3(1, 1, 1), color: '#999999', width: 30, label: 'Hello world' },
-    { type: 'arrow', start: new THREE.Vector3(freeBox.x + 0.04, 0, freeBox.z + 0.04), end: new THREE.Vector3(freeBox.x + 0.96, 0, freeBox.z + 0.04), color: '#444444', width: 20, label: '1m', font: defaultfont },
-    { type: 'arrow', start: new THREE.Vector3(freeBox.x + 0.04, 0, freeBox.z + 0.96), end: new THREE.Vector3(freeBox.x + 0.04, 0, freeBox.z + 0.04), color: '#444444', width: 20, label: '1m', font: defaultfont },
-    { type: 'text', position: new THREE.Vector3(0, 0, 0), font: 'bold 50px "Roboto Mono", monospace', color: '#444444', text: 'Origin', textAlign: 'left', textBaseline: 'bottom' },
-    
+  let items = [
+    { type: 'text', position: new THREE.Vector3(0, 0, 0), font: 'bold 50px "Roboto Mono", monospace', color: '#444444', text: '0,0,0', textAlign: 'left', textBaseline: 'bottom' },
   ]
+  
+  let freeBox = {x: 0, y: 0, z: 0}
+  let freeBoxText = {x: 0, y: 0, z: 0}
+  if(nodesMin && nodesMax) {
+    // this positions the legend not below the car
+    freeBox = {x: Math.round(nodesMin.x) - 1, y: 0, z: Math.round(nodesMin.z) - 1}
+    freeBoxText = {x: Math.round(nodesMin.x), y: 0, z: Math.round(nodesMin.z) - 1}
+    //{ type: 'arrow', start: new THREE.Vector3(0, 0, 0), end: new THREE.Vector3(1, 1, 1), color: '#999999', width: 30, label: 'Hello world' },
+  
+    items.push({ type: 'arrow', start: new THREE.Vector3(freeBox.x + 0.04, 0, freeBox.z + 0.04), end: new THREE.Vector3(freeBox.x + 0.96, 0, freeBox.z + 0.04), color: '#444444', width: 20, label: '1m', font: defaultfont })
+    items.push({ type: 'arrow', start: new THREE.Vector3(freeBox.x + 0.04, 0, freeBox.z + 0.96), end: new THREE.Vector3(freeBox.x + 0.04, 0, freeBox.z + 0.04), color: '#444444', width: 20, label: '1m', font: defaultfont })
+
+    // the bounds of the nodes
+    let leftStart = new THREE.Vector3(nodesMin.x, nodesMin.y, nodesMax.z)
+    let leftEnd = new THREE.Vector3(nodesMin.x, nodesMin.y, nodesMin.z)
+    let leftLength = Math.round(leftStart.distanceTo(leftEnd) * 10) / 10
+    let labelSize = Math.max(60, leftLength * 80)
+    if(leftLength > 0.1) {
+      items.push({ type: 'arrow', start: leftStart, end: leftEnd, color: 'rgba(0.3, 0.3, 0.3, 0.3)', width: labelSize / 10, label: leftLength + 'm', font: `bold ${labelSize}px "Roboto Mono", monospace` })
+    }
+    let topStart = new THREE.Vector3(nodesMin.x, nodesMin.y, nodesMin.z)
+    let topEnd = new THREE.Vector3(nodesMax.x, nodesMin.y, nodesMin.z)
+    let topLength = Math.round(topStart.distanceTo(topEnd) * 10) / 10
+    if(topLength > 0.1) {
+      items.push({ type: 'arrow', start: topStart, end: topEnd, color: 'rgba(0.3, 0.3, 0.3, 0.3)', width: labelSize / 10, label: topLength + 'm', font: `bold ${labelSize}px "Roboto Mono", monospace`})
+    }
+  }
 
   if(selectedNodeIndices) {
     if(selectedNodeIndices.length == 1) {
@@ -157,28 +193,31 @@ function redrawGroundPlane() {
     }
   }
 
-  // the bounds of the nodes
-  let leftStart = new THREE.Vector3(nodesMin.x, nodesMin.y, nodesMax.z)
-  let leftEnd = new THREE.Vector3(nodesMin.x, nodesMin.y, nodesMin.z)
-  let leftLength = Math.round(leftStart.distanceTo(leftEnd) * 10) / 10
-  let labelSize = Math.max(60, leftLength * 80)
-  items.push({ type: 'arrow', start: leftStart, end: leftEnd, color: 'rgba(0.3, 0.3, 0.3, 0.3)', width: labelSize / 10, label: leftLength + 'm', font: `bold ${labelSize}px "Roboto Mono", monospace` })
-  let topStart = new THREE.Vector3(nodesMin.x, nodesMin.y, nodesMin.z)
-  let topEnd = new THREE.Vector3(nodesMax.x, nodesMin.y, nodesMin.z)
-  let topLength = Math.round(topStart.distanceTo(topEnd) * 10) / 10
-  items.push({ type: 'arrow', start: topStart, end: topEnd, color: 'rgba(0.3, 0.3, 0.3, 0.3)', width: labelSize / 10, label: topLength + 'm', font: `bold ${labelSize}px "Roboto Mono", monospace`})
-
-  // the title of the file: TODO: improve
-  for (let partName in jbeamData) {
-    if(partName) {
-      let part = jbeamData[partName]
+  if(jbeamData) {
+    if(currentPartName) {
+      // one part in focus
+      let part = jbeamData[currentPartName]
       if(part) {
-        let nodeCount = 
         // position the text above the min/max box
+        let txt = currentPartName
+        if(part.information && part.information.name) {
+          txt = `${part.information.name} (${currentPartName})`
+        }
+        items.push({ type: 'text', position: new THREE.Vector3(freeBoxText.x, 0, freeBoxText.z), font: 'bold 120px "Roboto Mono", monospace', color: '#aaaaaa', text: txt, textAlign: 'left', textBaseline: 'top'})
+        txt = `${nodeCounter} nodes`
+        if(nodeCounter == 1) txt = `${nodeCounter} node`
+        else if(nodeCounter == 0) txt = `no nodes :(`
 
-        items.push({ type: 'text', position: new THREE.Vector3(freeBoxText.x, 0, freeBoxText.z), font: 'bold 120px "Roboto Mono", monospace', color: '#aaaaaa', text: partName, textAlign: 'left', textBaseline: 'top'})
-        items.push({ type: 'text', position: new THREE.Vector3(freeBoxText.x, 0, freeBoxText.z + 0.2), font: 'bold 60px "Roboto Mono", monospace', color: '#aaaaaa', text: `${nodeCounter} nodes`, textAlign: 'left', textBaseline: 'top'})
-        break
+        items.push({ type: 'text', position: new THREE.Vector3(freeBoxText.x, 0, freeBoxText.z + 0.2), font: 'bold 60px "Roboto Mono", monospace', color: '#aaaaaa', text: txt, textAlign: 'left', textBaseline: 'top'})
+      }
+    } else {
+      // everything being drawn
+      let txt = Object.keys(jbeamData).filter(key => !excludedKeys.includes(key)).length + ' different parts:'
+      items.push({ type: 'text', position: new THREE.Vector3(freeBoxText.x, 0, freeBoxText.z), font: 'bold 120px "Roboto Mono", monospace', color: '#aaaaaa', text: txt, textAlign: 'left', textBaseline: 'top'})
+      let rowCounter = 0
+      for (let partName in jbeamData) {
+        items.push({ type: 'text', position: new THREE.Vector3(freeBoxText.x + 0.1, 0, freeBoxText.z + 0.2 + rowCounter * 0.1), font: 'bold 60px "Roboto Mono", monospace', color: '#aaaaaa', text: partName, textAlign: 'left', textBaseline: 'top'})
+        rowCounter++
       }
     }
   }
@@ -186,9 +225,7 @@ function redrawGroundPlane() {
   updateProjectionPlane(scene, items);
 }
 
-export function onReceiveData(message) {
-  jbeamData = message.data
-  uri = message.uri
+function updateNodeViz(moveCamera) {
   nodeCounter = 0
   let nodeVertices = []
   pointsCache = []
@@ -197,6 +234,7 @@ export function onReceiveData(message) {
   nodesMax = {x: -Infinity, y: -Infinity, z: -Infinity}  
   nodesCenter = null
   for (let partName in jbeamData) {
+    if(currentPartName && partName !== currentPartName) continue
     let part = jbeamData[partName]
     if(part.hasOwnProperty('nodes')) {
       for (let nodeId in part.nodes) {
@@ -235,9 +273,15 @@ export function onReceiveData(message) {
       }
     }
   }
-  if(message.updatedOnly === false) {
+  if(nodeCounter == 0) {
+    // do not leak Inf everywhere ...
+    nodesMin = null
+    nodesMax = null
+  }  
+  if(moveCamera) {
     selectedNodeIndices = null
     for (let partName in jbeamData) {
+      if(currentPartName && partName !== currentPartName) continue
       let part = jbeamData[partName]
       if(part.__centerPosition) {
         moveCameraCenter(part.__centerPosition)
@@ -320,10 +364,13 @@ export function onReceiveData(message) {
   pointsObject = new THREE.Points(geometryNodes, nodesMaterial);
   scene.add(pointsObject);
 
-
-
-
   redrawGroundPlane()
+}
+
+export function onReceiveData(message) {
+  jbeamData = message.data
+  uri = message.uri
+  updateNodeViz(!message.updatedOnly)
 }
 
 function getColorFromDistance(distance, maxDistance) {
