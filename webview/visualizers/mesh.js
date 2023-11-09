@@ -136,7 +136,8 @@ function finalizeMeshes() {
                 color: 0x808080, // Grey color
                 metalness: 0.5,
                 roughness: 0.5,
-                transparent: true
+                transparent: true,
+                //depthWrite: false, // TODO: FIX transparency between objects
               })
       
               // Create a wireframe geometry from the mesh's geometry

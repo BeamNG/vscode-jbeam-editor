@@ -330,4 +330,13 @@ function updateVertexBuffer(geometry, attributeName, items, itemSize) {
   }
 }
 
+function getColorFromDistance(distance, maxDistance, colorHexA, colorHexB) {
+  let clampedDistance = Math.min(distance, maxDistance);
+  let normalizedDistance = clampedDistance / maxDistance;
+  let color = new THREE.Color(colorHexB);
+  color.lerp(new THREE.Color(colorHexA), normalizedDistance); 
+  return color;
+}
+
+// special keys that should be ignored in the data
 const excludedMagicKeys = ['__range', '__isarray', '__isNamed'];

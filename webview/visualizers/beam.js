@@ -7,7 +7,7 @@ let selectedBeamIndices = null // arry of selected beam or null for no selection
 let vertexPositions = []
 let vertexAlphas = []
 let vertexColors = []
-let linesObject
+let linesObject // the scene object
 
 function updateBeamViz() {
   vertexPositions = []
@@ -29,6 +29,7 @@ function updateBeamViz() {
       
           if (node1 && node2) {
             beam.nodePos1 = new THREE.Vector3(node1.pos[0], node1.pos[1], node1.pos[2])
+            beam.nodePos2 = new THREE.Vector3(node2.pos[0], node2.pos[1], node2.pos[2])
             beamCache.push(beam)
             beamNodesCounter+=2
             vertexPositions.push(node1.pos[0])
@@ -98,18 +99,8 @@ function updateBeamViz() {
   }
 }
 
-//const beamColorActive = new THREE.Color(0x00ff00);
-const beamColorInative = new THREE.Color(0x88dd88);
-
-function getColorFromDistance(distance, maxDistance) {
-  let clampedDistance = Math.min(distance, maxDistance);
-  let normalizedDistance = clampedDistance / maxDistance;
-  let color = new THREE.Color(0x00ff00);
-  color.lerp(beamColorInative, normalizedDistance); 
-  return color;
-}
-
 function onMouseMove(event) {
+  if(!linesObject || !linesObject.geometry) return
   const rect = renderer.domElement.getBoundingClientRect()
   mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
   mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
@@ -124,7 +115,7 @@ function onMouseMove(event) {
   
   for (let i = 0; i < beamCache.length; i++) {
     if(selectedBeamIndices && selectedBeamIndices.includes(i)) continue
-    const distance = raycaster.ray.distanceToPoint(beamCache[i].nodePos1);
+    const distance = Math.min(raycaster.ray.distanceToPoint(beamCache[i].nodePos1), raycaster.ray.distanceToPoint(beamCache[i].nodePos2))
 
     // Normalize the distance based on a predefined maximum distance
     let normalizedDistance = distance / maxDistance
@@ -134,7 +125,7 @@ function onMouseMove(event) {
     alphasAttribute.setX(i*2  , 1.0 - (normalizedDistance * 0.6))
     alphasAttribute.setX(i*2+1, 1.0 - (normalizedDistance * 0.6))
 
-    let color = getColorFromDistance(distance, maxDistance)
+    let color = getColorFromDistance(distance, maxDistance, 0x88dd88, 0x00ff00)
     colorsAttribute.setXYZ(i*2  , color.r, color.g, color.b)
     colorsAttribute.setXYZ(i*2+1, color.r, color.g, color.b)
   }
@@ -143,7 +134,7 @@ function onMouseMove(event) {
 }
 
 function focusBeams(beamsArrToFocus, triggerEditor = true) {
-  if (!beamsArrToFocus) return
+  if (!beamsArrToFocus || !linesObject || !linesObject.geometry) return
     
   let sumX = 0
   let sumY = 0
@@ -180,7 +171,7 @@ function focusBeams(beamsArrToFocus, triggerEditor = true) {
   alphasAttribute.needsUpdate = true;
   colorsAttribute.needsUpdate = true;
 
-  if(selectedBeamIndices == []) selectedBeamIndices = null
+  if(selectedBeamIndices.length === 0) selectedBeamIndices = null
   // TODO:
   //if(triggerEditor) {
   //  highlightNodeinTextEditor()

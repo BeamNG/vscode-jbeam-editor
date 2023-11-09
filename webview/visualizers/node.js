@@ -1,23 +1,22 @@
 let jbeamData = null
 let currentPartName = null
 let uri = null
+let pointsCache // the high level points in the cache
+let selectedNodeIndices = null // array of selected nodes
 
-let pointsObject
-let pointsCache
-
-// array of selected nodes
-let selectedNodeIndices = null
-
+// vertex buffers
 let vertexAlphas = []
 let vertexColors = []
 let vertexSizes = []
+let pointsObject // the scene object
 
+// computed data for display
 let nodesMin
 let nodesMax
 let nodesCenter
 let nodeCounter
 
-let wasWindowOutOfFocus = false
+let wasWindowOutOfFocus = false // to track if the user left the view
 
 function highlightNodeinTextEditor() {
   if(!selectedNodeIndices || selectedNodeIndices.length !== 1) return
@@ -33,7 +32,7 @@ function highlightNodeinTextEditor() {
 }
 
 function focusNodes(nodesArrToFocus, triggerEditor = true) {
-  if (!nodesArrToFocus) return
+  if (!nodesArrToFocus || !pointsObject) return
     
   let sumX = 0
   let sumY = 0
@@ -71,7 +70,7 @@ function focusNodes(nodesArrToFocus, triggerEditor = true) {
     highlightNodeinTextEditor()
   }
 
-  if(selectedNodeIndices == []) selectedNodeIndices = null
+  if(selectedNodeIndices.length == 0) selectedNodeIndices = null
 
   if(ncount > 0) {
     let nodesCenterPos = new THREE.Vector3(sumX / ncount, sumY / ncount, sumZ / ncount)
@@ -143,8 +142,6 @@ function updateNodeViz(moveCamera) {
           nodeCounter++
           node.pos3d = new THREE.Vector3(x, y, z)
           pointsCache.push(node)
-        } else {
-          //console.log("ERR", node)
         }
       }
 
@@ -238,15 +235,6 @@ function updateNodeViz(moveCamera) {
   ctx.visualizersGroundplane.redrawGroundPlane(nodesMin, nodesMax, selectedNodeIndices, pointsCache, jbeamData, currentPartName, nodeCounter)
 }
 
-function getColorFromDistance(distance, maxDistance) {
-  let clampedDistance = Math.min(distance, maxDistance);
-  let normalizedDistance = clampedDistance / maxDistance;
-  let color = new THREE.Color(0xFFA500);
-  color.lerp(new THREE.Color(0xddA500), normalizedDistance); 
-  return color;
-}
-
-
 function onMouseDown(event) {
   const rect = renderer.domElement.getBoundingClientRect();
   mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -319,7 +307,7 @@ function onMouseMove(event) {
     alphasAttribute.setX(i, 1.0 - (normalizedDistance * alphaDecay))
     sizesAttribute.setX(i, (1.0 - (normalizedDistance * 0.7)) * 0.05)
 
-    let color = getColorFromDistance(distance, maxDistance);
+    let color = getColorFromDistance(distance, maxDistance, 0xFFA500, 0xddA500)
     colorsAttribute.setXYZ(i, color.r, color.g, color.b);
   }
   alphasAttribute.needsUpdate = true;

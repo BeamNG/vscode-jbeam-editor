@@ -157,7 +157,7 @@ export function init() {
     scene.add(floor);
   }
 
-  createDome(scene)
+  //createDome(scene)
   createGrid(scene)
   gizmoCreate()
   ctx.ui.init()
