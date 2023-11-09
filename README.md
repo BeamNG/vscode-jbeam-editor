@@ -1,4 +1,4 @@
-# BeamNG JBeam editor
+# BeamNG JBeam Editor
 
 This is a lightweight visualizer and tool for working with the physics definition files of BeamNG (called jbeam).
 
