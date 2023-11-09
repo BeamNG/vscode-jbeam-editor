@@ -68,8 +68,7 @@ This is a lightweight visualizer and tool for working with the physics definitio
  
 ## Known Issues
 
-* All parts are displayed in a huge soup
-* mesh functions are a bit unstable still
+* Mesh functions are a bit unstable still. Especially if you change tabs, etc while it loads the data.
 
 ## Wishlist
 
@@ -91,7 +90,7 @@ This is a lightweight visualizer and tool for working with the physics definitio
 
 ## Requirements
 
-Have BeamNG installed
+None. The parser, etc is standalone from BeamNG.
 
 ## Known Issues
 
