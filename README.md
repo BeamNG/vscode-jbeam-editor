@@ -124,6 +124,12 @@ If all worked, it should show up like this now:
 
 ## Release Notes
 
+### 0.2.3
+* Improved readme a bit
+
+### 0.2.2
+* Remove icon theme to not overwrite any user themes
+
 ### 0.2.1
 * Fixed Mesh loading crashing when the opened file is outside the workspace. Enforcing a workspace now and showing an error message.
 
