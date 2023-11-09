@@ -60,25 +60,28 @@ This is the README for your extension "jbeam-editor". After writing up a brief d
   ![](assets/groundHelper1.png)
 
   ![](assets/groundHelper2.gif)
+
+* visualize current part or all parts
+
+  ![](assets/partFocus.gif)
+
  
 ## Known Issues
 
 * All parts are displayed in a huge soup
 * mesh functions are a bit unstable still
 
-## WIP
+## Wishlist
 
-* part selection: which part is displayed
 * implementation of props
 * picking flexbodies in 3d space
-* improved ui info windows: click on elements and jump to the range in the text editor
-* working slot system: part chain loading support
-* part config (PC) loading
+* working slot system: part chain loading support, part config (PC) loading
 * better support for sections: slidenodes, rails, triangles, wheels, refNodes, camera*, torsionbars
 * powertrain viz
 * trigger viz
 * variables debug UI
 * specific help for sections using proper error checking and links to documentation
+
 * Robustness and future-proofing: Add exception handling and error mitigation to the code so it will continue working in the future
 * zip mod loading?
 * convert all JS files to proper JS modules / remove hacks
