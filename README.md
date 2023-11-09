@@ -121,6 +121,7 @@ If the file association does not work out of the box, pelase configure your setu
    ![](assets/fileformatHelp3.png)
 
 If all worked, it should show up like this now:
+
 ![](assets/fileformatHelp4.png)
 
 ## Release Notes
