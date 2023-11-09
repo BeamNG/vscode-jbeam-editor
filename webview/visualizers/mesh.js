@@ -28,6 +28,8 @@ function onReceiveData(message) {
   uri = message.uri
   meshFolderCache = message.meshCache
   meshLoadingEnabled = message.meshLoadingEnabled
+  selectedMeshIndices = null
+  currentPartName = null
   //console.log("meshVisuals.onReceiveData", message);
 
   // trigger loading dae
@@ -35,9 +37,8 @@ function onReceiveData(message) {
   if(!wasLoaded) {
     meshLibraryFull = [] // clear the library on file change
   }
-  if(wasLoaded) {
-    startLoadingMeshes()
-  }
+
+  startLoadingMeshes()
 }
 
 function tryLoad3dMesh(meshName, onDone) {
