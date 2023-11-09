@@ -1,4 +1,5 @@
 let jbeamData = null
+let currentPartName = null
 let uri = null
 let daeFindfilesDone = false
 let wasLoaded = false
@@ -7,8 +8,7 @@ let wasLoaded = false
 
 let selectedMeshIndices = null
 
-export function load3DMeshes() {
-  loadedMeshes = []
+export function startLoadingMeshes() {
   daeFindfilesDone = false
   daeLoadingCounter = 0
   daeLoadingCounterFull = 0
@@ -31,16 +31,11 @@ function onReceiveData(message) {
 
   // trigger loading dae
 
-  for (let key in loadedMeshes) {
-    let colladaNode = loadedMeshes[key];
-    scene.remove(colladaNode);
-  }
-
   if(!wasLoaded) {
     meshLibraryFull = [] // clear the library on file change
   }
   if(wasLoaded) {
-    load3DMeshes()
+    startLoadingMeshes()
   }
 }
 
@@ -112,97 +107,103 @@ function finalizeMeshes() {
 
   //console.log('jbeamData = ', jbeamData)
 
-  if(true) {
-    for (let partName in jbeamData) {
-      let part = jbeamData[partName]
+  // unload everything first
+  for (let key in loadedMeshes) {
+    scene.remove(loadedMeshes[key]);
+  }
+  loadedMeshes = []
 
-      if(part.hasOwnProperty('flexbodies')) {
-        for (let flexBodyId in part.flexbodies) {
-          let flexbody = part.flexbodies[flexBodyId]
-          //console.log('Fexbody: ', flexbody)
 
-          tryLoad3dMesh(flexbody.mesh, (colladaNode) => {
-            if(!colladaNode) {
-              console.error(`Flexbody mesh not found: ${flexbody.mesh}`)
-              return
-            }
-            colladaNode.traverse((mesh) => {
-              if(mesh && mesh instanceof THREE.Mesh) {
-                mesh.material = new THREE.MeshStandardMaterial({
-                  color: 0x808080, // Grey color
-                  metalness: 0.5,
-                  roughness: 0.5,
-                  transparent: true
-                })
-        
-                // Create a wireframe geometry from the mesh's geometry
-                const wireframe = colladaNode.children.find(child => child instanceof THREE.LineSegments)
-                if(!wireframe) {
-                  const wireframeGeometry = new THREE.WireframeGeometry(mesh.geometry);
-                  const wireframe = new THREE.LineSegments(wireframeGeometry, new THREE.LineBasicMaterial({
-                    color: 0xaaaaaa,
-                    linewidth: 1,
-                    transparent: true
-                  }));
-                  mesh.add(wireframe);
-                }
-              }
-              colladaNode.rotation.x = -Math.PI / 2;
-              colladaNode.__range = flexbody.__range
-              colladaNode.traverse((n) => {
-                n.castShadow = true
+  for (let partName in jbeamData) {
+    if(currentPartName && partName !== currentPartName) continue
+    let part = jbeamData[partName]
+
+    if(part.hasOwnProperty('flexbodies')) {
+      for (let flexBodyId in part.flexbodies) {
+        let flexbody = part.flexbodies[flexBodyId]
+        //console.log('Fexbody: ', flexbody)
+
+        tryLoad3dMesh(flexbody.mesh, (colladaNode) => {
+          if(!colladaNode) {
+            console.error(`Flexbody mesh not found: ${flexbody.mesh}`)
+            return
+          }
+          colladaNode.traverse((mesh) => {
+            if(mesh && mesh instanceof THREE.Mesh) {
+              mesh.material = new THREE.MeshStandardMaterial({
+                color: 0x808080, // Grey color
+                metalness: 0.5,
+                roughness: 0.5,
+                transparent: true
               })
-              scene.add(colladaNode)
-              loadedMeshes.push(colladaNode)
+      
+              // Create a wireframe geometry from the mesh's geometry
+              const wireframe = colladaNode.children.find(child => child instanceof THREE.LineSegments)
+              if(!wireframe) {
+                const wireframeGeometry = new THREE.WireframeGeometry(mesh.geometry);
+                const wireframe = new THREE.LineSegments(wireframeGeometry, new THREE.LineBasicMaterial({
+                  color: 0xaaaaaa,
+                  linewidth: 1,
+                  transparent: true
+                }));
+                mesh.add(wireframe);
+              }
+            }
+            colladaNode.rotation.x = -Math.PI / 2;
+            colladaNode.__range = flexbody.__range
+            colladaNode.traverse((n) => {
+              n.castShadow = true
             })
-            //console.log(`Added Flexbody mesh to scene: ${flexbody.mesh}`)
+            scene.add(colladaNode)
+            loadedMeshes.push(colladaNode)
           })
-        }
+          //console.log(`Added Flexbody mesh to scene: ${flexbody.mesh}`)
+        })
       }
+    }
 
-      if(part.hasOwnProperty('props')) {
-        for (let propId in part.props) {
-          let prop = part.props[propId]
-          //console.log('Prop: ', flexbody)
-          if(prop.mesh == 'SPOTLIGHT') continue
+    if(part.hasOwnProperty('props')) {
+      for (let propId in part.props) {
+        let prop = part.props[propId]
+        //console.log('Prop: ', flexbody)
+        if(prop.mesh == 'SPOTLIGHT') continue
 
-          tryLoad3dMesh(prop.mesh, (colladaNode) => {
-            if(!colladaNode) {
-              console.error(`Flexbody mesh not found: ${flexbody.mesh}`)
-              return
-            }
-            colladaNode.traverse((mesh) => {
-              if(mesh && mesh instanceof THREE.Mesh) {
-                mesh.material = new THREE.MeshStandardMaterial({
-                  color: 0x808080, // Grey color
-                  metalness: 0.5,
-                  roughness: 0.5,
-                  transparent: true
-                })
-        
-                // Create a wireframe geometry from the mesh's geometry
-                const wireframe = colladaNode.children.find(child => child instanceof THREE.LineSegments)
-                if(!wireframe) {
-                  const wireframeGeometry = new THREE.WireframeGeometry(mesh.geometry);
-                  const wireframe = new THREE.LineSegments(wireframeGeometry, new THREE.LineBasicMaterial({
-                    color: 0xaaaaaa,
-                    linewidth: 1,
-                    transparent: true
-                  }));
-                  mesh.add(wireframe);
-                }        
-              }
-              colladaNode.rotation.x = -Math.PI / 2;
-              colladaNode.__range = prop.__range
-              colladaNode.traverse((n) => {
-                n.castShadow = true
+        tryLoad3dMesh(prop.mesh, (colladaNode) => {
+          if(!colladaNode) {
+            console.error(`Flexbody mesh not found: ${flexbody.mesh}`)
+            return
+          }
+          colladaNode.traverse((mesh) => {
+            if(mesh && mesh instanceof THREE.Mesh) {
+              mesh.material = new THREE.MeshStandardMaterial({
+                color: 0x808080, // Grey color
+                metalness: 0.5,
+                roughness: 0.5,
+                transparent: true
               })
-              scene.add(colladaNode)
-              loadedMeshes.push(colladaNode)
+      
+              // Create a wireframe geometry from the mesh's geometry
+              const wireframe = colladaNode.children.find(child => child instanceof THREE.LineSegments)
+              if(!wireframe) {
+                const wireframeGeometry = new THREE.WireframeGeometry(mesh.geometry);
+                const wireframe = new THREE.LineSegments(wireframeGeometry, new THREE.LineBasicMaterial({
+                  color: 0xaaaaaa,
+                  linewidth: 1,
+                  transparent: true
+                }));
+                mesh.add(wireframe);
+              }        
+            }
+            colladaNode.rotation.x = -Math.PI / 2;
+            colladaNode.__range = prop.__range
+            colladaNode.traverse((n) => {
+              n.castShadow = true
             })
-            //console.log(`Added Flexbody mesh to scene: ${flexbody.mesh}`)
+            scene.add(colladaNode)
+            loadedMeshes.push(colladaNode)
           })
-        }
+          //console.log(`Added Flexbody mesh to scene: ${flexbody.mesh}`)
+        })
       }
     }
   }
@@ -267,10 +268,25 @@ function focusMeshes(meshesArrToFocus) {
 
 function onCursorChangeEditor(message) {
   if(!loadedMeshes) return
-  let meshesFound = []
 
+  // figure out what part we are in
+  let partNameFound = null
+  for (let partName in jbeamData || {}) {
+    if (message.range[0] >= jbeamData[partName].__range[0] && message.range[0] <= jbeamData[partName].__range[2]) {
+      partNameFound = partName
+      break
+    }
+  }
+  if(partNameFound !== currentPartName) {
+    currentPartName = partNameFound
+    //console.log(`we are in part ${currentPartName}`)
+    if(wasLoaded) {
+      startLoadingMeshes()
+    }
+  }
+
+  let meshesFound = []
   //console.log(">meshes.onCursorChangeEditor ", message.range)
-  
   // Helper function to check if the cursor is within a given range
   const cursorInRange = (range) => {
     // only check the lines for now

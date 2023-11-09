@@ -55,7 +55,7 @@ export async function init() {
   folder3d.addButton({
     title: 'Load 3D Meshes',
   }).on('click', () => {
-    ctx.meshVisuals.load3DMeshes()
+    ctx.meshVisuals.startLoadingMeshes()
   })
 
   folder3d.addBinding(settings, 'meshStats', {

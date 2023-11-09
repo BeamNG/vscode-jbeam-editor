@@ -244,9 +244,10 @@ function onCursorChangeEditor(message) {
       break
     }
   }
-  currentPartName = partNameFound
-
-  updateBeamViz()
+  if(partNameFound !== currentPartName) {
+    currentPartName = partNameFound
+    updateBeamViz()
+  }
   
   let beamsFound = []
   // Helper function to check if the cursor is within a given range

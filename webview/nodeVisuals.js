@@ -116,10 +116,11 @@ function onCursorChangeEditor(message) {
       break
     }
   }
-  currentPartName = partNameFound
-  //console.log(`we are in part ${currentPartName}`)
-
-  updateNodeViz(true)
+  if(partNameFound !== currentPartName) {
+    currentPartName = partNameFound
+    //console.log(`we are in part ${currentPartName}`)
+    updateNodeViz(true)
+  }
   
   let nodesFound = []
   // Helper function to check if the cursor is within a given range
