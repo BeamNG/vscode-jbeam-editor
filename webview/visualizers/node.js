@@ -8,12 +8,9 @@ let pointsCache
 // array of selected nodes
 let selectedNodeIndices = null
 
-let nodesGeometry
-let nodesMaterial
-
-let alphas = [];
-let colors = [];
-let sizes = [];
+let vertexAlphas = []
+let vertexColors = []
+let vertexSizes = []
 
 let nodesMin
 let nodesMax
@@ -21,7 +18,6 @@ let nodesCenter
 let nodeCounter
 
 let wasWindowOutOfFocus = false
-const excludedKeys = ['__range', '__isarray', '__isNamed'];
 
 function highlightNodeinTextEditor() {
   if(!selectedNodeIndices || selectedNodeIndices.length !== 1) return
@@ -48,9 +44,9 @@ function focusNodes(nodesArrToFocus, triggerEditor = true) {
   selectedNodeIndices = nodesArrToFocus
 
   // color the node properly
-  const alphasAttribute = nodesGeometry.getAttribute('alpha');
-  const colorsAttribute = nodesGeometry.getAttribute('color');
-  const sizesAttribute = nodesGeometry.getAttribute('size');
+  const alphasAttribute = pointsObject.geometry.getAttribute('alpha');
+  const colorsAttribute = pointsObject.geometry.getAttribute('color');
+  const sizesAttribute = pointsObject.geometry.getAttribute('size');
   for (let i = 0; i < pointsCache.length; i++) {
     const node = pointsCache[i]
     if(selectedNodeIndices.includes(i)) {
@@ -82,7 +78,7 @@ function focusNodes(nodesArrToFocus, triggerEditor = true) {
     moveCameraCenter(nodesCenterPos)
   }
 
-  redrawGroundPlane()
+  ctx.visualizersGroundplane.redrawGroundPlane(nodesMin, nodesMax, selectedNodeIndices, pointsCache, jbeamData, currentPartName, nodeCounter)
 }
 
 function onCursorChangeEditor(message) {
@@ -110,97 +106,9 @@ function onCursorChangeEditor(message) {
   focusNodes(nodesFound, false)
 }
 
-function redrawGroundPlane() {
-  // create a fancy ground plane
-  const defaultfont = 'bold 60px "Roboto Mono", monospace'
-
-  let items = [
-    { type: 'text', position: new THREE.Vector3(0, 0, 0), font: 'bold 50px "Roboto Mono", monospace', color: '#444444', text: '0,0,0', textAlign: 'left', textBaseline: 'bottom' },
-  ]
-  
-  let freeBox = {x: 0, y: 0, z: 0}
-  let freeBoxText = {x: 0, y: 0, z: 0}
-  if(nodesMin && nodesMax) {
-    // this positions the legend not below the car
-    freeBox = {x: Math.round(nodesMin.x) - 1, y: 0, z: Math.round(nodesMin.z) - 1}
-    freeBoxText = {x: Math.round(nodesMin.x), y: 0, z: Math.round(nodesMin.z) - 1}
-    //{ type: 'arrow', start: new THREE.Vector3(0, 0, 0), end: new THREE.Vector3(1, 1, 1), color: '#999999', width: 30, label: 'Hello world' },
-  
-    items.push({ type: 'arrow', start: new THREE.Vector3(freeBox.x + 0.04, 0, freeBox.z + 0.04), end: new THREE.Vector3(freeBox.x + 0.96, 0, freeBox.z + 0.04), color: '#444444', width: 20, label: '1m', font: defaultfont })
-    items.push({ type: 'arrow', start: new THREE.Vector3(freeBox.x + 0.04, 0, freeBox.z + 0.96), end: new THREE.Vector3(freeBox.x + 0.04, 0, freeBox.z + 0.04), color: '#444444', width: 20, label: '1m', font: defaultfont })
-
-    // the bounds of the nodes
-    let leftStart = new THREE.Vector3(nodesMin.x, nodesMin.y, nodesMax.z)
-    let leftEnd = new THREE.Vector3(nodesMin.x, nodesMin.y, nodesMin.z)
-    let leftLength = Math.round(leftStart.distanceTo(leftEnd) * 10) / 10
-    let labelSize = Math.max(60, leftLength * 80)
-    if(leftLength > 0.1) {
-      items.push({ type: 'arrow', start: leftStart, end: leftEnd, color: 'rgba(0.3, 0.3, 0.3, 0.3)', width: labelSize / 10, label: leftLength + 'm', font: `bold ${labelSize}px "Roboto Mono", monospace` })
-    }
-    let topStart = new THREE.Vector3(nodesMin.x, nodesMin.y, nodesMin.z)
-    let topEnd = new THREE.Vector3(nodesMax.x, nodesMin.y, nodesMin.z)
-    let topLength = Math.round(topStart.distanceTo(topEnd) * 10) / 10
-    if(topLength > 0.1) {
-      items.push({ type: 'arrow', start: topStart, end: topEnd, color: 'rgba(0.3, 0.3, 0.3, 0.3)', width: labelSize / 10, label: topLength + 'm', font: `bold ${labelSize}px "Roboto Mono", monospace`})
-    }
-  }
-
-  if(selectedNodeIndices) {
-    if(selectedNodeIndices.length == 1) {
-      const node = pointsCache[selectedNodeIndices[0]]
-      if(node) {
-        //items.push({ type: 'arrow', start: new THREE.Vector3(0, 0, 0), end: node.pos3d, color: '#448844', width: 5, label: node.name || "", font: defaultfont })
-        items.push({ type: 'text', position: node.pos3d, font: 'bold 40px "Roboto Mono", monospace', color: '#448844', text: node.name || ""})
-      }
-    } else if(selectedNodeIndices.length == 2) {
-      const nodeA = pointsCache[selectedNodeIndices[0]]
-      const nodeB = pointsCache[selectedNodeIndices[1]]
-      if(nodeA && nodeB) {
-        // calculate the distance between nodeposA.pos3d and nodeposB.pos3d
-        const distance = Math.round(nodeA.pos3d.distanceTo(nodeB.pos3d) * 1000) / 1000 + 'm'
-        // add some distance to nodea.pos3d
-        items.push({ type: 'arrow', start: nodeA.pos3d, end: nodeB.pos3d, color: '#448844', width: 5, label: distance, font: defaultfont })
-        items.push({ type: 'text', position: nodeA.pos3d, font: 'bold 40px "Roboto Mono", monospace', color: '#448844', text: nodeA.name || "", textAlign: 'right'})
-        items.push({ type: 'text', position: nodeB.pos3d, font: 'bold 40px "Roboto Mono", monospace', color: '#448844', text: nodeB.name || "", textAlign: 'left'})
-      }
-    }
-  }
-
-  if(jbeamData) {
-    if(currentPartName) {
-      // one part in focus
-      let part = jbeamData[currentPartName]
-      if(part) {
-        // position the text above the min/max box
-        let txt = currentPartName
-        if(part.information && part.information.name) {
-          txt = `${part.information.name} (${currentPartName})`
-        }
-        items.push({ type: 'text', position: new THREE.Vector3(freeBoxText.x, 0, freeBoxText.z), font: 'bold 120px "Roboto Mono", monospace', color: '#aaaaaa', text: txt, textAlign: 'left', textBaseline: 'top'})
-        txt = `${nodeCounter} nodes`
-        if(nodeCounter == 1) txt = `${nodeCounter} node`
-        else if(nodeCounter == 0) txt = `no nodes :(`
-
-        items.push({ type: 'text', position: new THREE.Vector3(freeBoxText.x, 0, freeBoxText.z + 0.2), font: 'bold 60px "Roboto Mono", monospace', color: '#aaaaaa', text: txt, textAlign: 'left', textBaseline: 'top'})
-      }
-    } else {
-      // everything being drawn
-      let txt = Object.keys(jbeamData).filter(key => !excludedKeys.includes(key)).length + ' different parts:'
-      items.push({ type: 'text', position: new THREE.Vector3(freeBoxText.x, 0, freeBoxText.z), font: 'bold 120px "Roboto Mono", monospace', color: '#aaaaaa', text: txt, textAlign: 'left', textBaseline: 'top'})
-      let rowCounter = 0
-      for (let partName in jbeamData) {
-        items.push({ type: 'text', position: new THREE.Vector3(freeBoxText.x + 0.1, 0, freeBoxText.z + 0.2 + rowCounter * 0.1), font: 'bold 60px "Roboto Mono", monospace', color: '#aaaaaa', text: partName, textAlign: 'left', textBaseline: 'top'})
-        rowCounter++
-      }
-    }
-  }
-
-  updateProjectionPlane(scene, items);
-}
-
 function updateNodeViz(moveCamera) {
   nodeCounter = 0
-  let nodeVertices = []
+  let vertexPositions = []
   pointsCache = []
   let sum = {x: 0, y: 0, z: 0}
   nodesMin = {x: Infinity, y: Infinity, z: Infinity}
@@ -215,19 +123,19 @@ function updateNodeViz(moveCamera) {
         // node.pos contains [x, y, z]
         if(node.hasOwnProperty('pos')) {
           const x = node.pos[0]
-          nodeVertices.push(x)
+          vertexPositions.push(x)
           sum.x += x
           if(x < nodesMin.x) nodesMin.x = x
           else if(x > nodesMax.x) nodesMax.x = x
           
           const y = node.pos[1]
-          nodeVertices.push(y)
+          vertexPositions.push(y)
           sum.y += y
           if(y < nodesMin.y) nodesMin.y = y
           else if(y > nodesMax.y) nodesMax.y = y
 
           const z = node.pos[2]
-          nodeVertices.push(z)
+          vertexPositions.push(z)
           sum.z += z
           if(z < nodesMin.z) nodesMin.z = z
           else if(z > nodesMax.z) nodesMax.z = z
@@ -263,30 +171,30 @@ function updateNodeViz(moveCamera) {
     }
   }
 
-  // nodes
-  if(pointsObject) {
-    scene.remove(pointsObject);
-  }
-  if(nodesGeometry) {
-    nodesGeometry.dispose()
-  }
-  nodesGeometry = new THREE.BufferGeometry()
-  
   // Fill arrays with data for each node
   for (let i = 0; i < nodeCounter; i++) {
-    alphas.push(1)
-    colors.push(1, 0.65, 0)
-    sizes.push(0.05)
+    vertexAlphas.push(1)
+    vertexColors.push(1, 0.65, 0)
+    vertexSizes.push(1.05)
   }
 
-  updateVertexBuffer(nodesGeometry, 'position', nodeVertices, 3)
-  updateVertexBuffer(nodesGeometry, 'alpha', alphas, 1)
-  updateVertexBuffer(nodesGeometry, 'color', colors, 3)
-  updateVertexBuffer(nodesGeometry, 'size', sizes, 1)
+  let nodesGeometry
+  if(pointsObject && pointsObject.geometry) {
+    nodesGeometry = pointsObject.geometry
+  } else {
+    nodesGeometry = new THREE.BufferGeometry()
+  }
+  updateVertexBuffer(nodesGeometry, 'position', vertexPositions, 3)
+  updateVertexBuffer(nodesGeometry, 'alpha', vertexAlphas, 1)
+  updateVertexBuffer(nodesGeometry, 'color', vertexColors, 3)
+  updateVertexBuffer(nodesGeometry, 'size', vertexSizes, 1)
   nodesGeometry.computeBoundingBox()
   nodesGeometry.computeBoundingSphere()
 
-  if(!nodesMaterial) {
+  let nodesMaterial
+  if(pointsObject && pointsObject.material) {
+    nodesMaterial = pointsObject.material
+  } else {
     nodesMaterial = new THREE.ShaderMaterial({
       vertexShader: `
         attribute float alpha;
@@ -322,10 +230,12 @@ function updateNodeViz(moveCamera) {
     })
   }
   
-  pointsObject = new THREE.Points(nodesGeometry, nodesMaterial);
-  scene.add(pointsObject);
+  if(!pointsObject) {
+    pointsObject = new THREE.Points(nodesGeometry, nodesMaterial);
+    scene.add(pointsObject);
+  }
 
-  redrawGroundPlane()
+  ctx.visualizersGroundplane.redrawGroundPlane(nodesMin, nodesMax, selectedNodeIndices, pointsCache, jbeamData, currentPartName, nodeCounter)
 }
 
 function getColorFromDistance(distance, maxDistance) {
@@ -359,10 +269,10 @@ function onMouseDown(event) {
 }
 
 function resetNodeFocus() {
-  if(!nodesGeometry) return
-  const alphasAttribute = nodesGeometry.getAttribute('alpha');
-  const colorsAttribute = nodesGeometry.getAttribute('color');
-  const sizesAttribute = nodesGeometry.getAttribute('size');
+  if(!pointsObject || !pointsObject.geometry) return
+  const alphasAttribute = pointsObject.geometry.getAttribute('alpha');
+  const colorsAttribute = pointsObject.geometry.getAttribute('color');
+  const sizesAttribute = pointsObject.geometry.getAttribute('size');
   
   for (let i = 0; i < pointsCache.length; i++) {
     if(selectedNodeIndices && selectedNodeIndices.includes(i)) continue
@@ -390,9 +300,9 @@ function onMouseMove(event) {
 
   raycaster.setFromCamera(mouse, camera);
 
-  const alphasAttribute = nodesGeometry.getAttribute('alpha');
-  const colorsAttribute = nodesGeometry.getAttribute('color');
-  const sizesAttribute = nodesGeometry.getAttribute('size');
+  const alphasAttribute = pointsObject.geometry.getAttribute('alpha');
+  const colorsAttribute = pointsObject.geometry.getAttribute('color');
+  const sizesAttribute = pointsObject.geometry.getAttribute('size');
   
   let alphaDecay = 0.01; // The rate at which alpha value decreases with distance
   let maxDistance = 1; // Maximum distance to affect the alpha
@@ -455,8 +365,10 @@ export function dispose() {
   window.removeEventListener('message', onReceiveMessage);
   window.removeEventListener('mousedown', onMouseDown);
   window.removeEventListener('mousemove', onMouseMove); 
-  window.removeEventListener('mouseout', onMouseOut); 
-  if (nodesGeometry) nodesGeometry.dispose();
-  if (nodesMaterial) nodesMaterial.dispose();
-  scene.remove(linesObject);
+  window.removeEventListener('mouseout', onMouseOut)
+  if(pointsObject) {
+    if (pointsObject.geometry) pointsObject.geometry.dispose()
+    if (pointsObject.material) pointsObject.material.dispose()
+    scene.remove(pointsObject)
+  }
 }

@@ -329,3 +329,5 @@ function updateVertexBuffer(geometry, attributeName, items, itemSize) {
     buffer.needsUpdate = true
   }
 }
+
+const excludedMagicKeys = ['__range', '__isarray', '__isNamed'];

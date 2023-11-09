@@ -55,7 +55,6 @@ function updateBeamViz() {
   } else {
     lineGeometry = new THREE.BufferGeometry()
   }
-
   updateVertexBuffer(lineGeometry, 'position', vertexPositions, 3)
   updateVertexBuffer(lineGeometry, 'alpha', vertexAlphas, 1)
   updateVertexBuffer(lineGeometry, 'color', vertexColors, 3)
