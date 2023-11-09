@@ -2,7 +2,7 @@
   "name": "jbeam-editor",
   "displayName": "Jbeam editor",
   "description": "Editing utilities for jbeam",
-  "icon": "assets/beamng-icon.png",
+  "icon": "icons/beamng-icon.png",
   "publisher": "BeamNG",
   "repository": {
     "type": "git",
