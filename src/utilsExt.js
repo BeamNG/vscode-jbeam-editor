@@ -50,78 +50,77 @@ console.log(matches);
 ```
 */
 function findObjectsWithRange(obj, line, position, uri) {
-    let matches = [];
-    let breadcrumbTrail = []; // Array to keep track of the breadcrumb trail
-  
-    // Helper function to recursively search the object
-    function search(obj, currentDepth) {
-      if (obj.__range &&
-          line >= obj.__range[0] && line <= obj.__range[2] &&
-          (line !== obj.__range[0] || position >= obj.__range[1]) &&
-          (line !== obj.__range[2] || position <= obj.__range[3])) {
-        matches.push({
-          obj: obj,
-          depth: currentDepth,
-          breadcrumb: breadcrumbTrail.map(b => ({ name: b.name, __isNamed: b.__isNamed, __range: b.__range }))
-        });
-      }
-  
-      // Iterate over the properties of the object to go deeper into the tree
-      for (let key in obj) {
-        if (obj.hasOwnProperty(key)) {
-          const value = obj[key];
-          if (typeof value === 'object' && value !== null && value.__range) {
-            // Add the current object to the breadcrumb trail before going deeper
-            breadcrumbTrail.push({ name: key, __isNamed: value.__isNamed, __range: value.__range });
-            search(value, currentDepth + 1);
-            // Pop the current object from the breadcrumb trail as we backtrack
-            breadcrumbTrail.pop();
-          }
+  let matches = [];
+  let breadcrumbTrail = []; // Array to keep track of the breadcrumb trail
+
+  // Helper function to recursively search the object
+  function search(obj, currentDepth) {
+    if (obj.__range &&
+        line >= obj.__range[0] && line <= obj.__range[2] &&
+        (line !== obj.__range[0] || position >= obj.__range[1]) &&
+        (line !== obj.__range[2] || position <= obj.__range[3])) {
+      matches.push({
+        obj: obj,
+        depth: currentDepth,
+        breadcrumb: breadcrumbTrail.map(b => ({ name: b.name, __isNamed: b.__isNamed, __range: b.__range }))
+      });
+    }
+
+    // Iterate over the properties of the object to go deeper into the tree
+    for (let key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        const value = obj[key];
+        if (typeof value === 'object' && value !== null && value.__range) {
+          // Add the current object to the breadcrumb trail before going deeper
+          breadcrumbTrail.push({ name: key, __isNamed: value.__isNamed, __range: value.__range });
+          search(value, currentDepth + 1);
+          // Pop the current object from the breadcrumb trail as we backtrack
+          breadcrumbTrail.pop();
         }
       }
     }
-  
-    search(obj, 0);
-  
-    // Sort matches by depth descending (deepest first)
-    matches.sort((a, b) => b.depth - a.depth);
-  
-    // Map the results to include a clickable breadcrumb trail
-    return matches.map(match => {
-      let breadcrumbMarkdown = match.breadcrumb.map(breadcrumbPart => {
-        let commandId = 'jbeam-editor.gotoLine';
-        // Adjust the range for zero-based indexing in the editor
-        let args = {
-          range: breadcrumbPart.__range,
-          uri: uri
-        };
-        let encodedArgs = encodeURIComponent(JSON.stringify(args));
-        return `[${breadcrumbPart.name}](command:${commandId}?${encodedArgs} "Goto")`;
-      }).join(' > ');
-    
-      // Create a plain text breadcrumb trail, ignoring the first element and any array indices
-      let breadcrumbPlainText = match.breadcrumb
-        .slice(1) // This skips the first element
-        .filter(breadcrumbPart => breadcrumbPart.__isNamed !== true && isNaN(breadcrumbPart.name)) // This filters out any parts that are numbers (array indices)
-        .map(breadcrumbPart => breadcrumbPart.name)
-        .join(' > ');
-  
-      return {
-        obj: match.obj,
-        breadcrumbMarkdown: breadcrumbMarkdown, // Markdown links for each breadcrumb part
-        breadcrumbPlainText: breadcrumbPlainText // Plain text for each breadcrumb part
+  }
+
+  search(obj, 0);
+
+  // Sort matches by depth descending (deepest first)
+  matches.sort((a, b) => b.depth - a.depth);
+
+  // Map the results to include a clickable breadcrumb trail
+  return matches.map(match => {
+    let breadcrumbMarkdown = match.breadcrumb.map(breadcrumbPart => {
+      let commandId = 'jbeam-editor.gotoLine';
+      // Adjust the range for zero-based indexing in the editor
+      let args = {
+        range: breadcrumbPart.__range,
+        uri: uri
       };
-    });
-  }
-
-  module.exports = {
-    findObjectsWithRange
-  }
-
-
-  function convertUri(webPanel, filePath) {
-    const uri = vscode.Uri.file(filePath);
-    const webviewUri = webPanel.webview.asWebviewUri(uri);
-    return webviewUri.toString()
-  }
+      let encodedArgs = encodeURIComponent(JSON.stringify(args));
+      return `[${breadcrumbPart.name}](command:${commandId}?${encodedArgs} "Goto")`;
+    }).join(' > ');
   
+    // Create a plain text breadcrumb trail, ignoring the first element and any array indices
+    let breadcrumbPlainText = match.breadcrumb
+      .slice(1) // This skips the first element
+      .filter(breadcrumbPart => breadcrumbPart.__isNamed !== true && isNaN(breadcrumbPart.name)) // This filters out any parts that are numbers (array indices)
+      .map(breadcrumbPart => breadcrumbPart.name)
+      .join(' > ');
+
+    return {
+      obj: match.obj,
+      breadcrumbMarkdown: breadcrumbMarkdown, // Markdown links for each breadcrumb part
+      breadcrumbPlainText: breadcrumbPlainText // Plain text for each breadcrumb part
+    };
+  });
+}
+
+function convertUri(vscode, webPanel, filePath) {
+  const uri = vscode.Uri.file(filePath);
+  const webviewUri = webPanel.webview.asWebviewUri(uri);
+  return webviewUri.toString()
+}
+
+module.exports = {
+  findObjectsWithRange,
+  convertUri,
+}

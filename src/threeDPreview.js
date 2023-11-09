@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const sjsonParser = require('./sjsonParser');
 const tableSchema = require('./tableSchema');
+const utilsExt = require('./utilsExt');
 
 let meshCache = {}
 let extensionContext // context from activate
@@ -71,7 +72,7 @@ function onLoadColladaNamespaces(webPanel, uri, loadedNamespaces, loadCommon) {
         if(webPanel) {
           webPanel.webview.postMessage({
             command: 'loadDaeFinal',
-            uri: convertUri(webPanel, file.fsPath),
+            uri: utilsExt.convertUri(vscode, webPanel, file.fsPath),
             namespace: '/vehicles/common',
           })
         }
@@ -84,11 +85,11 @@ function onLoadColladaNamespaces(webPanel, uri, loadedNamespaces, loadCommon) {
     const vehicleFolderPattern = new vscode.RelativePattern(vehicleSpecificFolderPath, '**/*.{dae,DAE,dAe,DaE,daE,DAe,daE,dAE}');
     findFilesPromises.push(vscode.workspace.findFiles(vehicleFolderPattern, null).then(files => {
       files.forEach(file => {
-        //console.log(`Found .dae in vehicle specific folder: ${file.fsPath} > ${convertUri(webPanel, file.fsPath)}`);
+        //console.log(`Found .dae in vehicle specific folder: ${file.fsPath} > ${utilsExt.convertUri(vscode, webPanel, file.fsPath)}`);
         if(webPanel) {
           webPanel.webview.postMessage({
             command: 'loadDaeFinal',
-            uri: convertUri(file.fsPath),
+            uri: utilsExt.convertUri(vscode, webPanel, file.fsPath),
             namespace: '/vehicles/' + vehicleSpecificPath,
           })
         }
@@ -183,7 +184,7 @@ function show3DSceneCommand() {
           // the sandbox does not allow any direct file interaction, so this indirection is required
           webPanel.webview.postMessage({
             command: 'loadDaeFinal',
-            uri: convertUri(path.join(extensionContext.extensionPath, 'webview', message.path)),
+            uri: utilsExt.convertUri(vscode, webPanel, path.join(extensionContext.extensionPath, 'webview', message.path)),
           });
           break;
         case 'updateMeshCache':
