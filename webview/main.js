@@ -145,7 +145,7 @@ export function init() {
   // After adding lights, always update the scene graph
   scene.updateMatrixWorld(true);
   
-  if(false) {
+  if(true) {
     // Create a floor
     const floorGeometry = new THREE.PlaneGeometry(200, 200);
     const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 });
