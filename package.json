@@ -2,7 +2,19 @@
   "name": "jbeam-editor",
   "displayName": "Jbeam editor",
   "description": "Editing utilities for jbeam",
-  "version": "0.0.1",
+  "icon": "assets/beamng-icon.png",
+  "publisher": "BeamNG",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BeamNG/vscode-jbeam-editor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/BeamNG/vscode-jbeam-editor/issues"
+  },
+  "homepage": "https://github.com/BeamNG/vscode-jbeam-editor#readme",
+  "license": "MIT",
+  "keywords": ["jbeam", "editor", "3D", "beamng"],
+  "version": "0.1.0",
   "engines": {
     "vscode": "^1.84.0"
   },
