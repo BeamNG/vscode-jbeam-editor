@@ -1,6 +1,6 @@
 {
   "name": "jbeam-editor",
-  "displayName": "JBeam editor",
+  "displayName": "JBeam Editor",
   "description": "Editing utilities for the physics file format of BeamNG",
   "icon": "icons/beamng-icon.png",
   "publisher": "BeamNG",

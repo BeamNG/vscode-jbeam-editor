@@ -2,6 +2,9 @@
 
 This is a lightweight visualizer and tool for working with the physics definition files of BeamNG (called jbeam).
 
+![](assets/meshMultiselect.gif)
+
+
 # ⚠️ Experimental ⚠️
 
 **Warning:** this plugin is still very experimental and might crash. We are working on bugfixes and stability improvements
