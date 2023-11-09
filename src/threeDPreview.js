@@ -202,6 +202,21 @@ function show3DSceneCommand() {
 
   function parseAndPostData(doc, updatedOnly = false) {
     if(!webPanel) return
+
+    let meshLoadingEnabled = false
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders) {
+      meshLoadingEnabled = false
+    } else {
+      if(workspaceFolders.some(folder => { return doc.uri.fsPath.startsWith(folder.uri.fsPath) })) {
+        meshLoadingEnabled = true
+      }
+    }
+
+    if(!meshLoadingEnabled) {
+      vscode.window.showErrorMessage('In order to load 3D Meshes, the open file must be part of a workspace.');
+    }
+
     const text = doc.getText()
     const uri = doc.uri.toString()
     try {
@@ -221,6 +236,7 @@ function show3DSceneCommand() {
         uri: uri,
         meshCache: meshCache,
         updatedOnly: updatedOnly,
+        meshLoadingEnabled: meshLoadingEnabled,
       });
     } catch (e) {
       // If there's an error in parsing, show it to the user

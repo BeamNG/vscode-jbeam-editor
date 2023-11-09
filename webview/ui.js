@@ -1,5 +1,4 @@
-let show = true;
-let io = null
+let meshLoadingBtn
 
 let views = [
   {name: 'Top'   , onActivate() { animateCameraMovement(new THREE.Vector3(0, 10, 0)) }},
@@ -52,7 +51,7 @@ export async function init() {
     title: '3D Meshes',
   });
 
-  folder3d.addButton({
+  meshLoadingBtn = folder3d.addButton({
     title: 'Load 3D Meshes',
   }).on('click', () => {
     ctx.meshVisuals.startLoadingMeshes()
@@ -70,6 +69,8 @@ export function animate(time) {
 
   const meshesEnabled = Object.keys(meshFolderCache).length !== 0
   //load3DMeshBtn.enable(!meshesEnabled)
+
+  meshLoadingBtn.disabled = !meshLoadingEnabled // vscode might be in an incorrect state to load meshes
 
   if(meshesEnabled) {
     let txt = 'MeshCache\n'
