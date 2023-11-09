@@ -102,6 +102,26 @@ None. The parser, etc is standalone from BeamNG.
 
 Calling out known issues can help limit users opening duplicate issues against your extension.
 
+
+## Troubleshooting
+
+### JBeam file association
+If the file association does not work out of the box, pelase configure your setup:
+
+1) Open a jbeam file. On the bottom right corner of the window, click on the language mode:
+
+   ![](assets/fileformatHelp1.png)
+2) In the resulting popup, select `Configure File Association for '.jbeam'`:
+
+   ![](assets/fileformatHelp2.png)
+
+3) enter `jbeam` - It should look like this:
+
+   ![](assets/fileformatHelp3.png)
+
+If all worked, it should show up like this now:
+![](assets/fileformatHelp4.png)
+
 ## Release Notes
 
 ### 0.2.1
