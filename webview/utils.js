@@ -274,3 +274,17 @@ function updateProjectionPlane(scene, items) {
 
   scene.add(groundPlaneMesh);  
 }
+
+function moveCameraCenter(pos) {
+  const offset = new THREE.Vector3().subVectors(pos, orbitControls.target);
+  const newCameraPosition = new THREE.Vector3().addVectors(camera.position, offset);
+  new Tween(orbitControls.target)
+    .to(pos, 120)
+    .easing(Easing.Quadratic.Out)
+    .start()
+    
+  new Tween(camera.position)
+    .to(newCameraPosition, 120)
+    .easing(Easing.Quadratic.Out)
+    .start()
+}

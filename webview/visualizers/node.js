@@ -28,20 +28,6 @@ let nodeCounter
 let wasWindowOutOfFocus = false
 const excludedKeys = ['__range', '__isarray', '__isNamed'];
 
-function moveCameraCenter(pos) {
-  const offset = new THREE.Vector3().subVectors(pos, orbitControls.target);
-  const newCameraPosition = new THREE.Vector3().addVectors(camera.position, offset);
-  new Tween(orbitControls.target)
-    .to(pos, 120)
-    .easing(Easing.Quadratic.Out)
-    .start()
-    
-  new Tween(camera.position)
-    .to(newCameraPosition, 120)
-    .easing(Easing.Quadratic.Out)
-    .start()
-}
-
 function highlightNodeinTextEditor() {
   if(!selectedNodeIndices || selectedNodeIndices.length != 1) return
   const node = pointsCache[selectedNodeIndices[0]] // TODO
@@ -295,7 +281,9 @@ function updateNodeViz(moveCamera) {
   if(pointsObject) {
     scene.remove(pointsObject);
   }
-  geometryNodes = new THREE.BufferGeometry();
+  if(!geometryNodes) {
+    geometryNodes = new THREE.BufferGeometry()
+  }
   
   const positions = geometryNodes.getAttribute('position');
   if(!positions) {
@@ -366,12 +354,6 @@ function updateNodeViz(moveCamera) {
   scene.add(pointsObject);
 
   redrawGroundPlane()
-}
-
-export function onReceiveData(message) {
-  jbeamData = message.data
-  uri = message.uri
-  updateNodeViz(!message.updatedOnly)
 }
 
 function getColorFromDistance(distance, maxDistance) {
@@ -469,7 +451,9 @@ function onReceiveMessage(event) {
   const message = event.data;
   switch (message.command) {
     case 'jbeamData':
-      onReceiveData(message);
+      jbeamData = message.data
+      uri = message.uri
+      updateNodeViz(!message.updatedOnly)
       break;
     case 'cursorChanged':
       onCursorChangeEditor(message)

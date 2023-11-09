@@ -18,24 +18,31 @@
 <script src="<!-- LocalResource:libs/tween.js -->"></script>
 <script src="<!-- LocalResource:gizmo.js -->"></script>
 <script type="module">
+import * as tweakPane from '<!-- LocalResource:libs/tweakpane.min.js -->';
 import * as ui from '<!-- LocalResource:ui.js -->';
 import * as main from '<!-- LocalResource:main.js -->';
-import * as jbeamVisuals from '<!-- LocalResource:jbeamVisuals.js -->';
-import * as nodeVisuals from '<!-- LocalResource:nodeVisuals.js -->';
-import * as beamVisuals from '<!-- LocalResource:beamVisuals.js -->';
-import * as meshVisuals from '<!-- LocalResource:meshVisuals.js -->';
 import * as colladaLoader from '<!-- LocalResource:libs/ColladaLoader.js -->';
-import * as tweakPane from '<!-- LocalResource:libs/tweakpane.min.js -->';
 
+// visualizers
+import * as visualizersMain from '<!-- LocalResource:visualizers/main.js -->';
+import * as visualizersNode from '<!-- LocalResource:visualizers/node.js -->';
+import * as visualizersBeam from '<!-- LocalResource:visualizers/beam.js -->';
+import * as visualizersMesh from '<!-- LocalResource:visualizers/mesh.js -->';
+import * as visualizersTriangle from '<!-- LocalResource:visualizers/triangle.js -->';
+
+// we need to import everything in the main index file here as we need to use a special URL that is created by vscode
+// imports in other files will not work
 const vscode = acquireVsCodeApi();
 ctx.ui = ui
 ctx.vscode = vscode
 ctx.tweakPane = tweakPane
-ctx.jbeamVisuals = jbeamVisuals
-ctx.beamVisuals = beamVisuals
-ctx.nodeVisuals = nodeVisuals
-ctx.meshVisuals = meshVisuals
 ctx.colladaLoader = colladaLoader
+
+ctx.visualizersMain = visualizersMain
+ctx.visualizersNode = visualizersNode
+ctx.visualizersBeam = visualizersBeam
+ctx.visualizersMesh = visualizersMesh
+ctx.visualizersTriangle = visualizersTriangle
 main.init()
 </script>
 </body>

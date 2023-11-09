@@ -57,8 +57,9 @@ function updateBeamViz() {
     alphas.push(0.5)
     colors.push(0, 1, 0)
   }
-  
-  lineGeometry = new THREE.BufferGeometry()
+  if(!lineGeometry) {
+    lineGeometry = new THREE.BufferGeometry()
+  }
 
   let positionsBuffer = lineGeometry.getAttribute('position')
   if(positionsBuffer) {
@@ -120,11 +121,6 @@ function updateBeamViz() {
   scene.add(linesObject);
 }
 
-function onReceiveData(message) {
-  jbeamData = message.data
-  updateBeamViz()
-}
-
 //const beamColorActive = new THREE.Color(0x00ff00);
 const beamColorInative = new THREE.Color(0x88dd88);
 
@@ -167,20 +163,6 @@ function onMouseMove(event) {
   }
   alphasAttribute.needsUpdate = true
   colorsAttribute.needsUpdate = true
-}
-
-function moveCameraCenter(pos) {
-  const offset = new THREE.Vector3().subVectors(pos, orbitControls.target);
-  const newCameraPosition = new THREE.Vector3().addVectors(camera.position, offset);
-  new Tween(orbitControls.target)
-    .to(pos, 120)
-    .easing(Easing.Quadratic.Out)
-    .start()
-    
-  new Tween(camera.position)
-    .to(newCameraPosition, 120)
-    .easing(Easing.Quadratic.Out)
-    .start()
 }
 
 function focusBeams(beamsArrToFocus, triggerEditor = true) {
@@ -270,7 +252,8 @@ function onReceiveMessage(event) {
   const message = event.data;
   switch (message.command) {
     case 'jbeamData':
-      onReceiveData(message);
+      jbeamData = message.data
+      updateBeamViz()
       break;
     case 'cursorChanged':
       onCursorChangeEditor(message)
@@ -281,7 +264,6 @@ function onReceiveMessage(event) {
 export function init() {
   window.addEventListener('message', onReceiveMessage);
   window.addEventListener('mousemove', onMouseMove, false); 
-  ctx.nodeVisuals.init()
 }
 
 

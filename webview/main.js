@@ -21,7 +21,7 @@ function animate(time) {
     
     //cameraCenterSphere.position.copy(orbitControls.target);
     orbitControls.update(time)
-    ctx.jbeamVisuals.animate(time)
+    ctx.visualizersMain.animate(time)
     ctx.ui.animate(time)
   
     TweenUpdate();
@@ -145,21 +145,23 @@ export function init() {
   // After adding lights, always update the scene graph
   scene.updateMatrixWorld(true);
   
-  // Create a floor
-  const floorGeometry = new THREE.PlaneGeometry(200, 200);
-  const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 });
-  floorMaterial.roughness = 1; // Less reflective
-  floorMaterial.metalness = 0; // Not metallic
-  const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-  floor.rotation.x = -Math.PI / 2; // Rotate the floor 90 degrees
-  floor.position.y = -0.005; // to prevent flickering with the grid
-  scene.add(floor);
+  if(false) {
+    // Create a floor
+    const floorGeometry = new THREE.PlaneGeometry(200, 200);
+    const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 });
+    floorMaterial.roughness = 1; // Less reflective
+    floorMaterial.metalness = 0; // Not metallic
+    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+    floor.rotation.x = -Math.PI / 2; // Rotate the floor 90 degrees
+    floor.position.y = -0.005; // to prevent flickering with the grid
+    scene.add(floor);
+  }
 
   createDome(scene)
   createGrid(scene)
   gizmoCreate()
   ctx.ui.init()
-  ctx.jbeamVisuals.init()
+  ctx.visualizersMain.init()
 
   animate(0);
 
