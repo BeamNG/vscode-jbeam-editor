@@ -104,7 +104,8 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, diagnostics
         let value = rowValue[key];
         if (typeof value === 'object' && (!value.hasOwnProperty('__isarray') || !value.__isarray)  && allKeys.length > headerSize1) {
           Object.assign(newRow, replaceSpecialValues(value));
-          rowValue[key] = null;
+          // remove options from rowValue
+          delete rowValue[key];
           header[key] = "options";
         }
       }
