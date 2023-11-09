@@ -246,7 +246,7 @@ function show3DSceneCommand() {
   })
   // Listen for changes in the document of the active editor
   vscode.workspace.onDidChangeTextDocument(event => {
-    if (webPanel.visible && event.document === vscode.window.activeTextEditor.document) {
+    if (webPanel && webPanel.visible && event.document === vscode.window.activeTextEditor.document) {
       parseAndPostData(event.document, true);
     }
   });
