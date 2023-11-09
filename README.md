@@ -75,6 +75,7 @@ This is a lightweight visualizer and tool for working with the physics definitio
 
 ## Wishlist
 
+* JBeam beautifier: clean up the file, format everything nicely
 * autocomplete part names in PC files
 * make grid and ground plane being as big as the vehicle at least for big vehicles
 * mesh opacity user-setable
