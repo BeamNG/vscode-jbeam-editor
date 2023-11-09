@@ -2,6 +2,10 @@
 
 This is a lightweight visualizer and tool for working with the physics definition files of BeamNG (called jbeam).
 
+# ⚠️ Experimental ⚠️
+
+**Warning:** this plugin is still very experimental and might crash. We are working on bugfixes and stability improvements
+
 ## Features
 
 * custom icons for BeamNG file types
@@ -72,6 +76,8 @@ This is a lightweight visualizer and tool for working with the physics definitio
 
 ## Wishlist
 
+* make grid and ground plane being as big as the vehicle at least for big vehicles
+* mesh opacity user-setable
 * implementation of props
 * picking flexbodies in 3d space
 * working slot system: part chain loading support, part config (PC) loading
