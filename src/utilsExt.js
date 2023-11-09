@@ -117,3 +117,11 @@ function findObjectsWithRange(obj, line, position, uri) {
   module.exports = {
     findObjectsWithRange
   }
+
+
+  function convertUri(webPanel, filePath) {
+    const uri = vscode.Uri.file(filePath);
+    const webviewUri = webPanel.webview.asWebviewUri(uri);
+    return webviewUri.toString()
+  }
+  

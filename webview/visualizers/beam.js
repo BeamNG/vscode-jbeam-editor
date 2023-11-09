@@ -3,11 +3,12 @@ let currentPartName = null
 let linesObject
 
 let lineGeometry
+let lineMaterial
 
 let beamCache
 let positions = []
-let alphas = [];
-let colors = [];
+let alphas = []
+let colors = []
 
 let selectedBeamIndices = null
 
@@ -47,8 +48,8 @@ function updateBeamViz() {
 
   // beams
   if(linesObject) {
-  //  if (linesObject.geometry) linesObject.geometry.dispose();
-  //  if (linesObject.material) linesObject.material.dispose();
+    if (linesObject.geometry) linesObject.geometry.dispose();
+    if (linesObject.material) linesObject.material.dispose();
     scene.remove(linesObject);
   }
 
@@ -93,31 +94,33 @@ function updateBeamViz() {
     lineGeometry.setAttribute('color', colorBuffer)
   }
 
-  let lineMaterial = new THREE.ShaderMaterial({
-    vertexShader: `
-      attribute float alpha;
-      attribute vec3 color;
-      varying float vAlpha;
-      varying vec3 vColor;
+  if(!lineMaterial) {
+    lineMaterial = new THREE.ShaderMaterial({
+      vertexShader: `
+        attribute float alpha;
+        attribute vec3 color;
+        varying float vAlpha;
+        varying vec3 vColor;
 
-      void main() {
-        vAlpha = alpha;
-        vColor = color;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      }
-    `,
-    fragmentShader: `
-      varying float vAlpha;
-      varying vec3 vColor;
+        void main() {
+          vAlpha = alpha;
+          vColor = color;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        varying float vAlpha;
+        varying vec3 vColor;
 
-      void main() {
-        gl_FragColor = vec4(vColor, vAlpha);
-      }
-    `,
-    transparent: true,
-    //depthTest: true,
-    //side: THREE.DoubleSide
-  });
+        void main() {
+          gl_FragColor = vec4(vColor, vAlpha);
+        }
+      `,
+      transparent: true,
+      //depthTest: true,
+      //side: THREE.DoubleSide
+    })
+  }
 
   linesObject = new THREE.LineSegments(lineGeometry, lineMaterial);
   scene.add(linesObject);
@@ -220,16 +223,8 @@ function focusBeams(beamsArrToFocus, triggerEditor = true) {
 function onCursorChangeEditor(message) {
   if(!beamCache) return
 
-  // figure out what part we are in
-  let partNameFound = null
-  for (let partName in jbeamData || {}) {
-    if (message.range[0] >= jbeamData[partName].__range[0] && message.range[0] <= jbeamData[partName].__range[2]) {
-      partNameFound = partName
-      break
-    }
-  }
-  if(partNameFound !== currentPartName) {
-    currentPartName = partNameFound
+  if(currentPartName !== message.currentPartName) {
+    currentPartName = message.currentPartName
     updateBeamViz()
   }
   
@@ -270,7 +265,10 @@ export function init() {
   window.addEventListener('mousemove', onMouseMove, false); 
 }
 
-
-export function animate(time) {
-  if(jbeamData === null) return
+export function dispose() {
+  window.removeEventListener('message', onReceiveMessage);
+  window.removeEventListener('mousemove', onMouseMove); 
+  if (lineGeometry) lineGeometry.dispose();
+  if (lineMaterial) lineMaterial.dispose();
+  scene.remove(linesObject);
 }

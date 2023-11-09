@@ -5,9 +5,9 @@ export function init() {
   ctx.visualizersTriangle.init()
 }
 
-export function animate(time) {
-  ctx.visualizersNode.animate(time)
-  ctx.visualizersBeam.animate(time)
-  ctx.visualizersMesh.animate(time)
-  ctx.visualizersTriangle.animate(time)
+export function dispose() {
+  ctx.visualizersNode.dispose()
+  ctx.visualizersBeam.dispose()
+  ctx.visualizersMesh.dispose()
+  ctx.visualizersTriangle.dispose()
 }

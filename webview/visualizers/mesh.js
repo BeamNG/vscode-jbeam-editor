@@ -270,16 +270,8 @@ function focusMeshes(meshesArrToFocus) {
 function onCursorChangeEditor(message) {
   if(!loadedMeshes) return
 
-  // figure out what part we are in
-  let partNameFound = null
-  for (let partName in jbeamData || {}) {
-    if (message.range[0] >= jbeamData[partName].__range[0] && message.range[0] <= jbeamData[partName].__range[2]) {
-      partNameFound = partName
-      break
-    }
-  }
-  if(partNameFound !== currentPartName) {
-    currentPartName = partNameFound
+  if(currentPartName !== message.currentPartName) {
+    currentPartName = message.currentPartName
     if(wasLoaded) {
       startLoadingMeshes()
     }
@@ -328,5 +320,13 @@ export function init() {
   window.addEventListener('message', onReceiveMessage);
 }
 
-export function animate(time) {
+export function dispose() {
+  for (let key in loadedMeshes) {
+    if(loadedMeshes[key].geometry) loadedMeshes[key].geometry.dispose()
+    if(loadedMeshes[key].material) loadedMeshes[key].material.dispose()
+    scene.remove(loadedMeshes[key]);
+  }
+  loadedMeshes = []
+
+  window.removeEventListener('message', onReceiveMessage);
 }

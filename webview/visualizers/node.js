@@ -8,8 +8,8 @@ let pointsCache
 // array of selected nodes
 let selectedNodeIndices = null
 
-// Create arrays to hold the per-node data
-let geometryNodes
+let nodesGeometry
+let nodesMaterial
 
 let alphas = [];
 let alphaBuffer
@@ -29,8 +29,8 @@ let wasWindowOutOfFocus = false
 const excludedKeys = ['__range', '__isarray', '__isNamed'];
 
 function highlightNodeinTextEditor() {
-  if(!selectedNodeIndices || selectedNodeIndices.length != 1) return
-  const node = pointsCache[selectedNodeIndices[0]] // TODO
+  if(!selectedNodeIndices || selectedNodeIndices.length !== 1) return
+  const node = pointsCache[selectedNodeIndices[0]]
   if(node && node.hasOwnProperty('__range')) {
     ctx.vscode.postMessage({
       command: 'selectLine',
@@ -53,9 +53,9 @@ function focusNodes(nodesArrToFocus, triggerEditor = true) {
   selectedNodeIndices = nodesArrToFocus
 
   // color the node properly
-  const alphasAttribute = geometryNodes.getAttribute('alpha');
-  const colorsAttribute = geometryNodes.getAttribute('color');
-  const sizesAttribute = geometryNodes.getAttribute('size');
+  const alphasAttribute = nodesGeometry.getAttribute('alpha');
+  const colorsAttribute = nodesGeometry.getAttribute('color');
+  const sizesAttribute = nodesGeometry.getAttribute('size');
   for (let i = 0; i < pointsCache.length; i++) {
     const node = pointsCache[i]
     if(selectedNodeIndices.includes(i)) {
@@ -90,20 +90,11 @@ function focusNodes(nodesArrToFocus, triggerEditor = true) {
   redrawGroundPlane()
 }
 
-
 function onCursorChangeEditor(message) {
   if(!pointsCache) return
   
-  // figure out what part we are in
-  let partNameFound = null
-  for (let partName in jbeamData || {}) {
-    if (message.range[0] >= jbeamData[partName].__range[0] && message.range[0] <= jbeamData[partName].__range[2]) {
-      partNameFound = partName
-      break
-    }
-  }
-  if(partNameFound !== currentPartName) {
-    currentPartName = partNameFound
+  if(currentPartName !== message.currentPartName) {
+    currentPartName = message.currentPartName
     selectedNodeIndices = null
     updateNodeViz(true)
   }
@@ -281,14 +272,14 @@ function updateNodeViz(moveCamera) {
   if(pointsObject) {
     scene.remove(pointsObject);
   }
-  if(geometryNodes) {
-    geometryNodes.dispose()
+  if(nodesGeometry) {
+    nodesGeometry.dispose()
   }
-  geometryNodes = new THREE.BufferGeometry()
+  nodesGeometry = new THREE.BufferGeometry()
   
-  const positions = geometryNodes.getAttribute('position');
+  const positions = nodesGeometry.getAttribute('position');
   if(!positions) {
-    geometryNodes.setAttribute('position', new THREE.BufferAttribute(new Float32Array(nodeVertices), 3));
+    nodesGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(nodeVertices), 3));
   } else {
     positions.array = new Float32Array(nodeVertices); // Use the new data
     positions.needsUpdate = true;
@@ -296,62 +287,61 @@ function updateNodeViz(moveCamera) {
 
   // Fill arrays with data for each node
   for (let i = 0; i < nodeCounter; i++) {
-    alphas.push(1);
-    colors.push(1, 0.65, 0);
-    sizes.push(0.05);
+    alphas.push(1)
+    colors.push(1, 0.65, 0)
+    sizes.push(0.05)
   }
 
   // Convert arrays to typed arrays and add as attributes to the geometry
   alphaBuffer = new THREE.Float32BufferAttribute(alphas, 1)
   alphaBuffer.setUsage(THREE.DynamicDrawUsage);
-  geometryNodes.setAttribute('alpha', alphaBuffer);
+  nodesGeometry.setAttribute('alpha', alphaBuffer);
   
   colorBuffer = new THREE.Float32BufferAttribute(colors, 3)
   colorBuffer.setUsage(THREE.DynamicDrawUsage);
-  geometryNodes.setAttribute('color', colorBuffer);
+  nodesGeometry.setAttribute('color', colorBuffer);
 
   sizeBuffer = new THREE.Float32BufferAttribute(sizes, 1)
   sizeBuffer.setUsage(THREE.DynamicDrawUsage);
-  geometryNodes.setAttribute('size', sizeBuffer);
+  nodesGeometry.setAttribute('size', sizeBuffer);
 
-  const nodesMaterial = new THREE.ShaderMaterial({
-    uniforms: {
-      scale: { value: window.innerHeight / 2 } // Assuming perspective camera and square points
-    },
-    vertexShader: `
-      attribute float alpha;
-      attribute vec3 color;
-      attribute float size;
-  
-      varying float vAlpha;
-      varying vec3 vColor;
-  
-      uniform float scale;
-      void main() {
-        vAlpha = alpha;
-        vColor = color;
-        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-        gl_PointSize = size * (scale / -mvPosition.z);
-        gl_Position = projectionMatrix * mvPosition;
-      }
-    `,
-    fragmentShader: `
-      varying float vAlpha;
-      varying vec3 vColor;
-      void main() {
-        float r = distance(gl_PointCoord, vec2(0.5, 0.5));
-        if (r > 0.5) {
-          discard;
+  if(!nodesMaterial) {
+    nodesMaterial = new THREE.ShaderMaterial({
+      vertexShader: `
+        attribute float alpha;
+        attribute vec3 color;
+        attribute float size;
+    
+        varying float vAlpha;
+        varying vec3 vColor;
+    
+        uniform float scale;
+        void main() {
+          vAlpha = alpha;
+          vColor = color;
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          gl_PointSize = size * (scale / -mvPosition.z);
+          gl_Position = projectionMatrix * mvPosition;
         }
-        gl_FragColor = vec4(vColor, vAlpha);
-      }
-    `,
-    transparent: true,
-    //blending: THREE.AdditiveBlending,
-    depthTest: true
-  });
+      `,
+      fragmentShader: `
+        varying float vAlpha;
+        varying vec3 vColor;
+        void main() {
+          float r = distance(gl_PointCoord, vec2(0.5, 0.5));
+          if (r > 0.5) {
+            discard;
+          }
+          gl_FragColor = vec4(vColor, vAlpha);
+        }
+      `,
+      transparent: true,
+      //blending: THREE.AdditiveBlending,
+      depthTest: true
+    })
+  }
   
-  pointsObject = new THREE.Points(geometryNodes, nodesMaterial);
+  pointsObject = new THREE.Points(nodesGeometry, nodesMaterial);
   scene.add(pointsObject);
 
   redrawGroundPlane()
@@ -388,10 +378,10 @@ function onMouseDown(event) {
 }
 
 function resetNodeFocus() {
-  if(!geometryNodes) return
-  const alphasAttribute = geometryNodes.getAttribute('alpha');
-  const colorsAttribute = geometryNodes.getAttribute('color');
-  const sizesAttribute = geometryNodes.getAttribute('size');
+  if(!nodesGeometry) return
+  const alphasAttribute = nodesGeometry.getAttribute('alpha');
+  const colorsAttribute = nodesGeometry.getAttribute('color');
+  const sizesAttribute = nodesGeometry.getAttribute('size');
   
   for (let i = 0; i < pointsCache.length; i++) {
     if(selectedNodeIndices && selectedNodeIndices.includes(i)) continue
@@ -419,9 +409,9 @@ function onMouseMove(event) {
 
   raycaster.setFromCamera(mouse, camera);
 
-  const alphasAttribute = geometryNodes.getAttribute('alpha');
-  const colorsAttribute = geometryNodes.getAttribute('color');
-  const sizesAttribute = geometryNodes.getAttribute('size');
+  const alphasAttribute = nodesGeometry.getAttribute('alpha');
+  const colorsAttribute = nodesGeometry.getAttribute('color');
+  const sizesAttribute = nodesGeometry.getAttribute('size');
   
   let alphaDecay = 0.01; // The rate at which alpha value decreases with distance
   let maxDistance = 1; // Maximum distance to affect the alpha
@@ -445,7 +435,6 @@ function onMouseMove(event) {
   colorsAttribute.needsUpdate = true;
   sizesAttribute.needsUpdate = true;
 }
-
 
 function onReceiveMessage(event) {
   const message = event.data;
@@ -481,27 +470,12 @@ export function init() {
   window.addEventListener('mouseout', onMouseOut, false); 
 }
 
-export function animate(time) {
-  if(jbeamData === null) return
-
-  /*
-  if(selectedNodeIndices !== null) {
-    ImGui.Begin("Node Data##nodedata");
-    if(selectedNodeIndices.length > 1) {
-      ImGui.TextUnformatted(`${selectedNodeIndices.length} selected. Showing first:`);
-    }
-    for (let idx of selectedNodeIndices) {
-      const selectedNode = pointsCache[idx]
-      if(selectedNode) {
-        const prettyJson = JSON.stringify(selectedNode, null, 2)
-        ImGui.TextUnformatted(prettyJson ? prettyJson : "");
-      }
-      break
-    }
-    if(ImGui.SmallButton('deselect')) {
-      selectedNodeIndices = null
-    }
-    ImGui.End();
-  }
-  */
+export function dispose() {
+  window.removeEventListener('message', onReceiveMessage);
+  window.removeEventListener('mousedown', onMouseDown);
+  window.removeEventListener('mousemove', onMouseMove); 
+  window.removeEventListener('mouseout', onMouseOut); 
+  if (nodesGeometry) nodesGeometry.dispose();
+  if (nodesMaterial) nodesMaterial.dispose();
+  scene.remove(linesObject);
 }

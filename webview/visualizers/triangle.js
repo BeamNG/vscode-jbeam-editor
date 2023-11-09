@@ -13,8 +13,8 @@ let vertexHighlightBuffer
 
 let triObject
 let triGeometry
+let triMaterial
 let triCache
-let trisMaterial
 let selectedTriIndices = null
 
 
@@ -55,9 +55,9 @@ function updateTriViz() {
   }
 
   if (triObject) {
+    if(triGeometry) triGeometry.dispose();
+    if(triMaterial) triMaterial.dispose();
     scene.remove(triObject);
-    triGeometry.dispose(); // Good practice to dispose of old geometry
-    triObject.material.dispose(); // Good practice to dispose of old material
   }
   
   triGeometry = new THREE.BufferGeometry();
@@ -68,6 +68,7 @@ function updateTriViz() {
   // Check if you need to update the buffers or create new ones
   if (!vertexColorBuffer || vertexColorBuffer.count !== triVertices.length / 3) {
     vertexColorBuffer = new THREE.Float32BufferAttribute(vertexColors, 3);
+    vertexColorBuffer.setUsage(THREE.DynamicDrawUsage)
     triGeometry.setAttribute('color', vertexColorBuffer);
   } else {
     vertexColorBuffer.set(vertexColors);
@@ -76,6 +77,7 @@ function updateTriViz() {
 
   if (!vertexAlphaBuffer || vertexAlphaBuffer.count !== triVertices.length / 3) {
     vertexAlphaBuffer = new THREE.Float32BufferAttribute(vertexAlphas, 1);
+    vertexAlphaBuffer.setUsage(THREE.DynamicDrawUsage)
     triGeometry.setAttribute('alpha', vertexAlphaBuffer);
   } else {
     vertexAlphaBuffer.set(vertexAlphas);
@@ -84,14 +86,15 @@ function updateTriViz() {
 
   if (!vertexHighlightBuffer || vertexHighlightBuffer.count !== triVertices.length / 3) {
     vertexHighlightBuffer = new THREE.Float32BufferAttribute(vertexHighlight, 1);
+    vertexHighlightBuffer.setUsage(THREE.DynamicDrawUsage)
     triGeometry.setAttribute('highlight', vertexHighlightBuffer);
   } else {
     vertexHighlightBuffer.set(vertexHighlight);
     vertexHighlightBuffer.needsUpdate = true;
   }
 
-  if(!trisMaterial) {
-    trisMaterial = new THREE.ShaderMaterial({
+  if(!triMaterial) {
+    triMaterial = new THREE.ShaderMaterial({
       vertexShader: `
         attribute vec3 color;
         attribute float alpha;
@@ -122,7 +125,7 @@ function updateTriViz() {
     })
   }
 
-  triObject = new THREE.Mesh(triGeometry, trisMaterial);
+  triObject = new THREE.Mesh(triGeometry, triMaterial);
   scene.add(triObject);
 
   const subMeshWire = triObject.children.find(child => child instanceof THREE.LineSegments)
@@ -203,16 +206,8 @@ function focusTris(trisArrToFocus) {
 function onCursorChangeEditor(message) {
   if(!triCache) return
   
-  // figure out what part we are in
-  let partNameFound = null
-  for (let partName in jbeamData || {}) {
-    if (message.range[0] >= jbeamData[partName].__range[0] && message.range[0] <= jbeamData[partName].__range[2]) {
-      partNameFound = partName
-      break
-    }
-  }
-  if(partNameFound !== currentPartName) {
-    currentPartName = partNameFound
+  if(currentPartName !== message.currentPartName) {
+    currentPartName = message.currentPartName
     updateTriViz(true)
   }
   
@@ -252,6 +247,9 @@ export function init() {
   window.addEventListener('message', onReceiveMessage);
 }
 
-export function animate(time) {
-  if(jbeamData === null) return
+export function dispose() {
+  window.removeEventListener('message', onReceiveMessage);
+  if(triObject) scene.remove(triObject);
+  if(triGeometry) triGeometry.dispose();
+  if(triMaterial) triMaterial.dispose();
 }

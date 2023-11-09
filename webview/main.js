@@ -9,7 +9,7 @@ let delta = 0;
 
 function animate(time) {
   // Request the next frame
-  requestAnimationFrame(animate);
+  window.animationFrameId = requestAnimationFrame(animate);
   
   // Calculate the time delta since the last frame
   currentTime = (new Date()).getTime();
@@ -21,7 +21,7 @@ function animate(time) {
     
     //cameraCenterSphere.position.copy(orbitControls.target);
     orbitControls.update(time)
-    ctx.visualizersMain.animate(time)
+    //ctx.visualizersMain.animate(time)
     ctx.ui.animate(time)
   
     TweenUpdate();
@@ -167,3 +167,30 @@ export function init() {
 
   window.addEventListener('resize', onResize)
 }
+
+export function destroy() {
+  window.removeEventListener('resize', onResize)
+  // Cancel the ongoing animation frame
+  if (window.animationFrameId) {
+    cancelAnimationFrame(window.animationFrameId);
+  }
+  
+  // Dispose of scene objects
+  scene.traverse(object => {
+    if (object.geometry) object.geometry.dispose();
+    if (object.material) {
+      if (object.material instanceof Array) {
+        // In case of multi-materials
+        object.material.forEach(material => material.dispose());
+      } else {
+        object.material.dispose();
+      }
+    }
+  })
+  
+  renderer.dispose();
+  if (orbitControls) orbitControls.dispose();
+  ctx.visualizersMain.dispose()
+}
+
+window.onbeforeunload = destroy;

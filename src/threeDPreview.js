@@ -3,30 +3,53 @@ const fs = require('fs');
 const path = require('path');
 const sjsonParser = require('./sjsonParser');
 const tableSchema = require('./tableSchema');
-const utilsExt = require('./utilsExt');
 
-let webPanel
 let meshCache = {}
-let extensionContext
+let extensionContext // context from activate
 
-function convertUri(filePath) {
-  const uri = vscode.Uri.file(filePath);
-  const webviewUri = webPanel.webview.asWebviewUri(uri);
-  return webviewUri.toString()
+// caches parsed data for each document
+let docCache = {}
+
+const highlightDecorationType = vscode.window.createTextEditorDecorationType({
+  backgroundColor: 'rgba(255, 255, 0, 0.3)', // yellow background for highlighting
+}); 
+const fadeDecorationType = vscode.window.createTextEditorDecorationType({
+  color: 'rgba(200, 200, 200, 0.5)',
+})
+
+function applyFadeEffectToDocument(editor, rangeToHighlight) {
+  const fullRange = new vscode.Range(
+    0,
+    0,
+    editor.document.lineCount - 1,
+    editor.document.lineAt(editor.document.lineCount - 1).text.length
+  );
+
+  const rangesToFade = [
+    new vscode.Range(fullRange.start, rangeToHighlight.start),
+    new vscode.Range(rangeToHighlight.end, fullRange.end),
+  ];
+
+  // Set the fade decoration for all the document except the highlighted range
+  editor.setDecorations(fadeDecorationType, rangesToFade);
+
+  // Set the highlight decoration for the range to be highlighted
+  editor.setDecorations(highlightDecorationType, [rangeToHighlight]);
 }
 
-function loadColladaNamespaces(uri, loadedNamespaces, loadCommon) {
+
+function onLoadColladaNamespaces(webPanel, uri, loadedNamespaces, loadCommon) {
   // Parse the URI to get the full file system path
   let filePath = vscode.Uri.parse(uri).fsPath;
 
   // Find the 'vehicles' directory in the path
-  let vehiclesPath = filePath;
-  let vehicleSpecificPath = null;
+  let vehiclesPath = filePath
+  let vehicleSpecificPath = null
   while (!vehiclesPath.endsWith('vehicles') && path.dirname(vehiclesPath) !== vehiclesPath) {
     if (path.basename(path.dirname(vehiclesPath)) === 'vehicles') {
-      vehicleSpecificPath = path.basename(vehiclesPath); // Grab the specific vehicle directory name
+      vehicleSpecificPath = path.basename(vehiclesPath) // Grab the specific vehicle directory name
     }
-    vehiclesPath = path.dirname(vehiclesPath);
+    vehiclesPath = path.dirname(vehiclesPath)
   }
 
   // Check if 'vehicles' was found
@@ -48,7 +71,7 @@ function loadColladaNamespaces(uri, loadedNamespaces, loadCommon) {
         if(webPanel) {
           webPanel.webview.postMessage({
             command: 'loadDaeFinal',
-            uri: convertUri(file.fsPath),
+            uri: convertUri(webPanel, file.fsPath),
             namespace: '/vehicles/common',
           })
         }
@@ -61,7 +84,7 @@ function loadColladaNamespaces(uri, loadedNamespaces, loadCommon) {
     const vehicleFolderPattern = new vscode.RelativePattern(vehicleSpecificFolderPath, '**/*.{dae,DAE,dAe,DaE,daE,DAe,daE,dAE}');
     findFilesPromises.push(vscode.workspace.findFiles(vehicleFolderPattern, null).then(files => {
       files.forEach(file => {
-        //console.log(`Found .dae in vehicle specific folder: ${file.fsPath} > ${convertUri(file.fsPath)}`);
+        //console.log(`Found .dae in vehicle specific folder: ${file.fsPath} > ${convertUri(webPanel, file.fsPath)}`);
         if(webPanel) {
           webPanel.webview.postMessage({
             command: 'loadDaeFinal',
@@ -83,15 +106,8 @@ function loadColladaNamespaces(uri, loadedNamespaces, loadCommon) {
 }
 
 
-const highlightDecorationType = vscode.window.createTextEditorDecorationType({
-  backgroundColor: 'rgba(255, 255, 0, 0.3)', // yellow background for highlighting
-});  
-const fadeDecorationType = vscode.window.createTextEditorDecorationType({
-  color: 'rgba(200, 200, 200, 0.5)',
-});
-
 function getWebviewContent(webPanel) {
-  if(!webPanel) return null
+  if(!webPanel || webPanel.is) return null
   const webviewPath = path.join(extensionContext.extensionPath, 'webview', 'index_vscode.html');
   let content = fs.readFileSync(webviewPath, 'utf8');
   content = content.replace(/<!-- LocalResource:(.*?) -->/g, (match, resourceName) => {
@@ -102,7 +118,7 @@ function getWebviewContent(webPanel) {
 
 function show3DSceneCommand() {
   // Create and show a new webview
-  webPanel = vscode.window.createWebviewPanel(
+  let webPanel = vscode.window.createWebviewPanel(
     'sceneView', // Identifies the type of the webview
     '3D Scene View', // Title of the panel displayed to the user
     vscode.ViewColumn.Beside, // Editor column to show the new webview panel in
@@ -114,29 +130,11 @@ function show3DSceneCommand() {
   )
   webPanel.webview.html = getWebviewContent(webPanel);
   // Handle the webview being disposed (closed by the user)
-  webPanel.onDidDispose(() => { webPanel = null; }, null, extensionContext.subscriptions);  
+  webPanel.onDidDispose(() => { 
+    webPanel = null
+  }, null, extensionContext.subscriptions);  
 
-  function applyFadeEffectToDocument(editor, rangeToHighlight) {
-    const fullRange = new vscode.Range(
-      0,
-      0,
-      editor.document.lineCount - 1,
-      editor.document.lineAt(editor.document.lineCount - 1).text.length
-    );
-  
-    const rangesToFade = [
-      new vscode.Range(fullRange.start, rangeToHighlight.start),
-      new vscode.Range(rangeToHighlight.end, fullRange.end),
-    ];
-  
-    // Set the fade decoration for all the document except the highlighted range
-    editor.setDecorations(fadeDecorationType, rangesToFade);
-  
-    // Set the highlight decoration for the range to be highlighted
-    editor.setDecorations(highlightDecorationType, [rangeToHighlight]);
-  }
-
-  function resetSelection(message) {
+  function onResetSelection(message) {
     let targetEditor = vscode.window.visibleTextEditors.find(editor => {
       return editor.document.uri.toString() === message.uri;
     });
@@ -147,7 +145,7 @@ function show3DSceneCommand() {
     }
   }
 
-  function goToLineAndDecorate(message) {
+  function onGoToLineAndDecorate(message) {
     let targetEditor = vscode.window.visibleTextEditors.find(editor => {
       return editor.document.uri.toString() === message.uri;
     });
@@ -158,7 +156,7 @@ function show3DSceneCommand() {
       const highlightRange = new vscode.Range(start, end);
 
       // Apply the highlight and fade effects
-      applyFadeEffectToDocument(targetEditor, highlightRange);
+      applyFadeEffectToDocument(targetEditor, highlightRange)
 
       // Go to the line and reveal it in the center of the viewport
       targetEditor.selection = new vscode.Selection(start, start);
@@ -172,28 +170,25 @@ function show3DSceneCommand() {
     message => {
       switch (message.command) {
         case 'selectLine':
-          goToLineAndDecorate(message);
+          onGoToLineAndDecorate(message);
           break;
         case 'resetSelection':
-          resetSelection(message);
+          onResetSelection(message);
           break;
         case 'loadColladaNamespaces':
-          loadColladaNamespaces(message.uri, message.data, message.loadCommon)
+          onLoadColladaNamespaces(webPanel, message.uri, message.data, message.loadCommon)
           break
         case 'loadDae':
           // this converts any file requests to proper URIs that can load inside the webview.
           // the sandbox does not allow any direct file interaction, so this indirection is required
-          const uri = vscode.Uri.file(path.join(extensionContext.extensionPath, 'webview', message.path));
-          const webviewUri = webPanel.webview.asWebviewUri(uri);
-          //console.log(">loadDae> ", message.path, webviewUri.toString())
           webPanel.webview.postMessage({
             command: 'loadDaeFinal',
-            uri: webviewUri.toString(),
+            uri: convertUri(path.join(extensionContext.extensionPath, 'webview', message.path)),
           });
           break;
-          case 'updateMeshCache':
-            Object.assign(meshCache, message.data)
-            break
+        case 'updateMeshCache':
+          Object.assign(meshCache, message.data)
+          break
         }
     },
     undefined,
@@ -226,10 +221,8 @@ function show3DSceneCommand() {
         return
       }
       let [tableInterpretedData, diagnostics] = tableSchema.processAllParts(parsedData)
+      docCache[uri] = tableInterpretedData
 
-      // Do something with the parsed data, like show it in an information message
-      //vscode.window.showInformationMessage('Document parsed successfully. Check the console for the data.');
-      //console.log("table expanded:", parsedData);
       webPanel.webview.postMessage({
         command: 'jbeamData',
         data: tableInterpretedData,
@@ -241,38 +234,58 @@ function show3DSceneCommand() {
     } catch (e) {
       // If there's an error in parsing, show it to the user
       vscode.window.showErrorMessage(`Error parsing SJSON: ${e.message}`);
+      throw e
     }
   }
-
   // Listen for when the active editor changes
   vscode.window.onDidChangeActiveTextEditor(editor => {
     if (editor) {
       parseAndPostData(editor.document);
     }
-  });
-
+  })
   // Listen for changes in the document of the active editor
   vscode.workspace.onDidChangeTextDocument(event => {
     if (webPanel.visible && event.document === vscode.window.activeTextEditor.document) {
       parseAndPostData(event.document, true);
     }
   });
+  vscode.window.onDidChangeTextEditorSelection(event => {
+    if (event.textEditor === vscode.window.activeTextEditor) {
+      const uri = event.textEditor.document.uri.toString()
+      const range = [event.selections[0].start.line, event.selections[0].start.character, event.selections[0].end.line, event.selections[0].end.character]
 
+      // find the part the cursor is in
+      let partNameFound = null
+      if(docCache[uri]) {
+        const data = docCache[uri]
+        for (let partName in data) {
+          if (range[0] >= data[partName].__range[0] && range[0] <= data[partName].__range[2]) {
+            partNameFound = partName
+            break
+          }
+        }
+      }
+      if (webPanel && webPanel.visible) {
+        webPanel.webview.postMessage({
+          command: 'cursorChanged',
+          currentPartName: partNameFound,
+          range: range
+        });
+      }
+    }
+  })
   // Initial parse and post
   if (vscode.window.activeTextEditor) {
     parseAndPostData(vscode.window.activeTextEditor.document);
   }
 
-  vscode.window.onDidChangeTextEditorSelection(event => {
-    if (event.textEditor === vscode.window.activeTextEditor) {
-      if (webPanel && webPanel.visible) {
-        webPanel.webview.postMessage({
-          command: 'cursorChanged',
-          range: [event.selections[0].start.line, event.selections[0].start.character, event.selections[0].end.line, event.selections[0].end.character]
-        });
-      }
+  // Listen for document closures
+  vscode.workspace.onDidCloseTextDocument(document => {
+    const uri = document.uri.toString()
+    if(docCache[uri]) {
+      delete docCache[uri]
     }
-  });
+  })
 }
 
 function activate(context) {
@@ -280,6 +293,10 @@ function activate(context) {
   extensionContext.subscriptions.push(vscode.commands.registerCommand('jbeam-editor.show3DScene', show3DSceneCommand));
 }
 
+function deactivate() {
+}
+
 module.exports = {
   activate: activate,
+  deactivate: deactivate,
 }
