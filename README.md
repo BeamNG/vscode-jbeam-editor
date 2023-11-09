@@ -72,6 +72,7 @@ This is a lightweight visualizer and tool for working with the physics definitio
 
 ## Wishlist
 
+* autocomplete part names in PC files
 * make grid and ground plane being as big as the vehicle at least for big vehicles
 * mesh opacity user-setable
 * implementation of props
