@@ -1,6 +1,6 @@
 # BeamNG Jbeam editor
 
-This is the README for your extension "jbeam-editor". After writing up a brief description, we recommend including the following sections.
+This is a lightweight visualizer and tool for working with the physics definition files of BeamNG (called jbeam).
 
 ## Features
 
