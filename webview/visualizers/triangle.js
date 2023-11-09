@@ -67,7 +67,7 @@ function updateTriViz() {
   updateVertexBuffer(triGeometry, 'color', vertexColors, 3)
   updateVertexBuffer(triGeometry, 'highlight', vertexHighlight, 1)
   triGeometry.computeVertexNormals()
-  triGeometry.computeTangents()
+  //triGeometry.computeTangents()
   triGeometry.computeBoundingBox()
   triGeometry.computeBoundingSphere()
 
