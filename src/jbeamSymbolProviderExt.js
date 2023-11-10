@@ -25,8 +25,7 @@
 const vscode = require('vscode');
 const sjsonParser = require('./sjsonParser');
 const tableSchema = require('./tableSchema');
-
-const excludedKeys = ['__range', '__isarray', '__isNamed'];
+const utilsExt = require('./utilsExt');
 
 class JBeamSymbolProvider {
   provideDocumentSymbols(document, token) {
@@ -74,7 +73,7 @@ class JBeamSymbolProvider {
         )
         let infoText = ''
         if(true) {
-          infoText += Object.keys(section).filter(key => !excludedKeys.includes(key)).length
+          infoText += Object.keys(section).filter(key => !utilsExt.excludedMagicKeys.includes(key)).length
         }
         const subSymbol = new vscode.DocumentSymbol(
           sectionName,
@@ -92,14 +91,18 @@ class JBeamSymbolProvider {
   }
 }
 
+let symbolProviderDisposable
 function activate(context) {
-  context.subscriptions.push(vscode.languages.registerDocumentSymbolProvider(
+  symbolProviderDisposable = vscode.languages.registerDocumentSymbolProvider(
     { language: 'jbeam' },
-    new JBeamSymbolProvider()
-  ));
+    new JBeamSymbolProvider(symbolProviderDisposable)
+  )
+  context.subscriptions.push()
 }
 
 function deactivate() {
+  // we dispose explicitly as we reload these modules on config change
+  if(symbolProviderDisposable) symbolProviderDisposable.dispose()
 }
 
 module.exports = {

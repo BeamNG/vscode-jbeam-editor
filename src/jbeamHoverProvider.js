@@ -74,9 +74,6 @@ function getKeyByValueStringComparison(object, value) {
   return Object.keys(object).find(key => String(object[key]) === value);
 }
 
-const keysToRemove = ['__range', '__isarray', '__isNamed']
-
-
 // this is the same as `document.getWordRangeAtPosition(position);` but it parses $ as well.
 // this is needed as we use $ for variables in JBeam
 // TODO: improve to parse anything in quotes first, then fall back to this version
@@ -125,6 +122,8 @@ class JBeamHoverProvider {
     contents.isTrusted = true; // Allows for command links and other Markdown features
     //contents.appendMarkdown(`**You are hovering over:** ${word}\n\n`);
 
+    const showFullDevData = vscode.workspace.getConfiguration('jbeam-editor').get('hover.dev.showFullDevData')
+
     let docHints = []
     let parsedData = sjsonParser.decodeSJSON(text);
     if(parsedData) {
@@ -132,7 +131,7 @@ class JBeamHoverProvider {
       const resultsRawData = utilsExt.findObjectsWithRange(parsedData, position.line, position.character, document.uri.toString());
       let foundObjCleanRaw
       if(resultsRawData && resultsRawData.length > 0) {
-        foundObjCleanRaw = deepCloneAndRemoveKeys(resultsRawData[0].obj, keysToRemove)
+        foundObjCleanRaw = deepCloneAndRemoveKeys(resultsRawData[0].obj, showFullDevData ? [] : utilsExt.excludedMagicKeys)
       }
 
       // fully unrolled data
@@ -143,15 +142,15 @@ class JBeamHoverProvider {
       if(tableInterpretedData) {
         resultsStructuredData = utilsExt.findObjectsWithRange(tableInterpretedData, position.line, position.character, document.uri.toString());
         if(resultsStructuredData && resultsStructuredData.length > 0) {
-          foundObjCleanStructured = deepCloneAndRemoveKeys(resultsStructuredData[0].obj, keysToRemove)
+          foundObjCleanStructured = deepCloneAndRemoveKeys(resultsStructuredData[0].obj, showFullDevData ? [] : utilsExt.excludedMagicKeys)
           // check for removed entries
           wasBlockMerged = !(resultsStructuredData && resultsStructuredData && (resultsRawData.length - 2 < resultsStructuredData.length))
           // this element was present in the raw data and merged in the structured version, so it's gone ...
         }
       }
 
-      let showDocs = vscode.workspace.getConfiguration('jbeam-editor').get('hover.showDocs')
-      let showDocHints = vscode.workspace.getConfiguration('jbeam-editor').get('hover.showDocHints')
+      const showDocs = vscode.workspace.getConfiguration('jbeam-editor').get('hover.showDocs')
+      const showDocHints = vscode.workspace.getConfiguration('jbeam-editor').get('hover.dev.showDocHints')
 
       if(showDocs || showDocHints) {
         // no try to get the docs with both data being present ...

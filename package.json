@@ -89,28 +89,40 @@
           "jbeam-editor.hover.enabled": {
             "type": "boolean",
             "default": true,
-            "description": "Enable or disable the text hover"
+            "description": "Enable or disable the text hover",
+            "order": 5
           },
           "jbeam-editor.hover.highlightBreadCrumb": {
             "type": "boolean",
             "default": false,
-            "description": "Highlight on breadcrumb click in hover"
+            "description": "Highlight on breadcrumb click in hover",
+            "order": 5
           },
           "jbeam-editor.hover.showDocs": {
             "type": "boolean",
             "default": true,
-            "description": "Show documentation in hover info"
-          },
-          "jbeam-editor.hover.showDocHints": {
-            "type": "boolean",
-            "default": false,
-            "description": "Developer setting: show the keys it looks for in the docs"
+            "description": "Show documentation in hover info",
+            "order": 5
           },
           "jbeam-editor.hover.showData": {
             "type": "boolean",
             "default": true,
-            "description": "Show the parsed data in the hover"
+            "description": "Show the parsed data in the hover",
+            "order": 5
+          },
+          "jbeam-editor.hover.dev.showDocHints": {
+            "type": "boolean",
+            "default": false,
+            "description": "Developer setting: show the keys it looks for in the docs",
+            "order": 90
+          },
+          "jbeam-editor.hover.dev.showFullDevData": {
+            "type": "boolean",
+            "default": false,
+            "description": "Developer setting: Show all data hover, do not clean up",
+            "order": 91
           }
+          
         }
       }
     ]

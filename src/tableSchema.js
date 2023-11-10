@@ -1,3 +1,5 @@
+const utilsExt = require('./utilsExt');
+
 let ignoreSections = {maxIDs: true, options: true};
 
 const specialVals = {
@@ -22,9 +24,7 @@ const typeIds = {
   BRAKELIGHT: 8,
   RUNNINGLIGHT: 16,
   REVERSELIGHT: 32
-};
-
-const excludedKeys = ['__range', '__isarray', '__isNamed'];
+}
 
 function replaceSpecialValues(val) {
   return val;
@@ -43,7 +43,7 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, diagnostics
     return -1
   }
 
-  let headerSize = Object.keys(header).filter(key => !excludedKeys.includes(key)).length;
+  let headerSize = Object.keys(header).filter(key => !utilsExt.excludedMagicKeys.includes(key)).length;
   let headerSize1 = headerSize;
   let newListSize = 0;
   let newList = {}
@@ -55,7 +55,7 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, diagnostics
 
   // Walk the list entries
   let newRowId = 0
-  let keys = Object.keys(jbeamTable).filter(key => !excludedKeys.includes(key))
+  let keys = Object.keys(jbeamTable).filter(key => !utilsExt.excludedMagicKeys.includes(key))
   for (const rowKey of keys) {
     let rowValue = jbeamTable[rowKey];
     if (typeof rowValue !== "object") {
@@ -69,7 +69,7 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, diagnostics
     } else {
       let newID = newRowId++
 
-      const rowSize = Object.keys(rowValue).filter(key => !excludedKeys.includes(key)).length
+      const rowSize = Object.keys(rowValue).filter(key => !utilsExt.excludedMagicKeys.includes(key)).length
       if (rowSize == headerSize + 1) {
         if(typeof rowValue[headerSize] !== 'object') {
           diagnostics.push(['error', `Inline option (argument ${headerSize + 1}) need to be a dict, not a ${typeof rowValue[headerSize]}: ${rowValue[headerSize]}`, rowValue.__range])  
@@ -90,13 +90,13 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, diagnostics
 
       // Walk the table row
       let newRow = Object.assign({}, localOptions);
-      excludedKeys.forEach(key => {
+      utilsExt.excludedMagicKeys.forEach(key => {
         delete newRow[key];
       });
 
       // Check if inline options are provided, merge them then
       // Assuming `headerSize1` is the number of keys to skip
-      const allKeys = Object.keys(rowValue).filter(key => !excludedKeys.includes(key)); // Get all keys of the rowValue object
+      const allKeys = Object.keys(rowValue).filter(key => !utilsExt.excludedMagicKeys.includes(key)); // Get all keys of the rowValue object
       const relevantKeys = allKeys.slice(headerSize1); // Get the keys after the first `headerSize1` keys
 
       // Iterate over the remaining keys
@@ -112,7 +112,7 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, diagnostics
       //newRow.__astNodeIdx = rowValue.__astNodeIdx;
 
       // Now care about the rest
-      const allKeys2 = Object.keys(rowValue).filter(key => !excludedKeys.includes(key));
+      const allKeys2 = Object.keys(rowValue).filter(key => !utilsExt.excludedMagicKeys.includes(key));
       //for (let [rk, _] of Object.entries(rowValue)) {
       for (let rk in allKeys2) {
         if (header[rk] === null) {
