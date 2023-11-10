@@ -70,6 +70,7 @@ This is a lightweight visualizer and tool for working with the physics definitio
 
 * triangle visualization
 
+  ![](assets/triDisplay.gif)
 
 * Settings shortcut in the top right corner:
 
