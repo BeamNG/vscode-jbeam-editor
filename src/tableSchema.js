@@ -33,9 +33,9 @@ function replaceSpecialValues(val) {
 function processTableWithSchemaDestructive(jbeamTable, inputOptions, diagnostics) {
   // Its a list, so verify that the first row is the header
   let header = jbeamTable[0];
-  if(!header) {
+  if(typeof header === "undefined") {
     // empty section
-    return
+    return 0
   }
   if (typeof header !== "object" || !header.hasOwnProperty('__isarray') || !header.__isarray) {
     diagnostics.push(['error', 'Invalid table header', header.__range])
