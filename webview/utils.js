@@ -45,9 +45,11 @@ function roundNumber(num) {
   return (Math.round(num * 100) / 100).toFixed(2);
 }
 
-function createGrid(scene) {
-  let size = 10; // 20x20 grid
-  let divisions = 10;
+let gridXY
+function updateGrid(scene, env) {
+  let size = Math.round(env?.planeWidth);
+  let divisions = size;
+  //console.log('updateGrid', size, divisions)
 
   const colorFront = new THREE.Color(0xaaaaaa);
   const colorBack = new THREE.Color(0x808080);
@@ -60,7 +62,8 @@ function createGrid(scene) {
   //scene.add(gridXZ);
 
   // Grid for the XY plane (Top-Bottom) - this is the ground plane grid
-  let gridXY = new THREE.GridHelper(size, divisions, colorFront, colorBack);
+  if(gridXY) scene.remove(gridXY)
+  gridXY = new THREE.GridHelper(size, divisions, colorFront, colorBack);
   gridXY.material.opacity = 0.5;
   gridXY.material.transparent = true;
   scene.add(gridXY);
@@ -146,7 +149,7 @@ drawPrimitives['arrow'] = function(context, env, arrow) {
   if(gap * 2 > lineLength * 0.8) {
     gap = 0
   }
-  let overSizedText = (textWidth > lineLength * 0.7) // can text fit on the line?
+  let overSizedText = (textWidth > lineLength * 0.7) || lineLength > 2 // can text fit on the line?
 
   const startGapX = textMidX - gap * Math.cos(angle);
   const startGapY = textMidY - gap * Math.sin(angle);
@@ -224,7 +227,7 @@ let groundPlaneMesh = null
 let groundPlaneTexture = null
 let groundPlaneMaterial = null
 
-function updateProjectionPlane(scene, items) {
+function updateProjectionPlane(scene, items, _env = {}) {
   const env = {
     planeOrigin: {x: 0, y: 0, z: 0},
     planeWidth: 10, // Width of the plane in 3D units
@@ -232,6 +235,8 @@ function updateProjectionPlane(scene, items) {
     canvasWidth: 8192, // Width of the canvas in pixels
     canvasHeight: 8192, // Height of the canvas in pixels
   }
+  Object.assign(env, _env)
+  console.log('Ground plane constructing with: ', env)
   let canvas = document.getElementById('canvas2DGroundplane')
   // remove canvas if it exists
   if(canvas) {
@@ -246,7 +251,7 @@ function updateProjectionPlane(scene, items) {
 
   // Fill the canvas with blue for testing
   //context.fillStyle = 'blue';
-  //context.fillRect(0, 0, canvasWidth, canvasHeight);
+  //context.fillRect(0, 0, env.canvasWidth, env.canvasHeight);
 
   // Draw each arrow on the canvas
   items.forEach((item) => {

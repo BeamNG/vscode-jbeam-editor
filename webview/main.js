@@ -156,7 +156,7 @@ export function init() {
   }
 
   //createDome(scene)
-  createGrid(scene)
+
   gizmoCreate()
   ctx.ui.init()
   ctx.visualizersMain.init()

@@ -6,9 +6,21 @@ export function redrawGroundPlane(nodesMin, nodesMax, selectedNodeIndices, point
     { type: 'text', position: new THREE.Vector3(0, 0, 0), font: 'bold 50px "Roboto Mono", monospace', color: '#444444', text: '0,0,0', textAlign: 'left', textBaseline: 'bottom' },
   ]
   
+  let env = {
+    planeWidth: 10,
+    planeHeight: 10,
+  }
+  
   let freeBox = {x: 0, y: 0, z: 0}
   let freeBoxText = {x: 0, y: 0, z: 0}
   if(nodesMin && nodesMax) {
+    // make ground plane big enough
+    let tmp = Math.max(Math.max(nodesMax.x - nodesMin.x, nodesMax.z - nodesMin.z), 10) // node bounding rect max
+    tmp *= 2 // double the size: the bounding box could be completely on one side only
+    tmp = Math.round(tmp / 2) * 2 // nearestDivisibleByTwo 
+    env.planeWidth =  tmp
+    env.planeHeight = tmp
+
     // this positions the legend not below the car
     freeBox = {x: Math.round(nodesMin.x) - 1, y: 0, z: Math.round(nodesMin.z) - 1}
     freeBoxText = {x: Math.round(nodesMin.x), y: 0, z: Math.round(nodesMin.z) - 1}
@@ -21,7 +33,7 @@ export function redrawGroundPlane(nodesMin, nodesMax, selectedNodeIndices, point
     let leftStart = new THREE.Vector3(nodesMin.x, nodesMin.y, nodesMax.z)
     let leftEnd = new THREE.Vector3(nodesMin.x, nodesMin.y, nodesMin.z)
     let leftLength = Math.round(leftStart.distanceTo(leftEnd) * 10) / 10
-    let labelSize = Math.max(60, leftLength * 80)
+    let labelSize = Math.min(200, Math.max(60, leftLength * 80))
     if(leftLength > 0.1) {
       items.push({ type: 'arrow', start: leftStart, end: leftEnd, color: 'rgba(0.3, 0.3, 0.3, 0.3)', width: labelSize / 10, label: leftLength + 'm', font: `bold ${labelSize}px "Roboto Mono", monospace` })
     }
@@ -69,7 +81,7 @@ export function redrawGroundPlane(nodesMin, nodesMax, selectedNodeIndices, point
         if(nodeCounter == 1) txt = `${nodeCounter} node`
         else if(nodeCounter == 0) txt = `no nodes :(`
 
-        items.push({ type: 'text', position: new THREE.Vector3(freeBoxText.x, 0, freeBoxText.z + 0.2), font: 'bold 60px "Roboto Mono", monospace', color: '#aaaaaa', text: txt, textAlign: 'left', textBaseline: 'top'})
+        items.push({ type: 'text', position: new THREE.Vector3(freeBoxText.x, 0, freeBoxText.z + 0.4), font: 'bold 60px "Roboto Mono", monospace', color: '#aaaaaa', text: txt, textAlign: 'left', textBaseline: 'top'})
       }
     } else {
       // everything being drawn
@@ -83,5 +95,6 @@ export function redrawGroundPlane(nodesMin, nodesMax, selectedNodeIndices, point
     }
   }
 
-  updateProjectionPlane(scene, items);
+  updateGrid(scene, env)
+  updateProjectionPlane(scene, items, env);
 }
