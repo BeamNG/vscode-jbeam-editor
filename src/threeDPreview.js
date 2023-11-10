@@ -118,6 +118,7 @@ function getWebviewContent(webPanel) {
 }
 
 function show3DSceneCommand() {
+  const config = vscode.workspace.getConfiguration('jbeam-editor')
   // Create and show a new webview
   let webPanel = vscode.window.createWebviewPanel(
     'sceneView', // Identifies the type of the webview
@@ -133,7 +134,14 @@ function show3DSceneCommand() {
   // Handle the webview being disposed (closed by the user)
   webPanel.onDidDispose(() => { 
     webPanel = null
-  }, null, extensionContext.subscriptions);  
+  }, null, extensionContext.subscriptions)
+
+  // now start the 3d scene in the webpanel :)
+  // this needs to happen before we send any data over
+  webPanel.webview.postMessage({
+    command: 'init',
+    config: JSON.stringify(config)
+  })
 
   function onResetSelection(message) {
     let targetEditor = vscode.window.visibleTextEditors.find(editor => {
@@ -167,8 +175,11 @@ function show3DSceneCommand() {
     }
   }
 
+  let openedFromTextEditor = vscode.window.activeTextEditor
+
   webPanel.webview.onDidReceiveMessage(
     message => {
+      //console.log('ext.onDidReceiveMessage', message)
       switch (message.command) {
         case 'selectLine':
           onGoToLineAndDecorate(message);
@@ -189,6 +200,13 @@ function show3DSceneCommand() {
           break;
         case 'updateMeshCache':
           Object.assign(meshCache, message.data)
+          break
+        // sent once the 3d scene finished loading
+        case 'sceneReady':
+          // send over the data of the active text document
+          if (openedFromTextEditor) {
+            parseAndPostData(openedFromTextEditor.document);
+          }
           break
         }
     },
@@ -275,10 +293,6 @@ function show3DSceneCommand() {
       }
     }
   })
-  // Initial parse and post
-  if (vscode.window.activeTextEditor) {
-    parseAndPostData(vscode.window.activeTextEditor.document);
-  }
 
   // Listen for document closures
   vscode.workspace.onDidCloseTextDocument(document => {

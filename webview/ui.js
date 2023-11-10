@@ -1,3 +1,4 @@
+let meshLoadingBtn
 let views = [
   {name: 'Top'   , onActivate() { animateCameraMovement(new THREE.Vector3(0, 10, 0)) }},
   {name: 'Bottom', onActivate() { animateCameraMovement(new THREE.Vector3(0,-10, 0)) }},
@@ -49,6 +50,14 @@ export async function init() {
     title: '3D Meshes',
   });
 
+  if(!(ctx?.config?.sceneView?.meshes?.loadByDefault ?? false)) {
+    meshLoadingBtn = folder3d.addButton({
+      title: 'Load 3D Meshes',
+    }).on('click', () => {
+      ctx.visualizersMesh.startLoadingMeshes()
+    })
+  }
+
   folder3d.addBinding(settings, 'meshStats', {
     label:null,
     multiline: true,
@@ -58,9 +67,11 @@ export async function init() {
 }
 
 export function animate(time) {
-
   const meshesEnabled = Object.keys(meshFolderCache).length !== 0
-  //load3DMeshBtn.enable(!meshesEnabled)
+
+  if(meshLoadingBtn) {
+    meshLoadingBtn.disabled = !meshLoadingEnabled
+  }
 
   if(meshesEnabled) {
     let txt = 'Shallow cache:\n'
@@ -74,3 +85,5 @@ export function animate(time) {
     settings.meshStats = txt;
   }
 }
+
+

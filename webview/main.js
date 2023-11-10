@@ -1,11 +1,11 @@
 let cameraCenterSphere
 
-const fps = 30; // For example, 30 frames per second
-const interval = 1000 / fps; // Calculate the interval in milliseconds
+let fpsLimit = 30
+let interval = 1000 / fpsLimit
 
-let lastTime = (new Date()).getTime();
-let currentTime = 0;
-let delta = 0;
+let lastTime = (new Date()).getTime()
+let currentTime = 0
+let delta = 0
 
 function animate(time) {
   // Request the next frame
@@ -17,24 +17,21 @@ function animate(time) {
 
   // If the delta is greater than our interval, update and render
   if (delta > interval) {
-    //console.log(1000 / delta)
-    
+    //console.log('FPS: ', 1000 / delta)
     cameraCenterSphere.position.copy(orbitControls.target);
     orbitControls.update(time)
     //ctx.visualizersMain.animate(time)
     ctx.ui.animate(time)
-  
     TweenUpdate();
-
-    //document.getElementById('info').textContent = roundNumber(camera.position.x) + ', ' + roundNumber(camera.position.y) + ', ' + roundNumber(camera.position.z);
-
     renderer.clear();
     renderer.render(scene, camera);
     renderer.state.reset();
-
     gizmoAnimate()
-
-    lastTime = currentTime - (delta % interval);
+    if(interval > 0) {
+      lastTime = currentTime - (delta % interval)
+    } else {
+      lastTime = currentTime
+    }
   }
 }
 
@@ -163,13 +160,26 @@ export function init() {
   ctx.ui.init()
   ctx.visualizersMain.init()
 
-  animate(0);
+  // set some config
+  fpsLimit = ctx?.config?.sceneView?.fpsLimit ?? 60
+  if(fpsLimit == 0) {
+    interval = 0
+  } else {
+    interval = 1000 / fpsLimit;
+  }
+
+  // kick off the renderer
+  animate(0)
 
   window.addEventListener('resize', onResize)
+  
+  // let VSCode know that we are good to receive data :)
+  ctx.vscode.postMessage({command: 'sceneReady'})
 }
 
 export function destroy() {
   window.removeEventListener('resize', onResize)
+  window.removeEventListener('message', onReceiveMessage);
   // Cancel the ongoing animation frame
   if (window.animationFrameId) {
     cancelAnimationFrame(window.animationFrameId);
@@ -192,5 +202,18 @@ export function destroy() {
   if (orbitControls) orbitControls.dispose();
   ctx.visualizersMain.dispose()
 }
-
 window.onbeforeunload = destroy;
+
+// this init's it all, so its outside of init :D
+function onReceiveMessage(event) {
+  const message = event.data;
+  //console.log('onReceiveMessage', message)
+  switch (message.command) {
+    case 'init':
+      ctx.config = JSON.parse(message.config)
+      console.log("Got config: ", ctx.config)
+      init()
+      break
+  }
+}
+window.addEventListener('message', onReceiveMessage);

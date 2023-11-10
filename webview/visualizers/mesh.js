@@ -38,7 +38,9 @@ function onReceiveData(message) {
     meshLibraryFull = [] // clear the library on file change
   }
 
-  startLoadingMeshes()
+  if(ctx?.config?.sceneView?.meshes?.loadByDefault ?? false) {
+    startLoadingMeshes()
+  }
 }
 
 function tryLoad3dMesh(meshName, onDone) {
