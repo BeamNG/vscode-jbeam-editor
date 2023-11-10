@@ -17,7 +17,7 @@ export function startLoadingMeshes() {
       command: 'loadColladaNamespaces',
       data: Object.keys(meshFolderCache),
       uri: uri,
-      loadCommon: false // TODO
+      loadCommon: ctx?.config?.sceneView?.meshes?.loadCommonFolder ?? false
     });
   }
   wasLoaded = true

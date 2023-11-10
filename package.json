@@ -132,7 +132,13 @@
             "type": "number",
             "default": 60,
             "description": "The FPS Limit for the 3D view. Set to 0 for now limiter",
-            "order": 91
+            "order": 5
+          },
+          "jbeam-editor.sceneView.meshes.loadCommonFolder": {
+            "type": "boolean",
+            "default": false,
+            "description": "Load common vehicle folder meshes",
+            "order": 5
           }
         }
       }
