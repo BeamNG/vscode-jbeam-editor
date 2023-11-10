@@ -4,10 +4,6 @@ let uri = null
 let pointsCache // the high level points in the cache
 let selectedNodeIndices = null // array of selected nodes
 
-// vertex buffers
-let vertexAlphas = []
-let vertexColors = []
-let vertexSizes = []
 let pointsObject // the scene object
 
 // computed data for display
@@ -168,11 +164,14 @@ function updateNodeViz(moveCamera) {
     }
   }
 
+  let vertexAlphas = []
+  let vertexColors = []
+  let vertexSizes = []
   // Fill arrays with data for each node
   for (let i = 0; i < nodeCounter; i++) {
     vertexAlphas.push(1)
     vertexColors.push(1, 0.65, 0)
-    vertexSizes.push(1.05)
+    vertexSizes.push(0.05)
   }
 
   let nodesGeometry
@@ -193,6 +192,9 @@ function updateNodeViz(moveCamera) {
     nodesMaterial = pointsObject.material
   } else {
     nodesMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        scale: { value: window.innerHeight / 2 } // Assuming perspective camera and square points
+      },      
       vertexShader: `
         attribute float alpha;
         attribute vec3 color;

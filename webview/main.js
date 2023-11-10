@@ -19,7 +19,7 @@ function animate(time) {
   if (delta > interval) {
     //console.log(1000 / delta)
     
-    //cameraCenterSphere.position.copy(orbitControls.target);
+    cameraCenterSphere.position.copy(orbitControls.target);
     orbitControls.update(time)
     //ctx.visualizersMain.animate(time)
     ctx.ui.animate(time)
