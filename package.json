@@ -137,7 +137,7 @@
           "jbeam-editor.sceneView.meshes.loadCommonFolder": {
             "type": "boolean",
             "default": false,
-            "description": "Load common vehicle folder meshes",
+            "description": "Load common vehicle folder meshes. Warning: slow, as there is a lot of data!",
             "order": 5
           }
         }
