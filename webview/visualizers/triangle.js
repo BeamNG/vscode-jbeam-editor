@@ -232,3 +232,7 @@ export function dispose() {
   if(triGeometry) triGeometry.dispose();
   if(triMaterial) triMaterial.dispose();
 }
+
+export function onConfigChanged() {
+  //console.log('triangle.onConfigChanged', ctx.config)
+}

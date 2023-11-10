@@ -139,6 +139,14 @@
             "default": false,
             "description": "Load common vehicle folder meshes. Warning: slow, as there is a lot of data!",
             "order": 5
+          },
+          "jbeam-editor.sceneView.meshes.opacity": {
+            "type": "number",
+            "default": 50,
+            "minimum": 0,
+            "maximum ": 100,
+            "description": "Opacity of the 3D meshes in percent",
+            "order": 5
           }
         }
       }

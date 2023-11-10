@@ -177,6 +177,10 @@ export function init() {
   ctx.vscode.postMessage({command: 'sceneReady'})
 }
 
+function onConfigChanged() {
+  ctx.visualizersMain.onConfigChanged()
+}
+
 export function destroy() {
   window.removeEventListener('resize', onResize)
   window.removeEventListener('message', onReceiveMessage);
@@ -211,8 +215,13 @@ function onReceiveMessage(event) {
   switch (message.command) {
     case 'init':
       ctx.config = JSON.parse(message.config)
-      console.log("Got config: ", ctx.config)
+      console.log("Init with config: ", ctx.config)
       init()
+      break
+    case 'config':
+      ctx.config = JSON.parse(message.config)
+      console.log("Config changed: ", ctx.config)
+      onConfigChanged()
       break
   }
 }

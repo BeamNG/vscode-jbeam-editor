@@ -236,3 +236,7 @@ export function dispose() {
     scene.remove(linesObject)
   }
 }
+
+export function onConfigChanged() {
+  //console.log('beam.onConfigChanged', ctx.config)
+}

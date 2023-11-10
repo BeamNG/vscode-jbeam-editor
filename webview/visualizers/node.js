@@ -362,3 +362,7 @@ export function dispose() {
     scene.remove(pointsObject)
   }
 }
+
+export function onConfigChanged() {
+  //console.log('node.onConfigChanged', ctx.config)
+}

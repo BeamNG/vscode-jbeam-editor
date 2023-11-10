@@ -53,7 +53,8 @@ function goToLineForHover(args) {
     targetEditor.selection = new vscode.Selection(start, start);
     targetEditor.revealRange(highlightRange, vscode.TextEditorRevealType.InCenter);
   } else {
-    console.error('Editor for uri not found: ', args.uri);
+    // settings might be open, silently ignore this
+    //console.error('hover-goToLineForHover: Editor for uri not found: ', args.uri);
   }
 }
 

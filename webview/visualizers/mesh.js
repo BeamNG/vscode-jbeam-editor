@@ -3,6 +3,7 @@ let currentPartName = null
 let uri = null
 let daeFindfilesDone = false
 let wasLoaded = false
+let defaultMeshOpacity = 1
 
 // loadedMeshes is in utils
 
@@ -259,11 +260,11 @@ function focusMeshes(meshesArrToFocus) {
     const subMeshWire = colladaNode.children.find(child => child instanceof THREE.LineSegments)
     if(subMeshWire) {
       subMeshWire.material.color.set(selected ? 0xff69b4 : 0xaaaaaa);
-      subMeshWire.material.opacity = selected ? 1 : 0.5
+      subMeshWire.material.opacity = selected ? 1 : defaultMeshOpacity
       subMeshWire.material.needsUpdate = true
     }
     if(colladaNode.material) {
-      colladaNode.material.opacity = selected ? 1 : 0.5
+      colladaNode.material.opacity = selected ? 1 : defaultMeshOpacity
       colladaNode.material.color.set(selected ? 0xff69b4 : 0xaaaaaa);
       colladaNode.material.needsUpdate = true
     }  
@@ -321,6 +322,7 @@ function onReceiveMessage(event) {
 }
 
 export function init() {
+  defaultMeshOpacity = (ctx?.config?.sceneView?.meshes?.opacity ?? 100) / 100
   window.addEventListener('message', onReceiveMessage);
 }
 
@@ -333,4 +335,13 @@ export function dispose() {
   loadedMeshes = []
 
   window.removeEventListener('message', onReceiveMessage);
+}
+
+export function onConfigChanged() {
+  //console.log('mesh.onConfigChanged', ctx.config)
+
+  defaultMeshOpacity = (ctx?.config?.sceneView?.meshes?.opacity ?? 100) / 100
+
+  // update meshes
+  focusMeshes(selectedMeshIndices)
 }

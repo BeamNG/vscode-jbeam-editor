@@ -11,3 +11,10 @@ export function dispose() {
   ctx.visualizersMesh.dispose()
   ctx.visualizersTriangle.dispose()
 }
+
+export function onConfigChanged() {
+  ctx.visualizersNode.onConfigChanged()
+  ctx.visualizersBeam.onConfigChanged()
+  ctx.visualizersMesh.onConfigChanged()
+  ctx.visualizersTriangle.onConfigChanged()
+}

@@ -10,6 +10,7 @@ let extensionContext // context from activate
 
 // caches parsed data for each document
 let docCache = {}
+let allWebPanels = []
 
 const highlightDecorationType = vscode.window.createTextEditorDecorationType({
   backgroundColor: 'rgba(255, 255, 0, 0.3)', // yellow background for highlighting
@@ -133,8 +134,11 @@ function show3DSceneCommand() {
   webPanel.webview.html = getWebviewContent(webPanel);
   // Handle the webview being disposed (closed by the user)
   webPanel.onDidDispose(() => { 
+    allWebPanels = allWebPanels.filter(panel => panel !== webPanel);
     webPanel = null
   }, null, extensionContext.subscriptions)
+  allWebPanels.push(webPanel)
+  extensionContext.subscriptions.push(webPanel)
 
   // now start the 3d scene in the webpanel :)
   // this needs to happen before we send any data over
@@ -171,7 +175,8 @@ function show3DSceneCommand() {
       targetEditor.selection = new vscode.Selection(start, start);
       targetEditor.revealRange(highlightRange, vscode.TextEditorRevealType.InCenter);
     } else {
-      console.error('Editor for uri not found: ', message.uri);
+      // settings might be open, silently ignore this
+      //console.error('3d-onGoToLineAndDecorate - Editor for uri not found: ', message.uri);
     }
   }
 
@@ -264,12 +269,12 @@ function show3DSceneCommand() {
   })
   // Listen for changes in the document of the active editor
   vscode.workspace.onDidChangeTextDocument(event => {
-    if (webPanel && webPanel.visible && event.document === vscode.window.activeTextEditor.document) {
+    if (vscode.window.activeTextEditor && webPanel && webPanel.visible && event.document === vscode.window.activeTextEditor.document) {
       parseAndPostData(event.document, true);
     }
   });
   vscode.window.onDidChangeTextEditorSelection(event => {
-    if (event.textEditor === vscode.window.activeTextEditor) {
+    if (vscode.window.activeTextEditor && event.textEditor === vscode.window.activeTextEditor) {
       const uri = event.textEditor.document.uri.toString()
       const range = [event.selections[0].start.line, event.selections[0].start.character, event.selections[0].end.line, event.selections[0].end.character]
 
@@ -308,6 +313,19 @@ function activate(context) {
   extensionContext = context
   show3DSceneCommandDisposable = vscode.commands.registerCommand('jbeam-editor.show3DScene', show3DSceneCommand);
   extensionContext.subscriptions.push(show3DSceneCommandDisposable)
+
+  context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(event => {
+    if (event.affectsConfiguration('jbeam-editor')) {
+      const config = vscode.workspace.getConfiguration('jbeam-editor')
+      for(let w of allWebPanels) {
+        if(!w || !w.webview) continue
+        w.webview.postMessage({
+          command: 'config',
+          config: JSON.stringify(config)
+        })
+      }
+    }
+  }))
 }
 
 function deactivate() {
