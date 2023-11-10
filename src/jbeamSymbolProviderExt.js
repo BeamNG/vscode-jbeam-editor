@@ -100,7 +100,6 @@ function activate(context) {
 }
 
 function deactivate() {
-  jbeamDiagnostics.clear();
 }
 
 module.exports = {

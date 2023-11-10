@@ -289,12 +289,16 @@ function show3DSceneCommand() {
   })
 }
 
+let show3DSceneCommandDisposable
 function activate(context) {
   extensionContext = context
-  extensionContext.subscriptions.push(vscode.commands.registerCommand('jbeam-editor.show3DScene', show3DSceneCommand));
+  show3DSceneCommandDisposable = vscode.commands.registerCommand('jbeam-editor.show3DScene', show3DSceneCommand);
+  extensionContext.subscriptions.push(show3DSceneCommandDisposable)
 }
 
 function deactivate() {
+  // we dispose explicitly as we reload these modules on config change
+  if(show3DSceneCommandDisposable) show3DSceneCommandDisposable.dispose()
 }
 
 module.exports = {

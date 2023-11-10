@@ -45,7 +45,9 @@ function goToLineForHover(args) {
     const end = new vscode.Position(args.range[2], args.range[3]);
     const highlightRange = new vscode.Range(start, end);
 
-    applyFadeEffectToDocument(targetEditor, highlightRange);
+    if(vscode.workspace.getConfiguration('jbeam-editor').get('hoverHighlightBreadCrumb')) {
+      applyFadeEffectToDocument(targetEditor, highlightRange)
+    }
 
     // Go to the line and reveal it in the center of the viewport
     targetEditor.selection = new vscode.Selection(start, start);
@@ -221,16 +223,26 @@ class JBeamHoverProvider {
   }
 }
 
+let gotoLineDisposable
+let hoverProviderDisposable
 function activate(context) {
-  context.subscriptions.push(vscode.languages.registerHoverProvider(
-    { language: 'jbeam' },
-    new JBeamHoverProvider()
-  ))
+  let config = vscode.workspace.getConfiguration('jbeam-editor')
+  if(config.get('hoverEnabled')) {
+    hoverProviderDisposable = vscode.languages.registerHoverProvider(
+      { language: 'jbeam' },
+      new JBeamHoverProvider()
+    )
+    context.subscriptions.push(hoverProviderDisposable)
+  }
 
-  context.subscriptions.push(vscode.commands.registerCommand('jbeam-editor.gotoLine', goToLineForHover));
+  gotoLineDisposable = vscode.commands.registerCommand('jbeam-editor.gotoLine', goToLineForHover)
+  context.subscriptions.push();
 }
 
 function deactivate() {
+  // we dispose explicitly as we reload these modules on config change
+  if(gotoLineDisposable) gotoLineDisposable.dispose()
+  if(hoverProviderDisposable) hoverProviderDisposable.dispose()
 }
 
 module.exports = {

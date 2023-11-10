@@ -38,6 +38,11 @@
       {
         "command": "jbeam-editor.gotoLine",
         "title": "Go to a line"
+      },
+      {
+        "command": "jbeam-editor.openSettings",
+        "title": "Open settings",
+        "icon": "$(settings-gear)"
       }
     ],
     "menus": {
@@ -47,6 +52,12 @@
           "command": "jbeam-editor.show3DScene",
           "group": "navigation",
           "icon": "$(open-preview)"
+        },
+        {
+          "when": "resourceLangId == jbeam",
+          "command": "jbeam-editor.openSettings",
+          "group": "1_run",
+          "icon": "$(settings-gear)"
         }
       ]
     },
@@ -70,7 +81,25 @@
         "configuration": "./language-configuration.json"
       }
     ],
-    "documentSymbolProvider": true
+    "documentSymbolProvider": true,
+    "configuration": [
+      {
+        "type": "object",
+        "title": "BeamNG JBeam Editor",
+        "properties": {
+          "jbeam-editor.hoverEnabled": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable or disable the text hover"
+          },
+          "jbeam-editor.hoverHighlightBreadCrumb": {
+            "type": "boolean",
+            "default": false,
+            "description": "Highlight on breadcrumb click in hover"
+          }
+        }
+      }
+    ]
   },
   "webview": {
     "scripts": [
