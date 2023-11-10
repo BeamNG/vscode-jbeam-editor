@@ -161,6 +161,11 @@ function finalizeMeshes() {
                 mesh.add(wireframe);
               }
             }
+            if(flexbody.pos) {
+              colladaNode.position.x = flexbody.pos?.x ?? 0
+              colladaNode.position.y = flexbody.pos?.z ?? 0
+              colladaNode.position.z = -flexbody.pos?.y ?? 0
+            }
             colladaNode.rotation.x = -Math.PI / 2;
             colladaNode.__range = flexbody.__range
             colladaNode.traverse((n) => {
