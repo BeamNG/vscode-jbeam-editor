@@ -196,10 +196,10 @@ function processPart(part, diagnostics) {
       } else {
         if (!part.validTables[sectionName]) {
           let newList = processTableWithSchemaDestructive(section, part.options, diagnostics);
-          if (newList && newList.length > 0) {
+          if (newList !== undefined && newList.length > 0) {
             part.validTables[sectionName] = true;
-            part[sectionName] = newList;
           }
+          part[sectionName] = newList;
         }
       }
     }
