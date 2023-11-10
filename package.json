@@ -84,18 +84,32 @@
     "documentSymbolProvider": true,
     "configuration": [
       {
-        "type": "object",
         "title": "BeamNG JBeam Editor",
         "properties": {
-          "jbeam-editor.hoverEnabled": {
+          "jbeam-editor.hover.enabled": {
             "type": "boolean",
             "default": true,
             "description": "Enable or disable the text hover"
           },
-          "jbeam-editor.hoverHighlightBreadCrumb": {
+          "jbeam-editor.hover.highlightBreadCrumb": {
             "type": "boolean",
             "default": false,
             "description": "Highlight on breadcrumb click in hover"
+          },
+          "jbeam-editor.hover.showDocs": {
+            "type": "boolean",
+            "default": true,
+            "description": "Show documentation in hover info"
+          },
+          "jbeam-editor.hover.showDocHints": {
+            "type": "boolean",
+            "default": false,
+            "description": "Developer setting: show the keys it looks for in the docs"
+          },
+          "jbeam-editor.hover.showData": {
+            "type": "boolean",
+            "default": true,
+            "description": "Show the parsed data in the hover"
           }
         }
       }

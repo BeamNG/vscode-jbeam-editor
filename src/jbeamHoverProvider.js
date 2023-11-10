@@ -45,7 +45,7 @@ function goToLineForHover(args) {
     const end = new vscode.Position(args.range[2], args.range[3]);
     const highlightRange = new vscode.Range(start, end);
 
-    if(vscode.workspace.getConfiguration('jbeam-editor').get('hoverHighlightBreadCrumb')) {
+    if(vscode.workspace.getConfiguration('jbeam-editor').get('hover.highlightBreadCrumb')) {
       applyFadeEffectToDocument(targetEditor, highlightRange)
     }
 
@@ -56,9 +56,6 @@ function goToLineForHover(args) {
     console.error('Editor for uri not found: ', args.uri);
   }
 }
-
-
-
 
 function deepCloneAndRemoveKeys(obj, keysToRemove) {
   if (typeof obj !== 'object' || obj === null) return obj; // Primitives or null
@@ -153,64 +150,73 @@ class JBeamHoverProvider {
         }
       }
 
-      // no try to get the docs with both data being present ...
-      if(resultsRawData && resultsRawData.length > 0) {
-        const shortWord = word.slice(0, 40) // because there can be a lot of garbage in there, like half the document ...
-        const finalBreadCrumb = (`${resultsRawData[0].breadcrumbPlainText} > ${shortWord}`)
-        docHints.push(finalBreadCrumb)
-        let doc = getDocEntry(finalBreadCrumb)
-        if(doc) {
-          contents.appendMarkdown(`## Documentation\n### ${finalBreadCrumb}\n\n`);
-          contents.appendMarkdown(doc + '\n\n');
-        } else {
-          // try to find the key of the thing hovered
-          let keyOfEntry
-          if(foundObjCleanStructured) {
-            keyOfEntry = getKeyByValueStringComparison(foundObjCleanStructured, shortWord)
-            if(!keyOfEntry) {
-              keyOfEntry = getKeyByValueStringComparison(foundObjCleanRaw, shortWord)
-            }
-            if(keyOfEntry && resultsStructuredData && resultsStructuredData.length > 0) {
-              keyOfEntry = keyOfEntry.replace(/:.*$/, ''); // remove trailing : for the docs ... - btw, this is the namespace separator and empty means 'nodes'
-              keyOfEntry = `${resultsStructuredData[0].breadcrumbPlainText} > ${keyOfEntry}`
-              docHints.push(keyOfEntry)
-              doc = getDocEntry(keyOfEntry)
-              if(doc) {
-                contents.appendMarkdown(`## Documentation\n### ${keyOfEntry}\n\n`);
-                contents.appendMarkdown(doc + '\n\n');
+      let showDocs = vscode.workspace.getConfiguration('jbeam-editor').get('hover.showDocs')
+      let showDocHints = vscode.workspace.getConfiguration('jbeam-editor').get('hover.showDocHints')
+
+      if(showDocs || showDocHints) {
+        // no try to get the docs with both data being present ...
+        if(resultsRawData && resultsRawData.length > 0) {
+          const shortWord = word.slice(0, 40) // because there can be a lot of garbage in there, like half the document ...
+          const finalBreadCrumb = (`${resultsRawData[0].breadcrumbPlainText} > ${shortWord}`)
+          docHints.push(finalBreadCrumb)
+          let doc = getDocEntry(finalBreadCrumb)
+          if(showDocs && doc) {
+            contents.appendMarkdown(`## Documentation\n### ${finalBreadCrumb}\n\n`);
+            contents.appendMarkdown(doc + '\n\n');
+          } else {
+            // try to find the key of the thing hovered
+            let keyOfEntry
+            if(foundObjCleanStructured) {
+              keyOfEntry = getKeyByValueStringComparison(foundObjCleanStructured, shortWord)
+              if(!keyOfEntry) {
+                keyOfEntry = getKeyByValueStringComparison(foundObjCleanRaw, shortWord)
+              }
+              if(keyOfEntry && resultsStructuredData && resultsStructuredData.length > 0) {
+                keyOfEntry = keyOfEntry.replace(/:.*$/, ''); // remove trailing : for the docs ... - btw, this is the namespace separator and empty means 'nodes'
+                keyOfEntry = `${resultsStructuredData[0].breadcrumbPlainText} > ${keyOfEntry}`
+                docHints.push(keyOfEntry)
+                doc = getDocEntry(keyOfEntry)
+                if(showDocs && doc) {
+                  contents.appendMarkdown(`## Documentation\n### ${keyOfEntry}\n\n`);
+                  contents.appendMarkdown(doc + '\n\n');
+                }
               }
             }
-          }
-          if(!doc) {
-            // retry with the word only
-            docHints.push(keyOfEntry)
-            doc = getDocEntry(shortWord)
-            if(doc) {
-              contents.appendMarkdown(`## Documentation\n### ${shortWord}\n\n`);
-              contents.appendMarkdown(doc + '\n\n');
+            if(!doc) {
+              // retry with the word only
+              docHints.push(keyOfEntry)
+              doc = getDocEntry(shortWord)
+              if(showDocs && doc) {
+                contents.appendMarkdown(`## Documentation\n### ${shortWord}\n\n`);
+                contents.appendMarkdown(doc + '\n\n');
+              }
             }
           }
         }
       }
 
       // now add the data if available
-      if(resultsStructuredData) {
-        if(!wasBlockMerged && foundObjCleanStructured) {
-          const text = JSON.stringify(foundObjCleanStructured, null, 2)
-          if(text.length < 32768) {
-            contents.appendMarkdown(`## Data\n\n ${resultsStructuredData[0].breadcrumbMarkdown}\n`)
-            contents.appendCodeblock(JSON.stringify(foundObjCleanStructured, null, 2), 'json')
+      if(vscode.workspace.getConfiguration('jbeam-editor').get('hover.showData')) {
+        if(resultsStructuredData) {
+          if(!wasBlockMerged && foundObjCleanStructured) {
+            const text = JSON.stringify(foundObjCleanStructured, null, 2)
+            if(text.length < 32768) {
+              contents.appendMarkdown(`## Data\n\n ${resultsStructuredData[0].breadcrumbMarkdown}\n`)
+              contents.appendCodeblock(JSON.stringify(foundObjCleanStructured, null, 2), 'json')
+            }
+          } else {
+            contents.appendMarkdown(`Object contained in ${resultsStructuredData[0].breadcrumbMarkdown}\n`)
           }
-        } else {
-          contents.appendMarkdown(`Object contained in ${resultsStructuredData[0].breadcrumbMarkdown}\n`)
         }
       }
 
-      if(docHints.length > 0) {
-        docHints = docHints.filter(content => !/[^{}]*/.test(content))
+      if(showDocHints && docHints.length > 0) {
+        docHints = docHints.filter(content => !/[{}]/.test(content));
         if(docHints.length > 0) {
           contents.appendMarkdown('#### Documentation hints\n\n')
-          contents.appendMarkdown(docHints.join('\n\n'))
+          for(let dh of docHints) {
+            contents.appendMarkdown(' * `' + dh + '`\n\n')
+          }
         }
       }
 
@@ -227,7 +233,7 @@ let gotoLineDisposable
 let hoverProviderDisposable
 function activate(context) {
   let config = vscode.workspace.getConfiguration('jbeam-editor')
-  if(config.get('hoverEnabled')) {
+  if(config.get('hover.enabled')) {
     hoverProviderDisposable = vscode.languages.registerHoverProvider(
       { language: 'jbeam' },
       new JBeamHoverProvider()
