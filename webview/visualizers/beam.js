@@ -4,13 +4,10 @@ let beamCache // contains the high level object info
 let selectedBeamIndices = null // arry of selected beam or null for no selection
 
 // buffers for the 3d geometry
-let vertexPositions = []
-let vertexAlphas = []
-let vertexColors = []
 let linesObject // the scene object
 
 function updateBeamViz() {
-  vertexPositions = []
+  let vertexPositions = []
   beamCache = []
   let beamNodesCounter = 0
   for (let partName in jbeamData) {
@@ -45,6 +42,8 @@ function updateBeamViz() {
   }
 
   // Fill arrays with data for each node
+  let vertexAlphas = []
+  let vertexColors = []
   for (let i = 0; i < beamNodesCounter; i++) {
     vertexAlphas.push(0.5)
     vertexColors.push(0, 1, 0)
