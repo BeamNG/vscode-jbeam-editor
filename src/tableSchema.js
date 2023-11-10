@@ -33,6 +33,10 @@ function replaceSpecialValues(val) {
 function processTableWithSchemaDestructive(jbeamTable, inputOptions, diagnostics) {
   // Its a list, so verify that the first row is the header
   let header = jbeamTable[0];
+  if(!header) {
+    // empty section
+    return
+  }
   if (typeof header !== "object" || !header.hasOwnProperty('__isarray') || !header.__isarray) {
     diagnostics.push(['error', 'Invalid table header', header.__range])
     return -1
@@ -192,11 +196,10 @@ function processPart(part, diagnostics) {
       } else {
         if (!part.validTables[sectionName]) {
           let newList = processTableWithSchemaDestructive(section, part.options, diagnostics);
-
-          if (newList.length > 0) {
+          if (newList && newList.length > 0) {
             part.validTables[sectionName] = true;
+            part[sectionName] = newList;
           }
-          part[sectionName] = newList;
         }
       }
     }
