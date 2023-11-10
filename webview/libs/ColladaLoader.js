@@ -254,7 +254,7 @@ class ColladaLoader extends THREE.Loader {
             break;
 
           default:
-            console.log( child );
+            //console.log( child );
 
         }
 
@@ -2104,7 +2104,7 @@ class ColladaLoader extends THREE.Loader {
             break;
 
           default:
-            console.log( child );
+            //console.log( child );
 
         }
 
@@ -3156,7 +3156,7 @@ class ColladaLoader extends THREE.Loader {
 
           } else {
 
-            console.log( 'THREE.ColladaLoader: ' + jointIndex + ' does not exist.' );
+            //console.log( 'THREE.ColladaLoader: ' + jointIndex + ' does not exist.' );
 
           }
 
@@ -3330,7 +3330,7 @@ class ColladaLoader extends THREE.Loader {
             break;
 
           default:
-            console.log( child );
+            //console.log( child );
 
         }
 
