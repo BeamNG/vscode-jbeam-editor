@@ -8,17 +8,19 @@ let defaultMeshOpacity = 1
 // loadedMeshes is in utils
 
 let selectedMeshIndices = null
+let loadedCommonFolders
 
 export function startLoadingMeshes() {
   daeFindfilesDone = false
   daeLoadingCounter = 0
   daeLoadingCounterFull = 0
+  loadedCommonFolders = ctx?.config?.sceneView?.meshes?.loadCommonFolder ?? false
   if(ctx.vscode) {
     ctx.vscode.postMessage({
       command: 'loadColladaNamespaces',
       data: Object.keys(meshFolderCache),
       uri: uri,
-      loadCommon: ctx?.config?.sceneView?.meshes?.loadCommonFolder ?? false
+      loadCommon: loadedCommonFolders,
     });
   }
   wasLoaded = true
@@ -345,6 +347,12 @@ export function onConfigChanged() {
   //console.log('mesh.onConfigChanged', ctx.config)
 
   defaultMeshOpacity = (ctx?.config?.sceneView?.meshes?.opacity ?? 100) / 100
+
+  const shoudlLoadCommonFolder = (ctx?.config?.sceneView?.meshes?.loadCommonFolder ?? false)
+  if(shoudlLoadCommonFolder !== loadedCommonFolders) {
+    // changed, lets reload the meshes
+    startLoadingMeshes()    
+  }
 
   // update meshes
   focusMeshes(selectedMeshIndices)
