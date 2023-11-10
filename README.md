@@ -135,6 +135,26 @@ If all worked, it should show up like this now:
 
 ## Release Notes
 
+### 0.2.5
+* Bugfixes:
+  * fixed empty sections crashing the parser
+  * improved error handling sjson/table parsing
+  * improved stability with multiple webviews open
+  * improved stability with changing documents
+  * fixed memory leaks due to improper geometry/material management
+  * Fixed meshes disappearing: fixed normal and bounds calculation
+
+* Features:
+  * Added extension settings. Open with `Open Settings` on top right corner
+  * Added new settings
+    * Enable/Disable hover
+    * Enable/Disable hover highlight with the breadCrumb
+    * Enable/Disable hover documentation
+    * Enable/Disable hover data
+    * Enable/Disable mesh default loading
+    * FPS Limit
+    * Load common folder
+
 ### 0.2.4
 * fixed leaking `options` in the table parser
 * removed ground floor for now
