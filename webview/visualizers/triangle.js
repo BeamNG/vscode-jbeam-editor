@@ -105,6 +105,7 @@ function updateTriViz() {
   }
 
   triObject = new THREE.Mesh(triGeometry, triMaterial);
+  triObject.name = 'triObject'
   scene.add(triObject);
 
   const subMeshWire = triObject.children.find(child => child instanceof THREE.LineSegments)
@@ -119,6 +120,7 @@ function updateTriViz() {
       //depthTest: true,
       //renderOrder: 2,
     }));
+    wireframe.name = 'triangles_wireframe'
     triObject.add(wireframe);
   }
 }

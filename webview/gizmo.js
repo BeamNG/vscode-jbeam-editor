@@ -158,12 +158,14 @@ function gizmoCreate() {
   gizmoCube = new THREE.Mesh(gizmoCubeGeometry, gizmoMaterials);
   gizmoCube.position.set(0, 0, 0);
   gizmoCube.scale.set(cubeSize, cubeSize, cubeSize);
+  gizmoCube.name = 'gizmoCube'
   gizmoScene.add(gizmoCube);
 
   const edges = new THREE.EdgesGeometry(gizmoCube.geometry);
   gizmoCubeEdges = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xaaaaaa }));
   gizmoCubeEdges.position.set(0, 0, 0);
   gizmoCubeEdges.scale.set(cubeEdgesSize, cubeEdgesSize, cubeEdgesSize);
+  gizmoCubeEdges.name = 'gizmoCubeEdges'
   gizmoScene.add(gizmoCubeEdges);
 
   let gizmoHighlightMaterials = [
@@ -176,6 +178,7 @@ function gizmoCreate() {
   ]
   gizmoCubeHighlight = new THREE.Mesh(gizmoCubeGeometry, gizmoHighlightMaterials);
   gizmoCubeHighlight.scale.set(cubeEdgesSize, cubeEdgesSize, cubeEdgesSize);
+  gizmoCubeHighlight.name = 'gizmoCubeHighlight'
   gizmoScene.add(gizmoCubeHighlight)
 
   gizmoRenderer.domElement.addEventListener('click', onGizmoClick);

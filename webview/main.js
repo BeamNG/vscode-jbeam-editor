@@ -17,6 +17,15 @@ function animate(time) {
 
   // If the delta is greater than our interval, update and render
   if (delta > interval) {
+
+    /*
+    scene.traverse((object) => {
+      if (object.geometry && object.geometry.boundingSphere === null) {
+        console.warn('Found object with disposed geometry', object);
+      }
+    })
+    */
+
     //console.log('FPS: ', 1000 / delta)
     cameraCenterSphere.position.copy(orbitControls.target);
     orbitControls.update(time)
@@ -99,11 +108,14 @@ export function init() {
   //sphereMaterial.opacity = 0.5;
   //sphereMaterial.transparent = true;
   cameraCenterSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+  cameraCenterSphere.name = 'cameraCenterSphere'
   scene.add(cameraCenterSphere);  
   
 
   // Ambient light affects all objects in the scene globally.
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // soft white light
+  ambientLight.intensity = 0.1
+  ambientLight.name = 'ambientLight'
   scene.add(ambientLight);
   scene.fog = new THREE.FogExp2(0x808080, 0.002); // color and density
 
@@ -111,29 +123,30 @@ export function init() {
   const keyLight = new THREE.DirectionalLight(0xffffff, 1.0);
   keyLight.position.set(0, 50, 50); // Moved higher up
   keyLight.target.position.set(0, 0, 0); // Points towards the center of the scene
+  keyLight.name = 'keyLight'
   scene.add(keyLight);
 
   // Fill Light - weaker, opposite side of the key light
   const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
   fillLight.position.set(50, 25, -50); // Moved higher up
   fillLight.target.position.set(0, 0, 0); // Points towards the center of the scene
+  fillLight.name = 'fillLight'
   scene.add(fillLight);
 
   // Rim Light - behind the subject, high up, for defining edges
   const rimLight = new THREE.DirectionalLight(0xffffff, 0.75);
   rimLight.position.set(-50, 50, -50); // Moved higher up
   rimLight.target.position.set(0, 0, 0); // Points towards the center of the scene
+  rimLight.name = 'rimLight'
   scene.add(rimLight);
 
   // Bottom Light - placed below the subject, pointing upward
   const bottomLight = new THREE.DirectionalLight(0xffffff, 0.5);
   bottomLight.position.set(0, -50, 0); // Positioned below the scene, facing upwards
   bottomLight.target.position.set(0, 0, 0); // Points towards the center of the scene
+  bottomLight.name = 'bottomLight'
   scene.add(bottomLight);
-
-  // Existing Ambient Light - weaker, for subtle overall illumination
-  ambientLight.intensity = 0.1; // Assuming ambientLight is already created
-  scene.add(ambientLight);
+  
 
   // Renderer settings for gamma correction
   renderer.gammaFactor = 2.2;
@@ -152,6 +165,7 @@ export function init() {
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.rotation.x = -Math.PI / 2; // Rotate the floor 90 degrees
     floor.position.y = -0.005; // to prevent flickering with the grid
+    floor.name = 'floor'
     scene.add(floor);
   }
 

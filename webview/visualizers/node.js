@@ -231,6 +231,7 @@ function updateNodeViz(moveCamera) {
   
   if(!pointsObject) {
     pointsObject = new THREE.Points(nodesGeometry, nodesMaterial);
+    pointsObject.name = 'pointsObject'
     scene.add(pointsObject);
   }
 

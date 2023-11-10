@@ -94,6 +94,7 @@ function updateBeamViz() {
 
   if(!linesObject) {
     linesObject = new THREE.LineSegments(lineGeometry, lineMaterial);
+    linesObject.name = 'linesObject'
     scene.add(linesObject)
   }
 }

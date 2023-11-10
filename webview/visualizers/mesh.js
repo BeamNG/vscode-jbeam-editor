@@ -136,7 +136,7 @@ function finalizeMeshes() {
             return
           }
           colladaNode.traverse((mesh) => {
-            if(mesh && mesh instanceof THREE.Mesh) {
+            if(mesh && mesh instanceof THREE.Mesh && mesh.geometry) {
               mesh.material = new THREE.MeshStandardMaterial({
                 color: 0x808080, // Grey color
                 metalness: 0.5,
@@ -171,6 +171,7 @@ function finalizeMeshes() {
             colladaNode.traverse((n) => {
               n.castShadow = true
             })
+            colladaNode.name = 'flexbody_' + flexbody.mesh
             scene.add(colladaNode)
             loadedMeshes.push(colladaNode)
           })
@@ -208,6 +209,7 @@ function finalizeMeshes() {
                   linewidth: 1,
                   // TODO: FIX transparency between objects
                 }));
+                wireframe.name = 'prop_wireframe'
                 mesh.add(wireframe);
               }        
             }
@@ -216,6 +218,7 @@ function finalizeMeshes() {
             colladaNode.traverse((n) => {
               n.castShadow = true
             })
+            prop.name = 'prop_' + flexbody.mesh
             scene.add(colladaNode)
             loadedMeshes.push(colladaNode)
           })
@@ -269,12 +272,12 @@ function focusMeshes(meshesArrToFocus) {
     //console.log("focusMeshes > colladaNode", colladaNode)
     if(!colladaNode) continue
     const subMeshWire = colladaNode.children.find(child => child instanceof THREE.LineSegments)
-    if(subMeshWire) {
+    if(subMeshWire && subMeshWire.material) {
       subMeshWire.material.color.set(selected ? 0xff69b4 : 0xaaaaaa);
       subMeshWire.material.opacity = selected ? 1 : defaultMeshOpacity
       subMeshWire.material.needsUpdate = true
     }
-    if(colladaNode.material) {
+    if(colladaNode.material && colladaNode.material) {
       colladaNode.material.opacity = selected ? 1 : defaultMeshOpacity
       colladaNode.material.color.set(selected ? 0xff69b4 : 0xaaaaaa);
       colladaNode.material.needsUpdate = true

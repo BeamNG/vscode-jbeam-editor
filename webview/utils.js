@@ -59,6 +59,7 @@ function updateGrid(scene, env) {
   gridXZ.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);  // Rotate around the X-axis to lay it flat
   gridXZ.material.opacity = 0.5;
   gridXZ.material.transparent = true;
+  gridXZ.name = 'gridXZ'
   //scene.add(gridXZ);
 
   // Grid for the XY plane (Top-Bottom) - this is the ground plane grid
@@ -66,6 +67,7 @@ function updateGrid(scene, env) {
   gridXY = new THREE.GridHelper(size, divisions, colorFront, colorBack);
   gridXY.material.opacity = 0.5;
   gridXY.material.transparent = true;
+  gridXY.name = 'gridXY'
   scene.add(gridXY);
 
   // Grid for the YZ plane (Front-Back)
@@ -73,6 +75,7 @@ function updateGrid(scene, env) {
   gridYZ.material.opacity = 0.5;
   gridYZ.material.transparent = true;
   gridYZ.rotateOnAxis(new THREE.Vector3(0, 0, 1), Math.PI / 2);  // Rotate around the Z-axis to make it vertical
+  gridYZ.name = 'gridYZ'
   //scene.add(gridYZ);
 }
 
@@ -109,6 +112,7 @@ function createDome(scene) {
   domeMesh.position.set(0, 0, 0); // Adjust as necessary
 
   // Add the dome to the scene
+  domeMesh.name = 'domeMesh'
   scene.add(domeMesh);
 }
 
@@ -149,7 +153,7 @@ drawPrimitives['arrow'] = function(context, env, arrow) {
   if(gap * 2 > lineLength * 0.8) {
     gap = 0
   }
-  let overSizedText = (textWidth > lineLength * 0.7) || lineLength > 2 // can text fit on the line?
+  let overSizedText = (textWidth > lineLength * 0.7) || lineLength > 400 // can text fit on the line?
 
   const startGapX = textMidX - gap * Math.cos(angle);
   const startGapY = textMidY - gap * Math.sin(angle);
@@ -222,6 +226,25 @@ drawPrimitives['text'] = function(context, env, item) {
   context.fillText(item.text, pos2D.x, pos2D.y);
 }
 
+drawPrimitives['line3d'] = function(context, env, item) {
+  // Create the line geometry from the provided points
+  const points = []
+  points.push(item.pos1)
+  points.push(item.pos2)
+  const geometry = new THREE.BufferGeometry().setFromPoints(points)
+
+  const material = new THREE.LineDashedMaterial({
+    color: item.color || 0xffffff,
+    linewidth: item.linewidth || 1,
+    dashSize: item.dashSize || 3,
+    gapSize: item.gapSize || 1,
+  })
+  const line = new THREE.Line(geometry, material);
+  line.computeLineDistances()
+  line.name = 'drawPrimitives_line3d'
+  return [line]
+}
+
 // Create a mesh with all arrows drawn on a canvas
 let groundPlaneMesh = null
 let groundPlaneTexture = null
@@ -254,8 +277,10 @@ function updateProjectionPlane(scene, items, _env = {}) {
   //context.fillRect(0, 0, env.canvasWidth, env.canvasHeight);
 
   // Draw each arrow on the canvas
+  let objects = []
   items.forEach((item) => {
-    drawPrimitives[item.type](context, env, item)
+    let res = drawPrimitives[item.type](context, env, item)
+    if(res) objects = objects.concat(res)
   });
 
   // Create texture and material from the canvas
@@ -268,6 +293,7 @@ function updateProjectionPlane(scene, items, _env = {}) {
 
   if(groundPlaneMesh) {
     scene.remove(groundPlaneMesh)
+    groundPlaneMesh = null
   }
   const planeGeometry = new THREE.PlaneGeometry(env.planeWidth, env.planeHeight);
   groundPlaneMesh = new THREE.Mesh(planeGeometry, groundPlaneMaterial);
@@ -277,7 +303,12 @@ function updateProjectionPlane(scene, items, _env = {}) {
   groundPlaneMesh.rotation.x = -Math.PI / 2;
   groundPlaneMesh.position.y = 0.01
 
-  scene.add(groundPlaneMesh);  
+  for(let o of objects) {
+    groundPlaneMesh.add(o)
+  }
+
+  groundPlaneMesh.name = 'groundPlaneMesh'
+  scene.add(groundPlaneMesh)
 }
 
 function moveCameraCenter(pos) {
