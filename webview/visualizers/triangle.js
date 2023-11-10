@@ -113,7 +113,11 @@ function updateTriViz() {
     const wireframe = new THREE.LineSegments(wireframeGeometry, new THREE.LineBasicMaterial({
       color: 0xaaaaaa,
       linewidth: 1,
-      transparent: true
+      transparent: true,
+      // TODO: FIX transparency between objects
+      //depthWrite: false, 
+      //depthTest: true,
+      //renderOrder: 2,
     }));
     triObject.add(wireframe);
   }

@@ -139,8 +139,10 @@ function finalizeMeshes() {
                 color: 0x808080, // Grey color
                 metalness: 0.5,
                 roughness: 0.5,
+                // TODO: FIX transparency between objects
                 transparent: true,
-                //depthWrite: false, // TODO: FIX transparency between objects
+                //depthWrite: false,
+                //depthTest: true,
               })
       
               // Create a wireframe geometry from the mesh's geometry
@@ -150,7 +152,9 @@ function finalizeMeshes() {
                 const wireframe = new THREE.LineSegments(wireframeGeometry, new THREE.LineBasicMaterial({
                   color: 0xaaaaaa,
                   linewidth: 1,
-                  transparent: true
+                  transparent: true,
+                  //depthWrite: false, // TODO: FIX transparency between objects
+                  //depthTest: true,
                 }));
                 mesh.add(wireframe);
               }
@@ -185,7 +189,7 @@ function finalizeMeshes() {
                 color: 0x808080, // Grey color
                 metalness: 0.5,
                 roughness: 0.5,
-                transparent: true
+                // TODO: FIX transparency between objects
               })
       
               // Create a wireframe geometry from the mesh's geometry
@@ -195,7 +199,7 @@ function finalizeMeshes() {
                 const wireframe = new THREE.LineSegments(wireframeGeometry, new THREE.LineBasicMaterial({
                   color: 0xaaaaaa,
                   linewidth: 1,
-                  transparent: true
+                  // TODO: FIX transparency between objects
                 }));
                 mesh.add(wireframe);
               }        
@@ -253,7 +257,7 @@ function loadMeshShallow(uri, namespace) {
 function focusMeshes(meshesArrToFocus) {
   selectedMeshIndices = meshesArrToFocus
   for (let i = 0; i < loadedMeshes.length; i++) {
-    const selected = meshesArrToFocus.includes(i)
+    const selected = meshesArrToFocus ? meshesArrToFocus.includes(i) : false
     const colladaNode = loadedMeshes[i]
     //console.log("focusMeshes > colladaNode", colladaNode)
     if(!colladaNode) continue

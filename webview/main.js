@@ -89,6 +89,7 @@ export function init() {
   renderer.gammaFactor = 2.2; 
   renderer.gammaOutput = true;
   renderer.setClearColor(0x808080);
+  //renderer.sortObjects = true
 
   orbitControls = new OrbitControls(camera, renderer.domElement);
 
