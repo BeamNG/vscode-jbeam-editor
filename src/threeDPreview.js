@@ -244,7 +244,7 @@ function show3DSceneCommand() {
         console.error("Could not parse SJSON!")
         return
       }
-      let [tableInterpretedData, diagnostics] = tableSchema.processAllParts(parsedData)
+      let [tableInterpretedData, diagnosticsTable] = tableSchema.processAllParts(parsedData)
       docCache[uri] = tableInterpretedData
 
       webPanel.webview.postMessage({

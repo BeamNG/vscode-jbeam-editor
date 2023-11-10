@@ -75,6 +75,13 @@ This is a lightweight visualizer and tool for working with the physics definitio
 
   ![](assets/settingsShortcut.png)
 
+
+* Extensive settings, live updating the 3D scene as well:
+
+  ![](assets/settings1.png)
+
+  ![](assets/settings2.gif)
+
  
 ## Known Issues
 
