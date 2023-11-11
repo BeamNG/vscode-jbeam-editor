@@ -240,24 +240,42 @@ function updateNodeViz(moveCamera) {
 
 function onMouseDown(event) {
   const rect = renderer.domElement.getBoundingClientRect();
-  mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-  mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-  if(!pointsCache) return
+  const mouse2D = new THREE.Vector2(
+    event.clientX - rect.left,
+    event.clientY - rect.top
+  );
 
-  raycaster.setFromCamera(mouse, camera);
-  
+  if (!pointsCache) return;
+
   let closestPointIdx = null;
   let closestDistance = Infinity;
+
+  // we compare the nodes in screenspace as the picking range is weird otherwise
   for (let i = 0; i < pointsCache.length; i++) {
-    const distance = raycaster.ray.distanceToPoint(pointsCache[i].pos3d);
+    const point3D = pointsCache[i].pos3d.clone();
+    point3D.project(camera); // Project 3D point to NDC space
+
+    // Convert NDC to pixel coordinates
+    const point2D = new THREE.Vector2(
+      ((point3D.x + 1) / 2) * rect.width,
+      (-(point3D.y - 1) / 2) * rect.height
+    );
+
+    // Calculate distance in pixels
+    const distance = mouse2D.distanceTo(point2D);
+
     if (distance < closestDistance) {
       closestDistance = distance;
       closestPointIdx = i;
     }
   }
-  // If the closest point is within the desired threshold, we have a hit
-  if(closestPointIdx !== null && closestDistance < 0.1) focusNodes([closestPointIdx])
+
+  const pixelThreshold = 10
+  if (closestPointIdx !== null && closestDistance < pixelThreshold) {
+    focusNodes([closestPointIdx]);
+  }
 }
+
 
 function resetNodeFocus() {
   if(!pointsObject || !pointsObject.geometry) return
