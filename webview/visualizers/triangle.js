@@ -1,6 +1,8 @@
 let jbeamData = null
 let uri
 let currentPartName = null
+let currentSectionName = null
+let isInSection = false
 
 let vertexAlphas = []
 let vertexColors = []
@@ -17,7 +19,7 @@ function updateTriViz() {
   let triVertices = []
   let triIndices = []
   triCache = []
-  let triIndexCounter = 0;
+  let triIndexCounter = 0
   
   for (let partName in jbeamData) {
     if (currentPartName && partName !== currentPartName) continue;
@@ -45,7 +47,7 @@ function updateTriViz() {
 
   for (let i = 0; i < triVertices.length; i++) {
     vertexColors.push(0, 0, 0.65);
-    vertexAlphas.push(0.4)
+    vertexAlphas.push(isInSection ? 0.4 : 0.05)
     vertexHighlight.push(0)
   }
 
@@ -133,6 +135,8 @@ function focusTris(trisArrToFocus) {
   let sumZ = 0
   let tcount = 0
 
+  const alphaNotActive = isInSection ? 0.4 : 0.05
+
   selectedTriIndices = trisArrToFocus
 
   // color the tri properly
@@ -164,9 +168,9 @@ function focusTris(trisArrToFocus) {
         tcount+=3
         continue
       }
-      alphasAttribute.setX(i*3  , 0.4)
-      alphasAttribute.setX(i*3+1, 0.4)
-      alphasAttribute.setX(i*3+2, 0.4)
+      alphasAttribute.setX(i*3  , alphaNotActive)
+      alphasAttribute.setX(i*3+1, alphaNotActive)
+      alphasAttribute.setX(i*3+2, alphaNotActive)
       highlightAttribute.setX(i*3  , 0)
       highlightAttribute.setX(i*3+1, 0)
       highlightAttribute.setX(i*3+2, 0)
@@ -190,11 +194,17 @@ function focusTris(trisArrToFocus) {
 
 function onCursorChangeEditor(message) {
   if(!triCache) return
-  
-  if(currentPartName !== message.currentPartName) {
+
+
+  if(currentPartName !== message.currentPartName || currentSectionName !== message.currentSectionName) {
     currentPartName = message.currentPartName
+    currentSectionName = message.currentSectionName
+    isInSection = (currentSectionName === 'triangles')
     updateTriViz(true)
   }
+  isInSection = (currentSectionName === 'triangles')
+
+  
   
   let trisFound = []
   // Helper function to check if the cursor is within a given range

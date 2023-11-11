@@ -283,11 +283,22 @@ function show3DSceneCommand() {
 
       // find the part the cursor is in
       let partNameFound = null
+      let sectionNameFound = null
       if(docCache[uri]) {
         const data = docCache[uri]
         for (let partName in data) {
-          if (range[0] >= data[partName].__range[0] && range[0] <= data[partName].__range[2]) {
+          const part = data[partName]
+          if(!part.__range) continue
+          if (range[0] >= part.__range[0] && range[0] <= part.__range[2]) {
             partNameFound = partName
+            for (let sectionName in part) {
+              const section = part[sectionName]
+              if(!section.__range) continue
+              if (range[0] >= section.__range[0] && range[0] <= section.__range[2]) {
+                sectionNameFound = sectionName
+                break
+              }
+            }
             break
           }
         }
@@ -296,6 +307,7 @@ function show3DSceneCommand() {
         webPanel.webview.postMessage({
           command: 'cursorChanged',
           currentPartName: partNameFound,
+          currentSectionName: sectionNameFound,
           range: range
         });
       }
