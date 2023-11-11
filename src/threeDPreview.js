@@ -264,16 +264,19 @@ function show3DSceneCommand() {
   // Listen for when the active editor changes
   vscode.window.onDidChangeActiveTextEditor(editor => {
     if (editor) {
+      if (editor.document.languageId !== 'jbeam') return;
       parseAndPostData(editor.document);
     }
   })
   // Listen for changes in the document of the active editor
   vscode.workspace.onDidChangeTextDocument(event => {
+    if (event.document.languageId !== 'jbeam') return;
     if (vscode.window.activeTextEditor && webPanel && webPanel.visible && event.document === vscode.window.activeTextEditor.document) {
       parseAndPostData(event.document, true);
     }
   });
   vscode.window.onDidChangeTextEditorSelection(event => {
+    if (event.textEditor.document.languageId !== 'jbeam') return;
     if (vscode.window.activeTextEditor && event.textEditor === vscode.window.activeTextEditor) {
       const uri = event.textEditor.document.uri.toString()
       const range = [event.selections[0].start.line, event.selections[0].start.character, event.selections[0].end.line, event.selections[0].end.character]
