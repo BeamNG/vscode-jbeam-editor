@@ -41,7 +41,7 @@ function onReceiveData(message) {
     meshLibraryFull = [] // clear the library on file change
   }
 
-  if(meshLoadingEnabled && ctx?.config?.sceneView?.meshes?.loadByDefault ?? false) {
+  if(meshLoadingEnabled && (ctx?.config?.sceneView?.meshes?.loadByDefault ?? false)) {
     startLoadingMeshes()
   }
 }
@@ -218,7 +218,7 @@ function finalizeMeshes() {
             colladaNode.traverse((n) => {
               n.castShadow = true
             })
-            prop.name = 'prop_' + flexbody.mesh
+            prop.name = 'prop_' + prop.mesh
             scene.add(colladaNode)
             loadedMeshes.push(colladaNode)
           })
