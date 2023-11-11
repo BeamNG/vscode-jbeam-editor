@@ -85,12 +85,12 @@ function animateCameraMovement(targetCameraPosition) {
     .start();  
 
   // orbit camera targets and cursors
-  new Tween(orbitControls.target)
+  new Tween(arcballControls.target)
     .to(vecZero, gizmoAnimationTime)
     .easing(Easing.Quadratic.Out)
     .start()
 
-  new Tween(orbitControls.cursor)
+  new Tween(arcballControls.cursor)
     .to(vecZero, gizmoAnimationTime)
     .easing(Easing.Quadratic.Out)
     .start()

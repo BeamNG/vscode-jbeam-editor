@@ -27,8 +27,8 @@ function animate(time) {
     */
 
     //console.log('FPS: ', 1000 / delta)
-    cameraCenterSphere.position.copy(orbitControls.target);
-    orbitControls.update(time)
+    cameraCenterSphere.position.copy(arcballControls.target);
+    arcballControls.update(time)
     //ctx.visualizersMain.animate(time)
     ctx.ui.animate(time)
     TweenUpdate();
@@ -100,7 +100,7 @@ export function init() {
   renderer.setClearColor(0x808080);
   //renderer.sortObjects = true
 
-  orbitControls = new OrbitControls(camera, renderer.domElement);
+  arcballControls = new ArcballControls(camera, renderer.domElement);
 
   // the camera center
   const sphereGeometry = new THREE.SphereGeometry(0.025);
@@ -218,7 +218,7 @@ export function destroy() {
   })
   
   renderer.dispose();
-  if (orbitControls) orbitControls.dispose();
+  if (arcballControls) arcballControls.dispose();
   ctx.visualizersMain.dispose()
 }
 window.onbeforeunload = destroy;

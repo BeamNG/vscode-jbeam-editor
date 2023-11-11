@@ -2,7 +2,7 @@ let camera
 let cameraPersp
 let orthoCamera
 let cameraIsPersp = true
-let orbitControls
+let arcballControls
 let selectedViewName = 'Front'
 let scene = null
 let renderer
@@ -312,9 +312,9 @@ function updateProjectionPlane(scene, items, _env = {}) {
 }
 
 function moveCameraCenter(pos) {
-  const offset = new THREE.Vector3().subVectors(pos, orbitControls.target);
+  const offset = new THREE.Vector3().subVectors(pos, arcballControls.target);
   const newCameraPosition = new THREE.Vector3().addVectors(camera.position, offset);
-  new Tween(orbitControls.target)
+  new Tween(arcballControls.target)
     .to(pos, 120)
     .easing(Easing.Quadratic.Out)
     .start()

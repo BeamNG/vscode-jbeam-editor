@@ -28,7 +28,7 @@ export async function init() {
       camera = orthoCamera;
       orthoCamera.position.copy(cameraPersp.position);
     }
-    orbitControls.object = camera; // Update controls to new camera
+    arcballControls.object = camera; // Update controls to new camera
   })
 
   pane.addBinding(settings, 'view', {
