@@ -137,8 +137,14 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, diagnostics
 
       if (newRow.hasOwnProperty('id') && newRow.id !== null) {
         newID = newRow.id
+        //newRow.name = newRow.id // the original is to exchange with id
+        //delete newRow.id
+        
+        // changed behavior for the editor below
+        // in BeamNG, only name exists, id is deleted
+        newRow.id = newRow.id
         newRow.name = newRow.id
-        delete newRow.id
+        
         newRow.__isNamed = true
       }
 
