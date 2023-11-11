@@ -41,7 +41,7 @@ function onReceiveData(message) {
     meshLibraryFull = [] // clear the library on file change
   }
 
-  if(ctx?.config?.sceneView?.meshes?.loadByDefault ?? false) {
+  if(meshLoadingEnabled && ctx?.config?.sceneView?.meshes?.loadByDefault ?? false) {
     startLoadingMeshes()
   }
 }
