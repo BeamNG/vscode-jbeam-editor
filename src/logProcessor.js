@@ -1,65 +1,72 @@
+/**
+ * Processes BeamNG log files for diagnostics.
+ * 
+ * Parses log lines for severity and message, creating diagnostics based on user settings.
+ * Handles Error, Warning, and optionally Info levels. Ignores Debug messages.
+ */
 const vscode = require('vscode');
 
-function processLogFile(document, diagnosticCollection) {
-  const diagnostics = []
+let diagnosticCollection
 
-  const text = document.getText()
-  const uri = document.uri.toString()
-  const lines = text.split(/\r?\n/)
+function processLogDocument(document) {
+  if (document.languageId !== 'beamng-log') return
 
-  for(let lineNo = 0; lineNo < lines.length; lineNo++) {
-    const line = lines[lineNo]
-    const args = line.split('|', 4)
-    if(args.length != 4) continue
+  try {
+    const pareInfo = (vscode.workspace.getConfiguration('beamng-log').get('parseInfo', false))
+    const diagnosticList = []
+    const text = document.getText()
+    const lines = text.split(/\r?\n/)
 
-    let severity
-    if(args[1] == 'D') continue // shortcut, most common case
-    else if(args[1] == 'E') severity = vscode.DiagnosticSeverity.Error
-    else if(args[1] == 'W') severity = vscode.DiagnosticSeverity.Warning
-    else if(args[1] == 'I') severity = vscode.DiagnosticSeverity.Information
+    for(let lineNo = 0; lineNo < lines.length; lineNo++) {
+      const line = lines[lineNo]
+      const args = line.split('|', 4)
+      if(args.length != 4) continue
 
-    // ignore debug things
-    if(!severity) continue
+      let severity
+      if(args[1] == 'D') continue // shortcut, most common case
+      else if(args[1] == 'E') severity = vscode.DiagnosticSeverity.Error
+      else if(args[1] == 'W') severity = vscode.DiagnosticSeverity.Warning
+      else if(args[1] == 'I' && pareInfo) severity = vscode.DiagnosticSeverity.Information
 
-    const range = new vscode.Range(new vscode.Position(lineNo + 1, 0), new vscode.Position(lineNo + 1, line.length))
-    const diagnostic = new vscode.Diagnostic(range, args[3].substring(1), severity)
-    diagnostics.push(diagnostic);
+      // ignore debug things
+      if(!severity) continue
+
+      const message = (args[2] ? args[2] : "") + ": " + (args[3] && args[3].length > 1) ? args[3].substring(1) : 'No message provided';
+
+      const range = new vscode.Range(new vscode.Position(lineNo, 0), new vscode.Position(lineNo, line.length))
+      const diagnostic = new vscode.Diagnostic(range, message, severity)
+      diagnosticList.push(diagnostic);
+    }
+
+    if(diagnosticCollection) {
+      diagnosticCollection.set(document.uri, diagnosticList)
+    }
+  } catch(e) {
+    console.error("error while parsing log: ", e)
   }
-
-  diagnosticCollection.set(uri, diagnostics)
 }
 
 function activate(context) {
-  let diagnosticCollection = vscode.languages.createDiagnosticCollection('BeamNGLog');
-  context.subscriptions.push(diagnosticCollection);
-
+  diagnosticCollection = vscode.languages.createDiagnosticCollection('beamng-log');
   // Process all currently open text documents
   vscode.workspace.textDocuments.forEach(document => {
-    if (document.languageId === 'beamng-log') {
-      processLogFile(document, diagnosticCollection)
-    }
+    processLogDocument(document)
   })
 
   // Process documents that are opened after the extension is activated
   vscode.workspace.onDidOpenTextDocument((document) => {
-    if (document.languageId === 'beamng-log') {
-      processLogFile(document, diagnosticCollection)
-    }
+    processLogDocument(document)
   })
 
   // Listen for changes in the document of the active editor
   vscode.workspace.onDidChangeTextDocument(event => {
-    if (event.document.languageId === 'beamng-log') {
-      processLogFile(event.document, diagnosticCollection)
-    }
+    processLogDocument(event.document)
   })
-  
 }
 
 function deactivate() {
-  if (diagnosticCollection) {
-    diagnosticCollection.dispose();
-  }
+  diagnosticCollection.dispose()
+  diagnosticCollection = null
 }
 
 module.exports = {

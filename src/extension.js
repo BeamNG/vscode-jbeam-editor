@@ -19,12 +19,15 @@ function activate(context) {
       jbeamSyntaxChecker.deactivate()
       jbeamSymbolProviderExt.deactivate()
       jbeamHoverProvider.deactivate()
-      logProcessor.deactivate()
 
       threeDPreview.activate(context)
       jbeamSyntaxChecker.activate(context)
       jbeamSymbolProviderExt.activate(context)
       jbeamHoverProvider.activate(context)
+    }
+
+    if (event.affectsConfiguration('beamng-log')) {
+      logProcessor.deactivate()
       logProcessor.activate(context)
     }
   }))

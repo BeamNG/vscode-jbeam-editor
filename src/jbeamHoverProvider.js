@@ -45,7 +45,7 @@ function goToLineForHover(args) {
     const end = new vscode.Position(args.range[2], args.range[3]);
     const highlightRange = new vscode.Range(start, end);
 
-    if(vscode.workspace.getConfiguration('jbeam-editor').get('hover.highlightBreadCrumb')) {
+    if(vscode.workspace.getConfiguration('jbeam-editor').get('hover.highlightBreadCrumb', false)) {
       applyFadeEffectToDocument(targetEditor, highlightRange)
     }
 
@@ -97,20 +97,25 @@ function getWordRangeAtPositionIncludingDollar(document, position) {
 }
 
 function getDocEntry(key) {
-  let res = docHelper.jbeamDocumentation[key]
-  if(typeof res === 'object') {
-    let resText = ''
-    for (let k in res) {
-      let v = res[k]
-      if(k === 'description') {
-        resText += v + "\n\n"
-      } else {
-        resText += '* **' + k + '**: ' + v + "\n\n"
-      }
-    }
-    return resText
+  let d = docHelper.jbeamDocumentation[key];
+  if (typeof d === 'object') {
+    let res = '<span style="margin:5px;width:150px;"><b>Documentation</b><br/>'
+    res += `$(type-hierarchy-sub) ${key}<br/>`
+    res += `$(book) ${d.description}<br/>`
+    let ticon = ''
+    
+    if(d.type == 'number') ticon = '$(symbol-numeric)'
+    else if(d.type == 'boolean') ticon = '$(symbol-boolean)'
+    else if(d.type == 'string') ticon = '$(symbol-string)'
+    if(d.default === '') d.default = '<empty>'
+    res += `${ticon} ${d.type} (default: ${d.default})<br/>`
+
+    res += `$(notebook) ${d.documentation}<br/>`
+
+    res += '</span><br/>'
+    return res
   }
-  return docHelper.jbeamDocumentation[key]
+  return null
 }
 
 class JBeamHoverProvider {
@@ -120,10 +125,12 @@ class JBeamHoverProvider {
     const word = document.getText(range);
 
     const contents = new vscode.MarkdownString();
-    contents.isTrusted = true; // Allows for command links and other Markdown features
+    contents.isTrusted = true
+    contents.supportHtml = true
+    contents.supportThemeIcons = true
     //contents.appendMarkdown(`**You are hovering over:** ${word}\n\n`);
 
-    const showFullDevData = vscode.workspace.getConfiguration('jbeam-editor').get('hover.dev.showFullDevData')
+    const showFullDevData = vscode.workspace.getConfiguration('jbeam-editor').get('hover.dev.showFullDevData', false)
 
     let docHints = []
     let parsedData = sjsonParser.decodeSJSON(text);
@@ -150,8 +157,8 @@ class JBeamHoverProvider {
         }
       }
 
-      const showDocs = vscode.workspace.getConfiguration('jbeam-editor').get('hover.showDocs')
-      const showDocHints = vscode.workspace.getConfiguration('jbeam-editor').get('hover.dev.showDocHints')
+      const showDocs = vscode.workspace.getConfiguration('jbeam-editor').get('hover.showDocs', true)
+      const showDocHints = vscode.workspace.getConfiguration('jbeam-editor').get('hover.dev.showDocHints', false)
 
       if(showDocs || showDocHints) {
         // no try to get the docs with both data being present ...
@@ -161,8 +168,7 @@ class JBeamHoverProvider {
           docHints.push(finalBreadCrumb)
           let doc = getDocEntry(finalBreadCrumb)
           if(showDocs && doc) {
-            contents.appendMarkdown(`## Documentation\n### ${finalBreadCrumb}\n\n`);
-            contents.appendMarkdown(doc + '\n\n');
+            contents.appendMarkdown(doc)
           } else {
             // try to find the key of the thing hovered
             let keyOfEntry
@@ -177,8 +183,7 @@ class JBeamHoverProvider {
                 docHints.push(keyOfEntry)
                 doc = getDocEntry(keyOfEntry)
                 if(showDocs && doc) {
-                  contents.appendMarkdown(`## Documentation\n### ${keyOfEntry}\n\n`);
-                  contents.appendMarkdown(doc + '\n\n');
+                  contents.appendMarkdown(doc)
                 }
               }
             }
@@ -187,8 +192,7 @@ class JBeamHoverProvider {
               docHints.push(keyOfEntry)
               doc = getDocEntry(shortWord)
               if(showDocs && doc) {
-                contents.appendMarkdown(`## Documentation\n### ${shortWord}\n\n`);
-                contents.appendMarkdown(doc + '\n\n');
+                contents.appendMarkdown(doc)
               }
             }
           }
@@ -196,16 +200,17 @@ class JBeamHoverProvider {
       }
 
       // now add the data if available
-      if(vscode.workspace.getConfiguration('jbeam-editor').get('hover.showData')) {
+      if(vscode.workspace.getConfiguration('jbeam-editor').get('hover.showData', true)) {
         if(resultsStructuredData) {
           if(!wasBlockMerged && foundObjCleanStructured) {
             const text = JSON.stringify(foundObjCleanStructured, null, 2)
             if(text.length < 32768) {
-              contents.appendMarkdown(`## Data\n\n ${resultsStructuredData[0].breadcrumbMarkdown}\n`)
+              contents.appendMarkdown(`<span style="margin:5px;width:150px;"><b>Data</b><br/>$(type-hierarchy-sub)${resultsStructuredData[0].breadcrumbMarkdown}<br/>`)
               contents.appendCodeblock(JSON.stringify(foundObjCleanStructured, null, 2), 'json')
+              contents.appendMarkdown('</span><br/>')
             }
           } else {
-            contents.appendMarkdown(`Object contained in ${resultsStructuredData[0].breadcrumbMarkdown}\n`)
+            contents.appendMarkdown(`<span style="margin:5px;width:150px;"><b>Data</b><br/>$(type-hierarchy-sub)${resultsStructuredData[0].breadcrumbMarkdown}</span><br/>`)
           }
         }
       }
@@ -213,10 +218,11 @@ class JBeamHoverProvider {
       if(showDocHints && docHints.length > 0) {
         docHints = docHints.filter(content => !/[{}]/.test(content));
         if(docHints.length > 0) {
-          contents.appendMarkdown('#### Documentation hints\n\n')
+          contents.appendMarkdown('<span style=""><b>Documentation hints</b><br/><ul>')
           for(let dh of docHints) {
-            contents.appendMarkdown(' * `' + dh + '`\n\n')
+            contents.appendMarkdown('<li>`' + dh + '`</li>')
           }
+          contents.appendMarkdown('<ul></span><br/>')
         }
       }
 

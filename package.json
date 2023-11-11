@@ -54,7 +54,7 @@
           "icon": "$(open-preview)"
         },
         {
-          "when": "resourceLangId == jbeam",
+          "when": "resourceLangId == jbeam || resourceLangId == beamng-log",
           "command": "jbeam-editor.openSettings",
           "group": "1_run",
           "icon": "$(settings-gear)"
@@ -94,6 +94,17 @@
     ],
     "documentSymbolProvider": true,
     "configuration": [
+      {
+        "title": "BeamNG Log parser",
+        "properties": {
+          "beamng-log.parseInfo": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enables parsing info lines",
+            "order": 5
+          }
+        }
+      },
       {
         "title": "BeamNG JBeam Editor",
         "properties": {

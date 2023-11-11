@@ -83,7 +83,10 @@ This is a lightweight visualizer and tool for working with the physics definitio
 
   ![](assets/settings2.gif)
 
- 
+* BeamNG Log file syntax highlighter and parser included
+
+  ![](assets/beamngLog.png)
+
 ## Known Issues
 
 * Mesh functions are a bit unstable still. Especially if you change tabs, etc while it loads the data.
@@ -109,6 +112,14 @@ This is a lightweight visualizer and tool for working with the physics definitio
 * implement more providers from [here](https://code.visualstudio.com/api/language-extensions/programmatic-language-features)
 * use more icons throughout the UI: [from here](https://microsoft.github.io/vscode-codicons/dist/codicon.html)
 * multi-line selection of elements also working in 3d space
+
+* direction connection to BeamNG: sync/reload automatically
+* highlighting of scopes
+* dedicated data view
+* dedicated documentation view
+* walkthrough: https://code.visualstudio.com/api/references/contribution-points#contributes.walkthroughs
+* getting started page
+* beamng.log parser
 
 ## Requirements
 
