@@ -1,5 +1,7 @@
 let jbeamData = null
 let currentPartName = null
+let currentSectionName = null
+let isInSection = false
 let uri = null
 let daeFindfilesDone = false
 let wasLoaded = false
@@ -41,9 +43,9 @@ function onReceiveData(message) {
     meshLibraryFull = [] // clear the library on file change
   }
 
-  if(meshLoadingEnabled && (ctx?.config?.sceneView?.meshes?.loadByDefault ?? false)) {
-    startLoadingMeshes()
-  }
+  //if(meshLoadingEnabled && (ctx?.config?.sceneView?.meshes?.loadByDefault ?? false)) {
+  //  startLoadingMeshes()
+  //}
 }
 
 function tryLoad3dMesh(meshName, onDone) {
@@ -289,12 +291,26 @@ function focusMeshes(meshesArrToFocus) {
 function onCursorChangeEditor(message) {
   if(!loadedMeshes) return
 
-  if(currentPartName !== message.currentPartName) {
+  if(currentPartName !== message.currentPartName || currentSectionName !== message.currentSectionName) {
     currentPartName = message.currentPartName
-    if(wasLoaded) {
-      startLoadingMeshes()
+    currentSectionName = message.currentSectionName
+    isInSection = (currentSectionName === 'flexbodies' || currentSectionName === 'props')
+    if(isInSection) {
+      for (let i = 0; i < loadedMeshes.length; i++) {
+        loadedMeshes[i].visible = true
+      }
+      if(meshLoadingEnabled && (wasLoaded || (ctx?.config?.sceneView?.meshes?.loadByDefault ?? false))) {
+        startLoadingMeshes()
+      }
+    } else {
+      for (let i = 0; i < loadedMeshes.length; i++) {
+        scene.remove(loadedMeshes[i])
+      }
+      loadedMeshes = []
+      return
     }
   }
+
 
   let meshesFound = []
   //console.log(">meshes.onCursorChangeEditor ", message.range)
