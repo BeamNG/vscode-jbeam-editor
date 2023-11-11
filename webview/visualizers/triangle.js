@@ -108,7 +108,8 @@ function updateTriViz() {
 
   triObject = new THREE.Mesh(triGeometry, triMaterial);
   triObject.name = 'triObject'
-  scene.add(triObject);
+  scene.add(triObject)
+  triObject.visible = false
 
   const subMeshWire = triObject.children.find(child => child instanceof THREE.LineSegments)
   if(!subMeshWire) {
@@ -129,6 +130,12 @@ function updateTriViz() {
 
 function focusTris(trisArrToFocus) {
   if (!trisArrToFocus) return
+
+  if(!isInSection) {
+    triObject.visible = false
+    return
+  }
+  triObject.visible = true
     
   let sumX = 0
   let sumY = 0
