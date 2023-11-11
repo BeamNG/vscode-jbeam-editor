@@ -16,8 +16,11 @@ export function redrawGroundPlane(nodesMin, nodesMax, selectedNodeIndices, point
   let freeBoxText = {x: 0, y: 0, z: 0}
   if(nodesMin && nodesMax) {
     // make ground plane big enough
-    let tmp = Math.max(Math.max(nodesMax.x - nodesMin.x, nodesMax.z - nodesMin.z), 10) // node bounding rect max
-    tmp *= 2 // double the size: the bounding box could be completely on one side only
+
+    const minLength = Math.sqrt(nodesMin.x * nodesMin.x + nodesMin.y * nodesMin.y + nodesMin.z * nodesMin.z)
+    const maxLength = Math.sqrt(nodesMax.x * nodesMax.x + nodesMax.y * nodesMax.y + nodesMax.z * nodesMax.z)
+
+    let tmp = Math.max(minLength, maxLength) * 2 + 6
     tmp = Math.round(tmp / 2) * 2 // nearestDivisibleByTwo 
     env.planeWidth =  tmp
     env.planeHeight = tmp
