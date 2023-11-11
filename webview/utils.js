@@ -259,7 +259,7 @@ function updateProjectionPlane(scene, items, _env = {}) {
     canvasHeight: 8192, // Height of the canvas in pixels
   }
   Object.assign(env, _env)
-  console.log('Ground plane constructing with: ', env)
+  //console.log('Ground plane constructing with: ', env)
   let canvas = document.getElementById('canvas2DGroundplane')
   // remove canvas if it exists
   if(canvas) {
