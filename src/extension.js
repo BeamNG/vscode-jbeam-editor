@@ -3,6 +3,7 @@ const threeDPreview = require('./threeDPreview');
 const jbeamSyntaxChecker = require('./jbeamSyntaxChecker');
 const jbeamSymbolProviderExt = require('./jbeamSymbolProviderExt');
 const jbeamHoverProvider = require('./jbeamHoverProvider');
+const logProcessor = require('./logProcessor');
 
 function activate(context) {
 
@@ -18,11 +19,13 @@ function activate(context) {
       jbeamSyntaxChecker.deactivate()
       jbeamSymbolProviderExt.deactivate()
       jbeamHoverProvider.deactivate()
+      logProcessor.deactivate()
 
       threeDPreview.activate(context)
       jbeamSyntaxChecker.activate(context)
       jbeamSymbolProviderExt.activate(context)
       jbeamHoverProvider.activate(context)
+      logProcessor.activate(context)
     }
   }))
 
@@ -30,6 +33,7 @@ function activate(context) {
   jbeamSyntaxChecker.activate(context)
   jbeamSymbolProviderExt.activate(context)
   jbeamHoverProvider.activate(context)
+  logProcessor.activate(context)
 }
 
 function deactivate() {
@@ -37,6 +41,8 @@ function deactivate() {
   jbeamSyntaxChecker.deactivate()
   jbeamSymbolProviderExt.deactivate()
   jbeamHoverProvider.deactivate()
+  dataView.deactivate()
+  logProcessor.deactivate()
 }
 
 module.exports = {

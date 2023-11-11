@@ -1,0 +1,42 @@
+{
+  "name": "BeamNG Log",
+  "scopeName": "source.beamng-log",
+  "fileTypes": ["log"],
+  "patterns": [
+    {
+      "name": "constant.numeric.timestamp.beamng-log",
+      "match": "^\\s*(\\d+\\.\\d+)"
+    },
+    {
+      "name": "punctuation.separator.pipe.beamng-log",
+      "match": "(?<=\\d)\\|"
+    },
+    {
+      "name": "keyword.other.severity.beamng-log",
+      "match": "(?<=\\|)(.)(?=\\|)"
+    },
+    {
+      "name": "punctuation.separator.pipe.beamng-log",
+      "match": "\\|(?=[a-zA-Z0-9_])"
+    },
+    {
+      "name": "entity.name.section.origin.beamng-log",
+      "match": "([a-zA-Z0-9_:]+)"
+    },
+    {
+      "name": "punctuation.separator.pipe.beamng-log",
+      "match": "\\|(?= )"
+    },
+    {
+      "name": "string.quoted.double.message.beamng-log",
+      "begin": " ",
+      "end": "$",
+      "patterns": [
+        {
+          "match": ".+",
+          "name": "string.quoted.double.message.content.beamng-log"
+        }
+      ]
+    }
+  ]
+}

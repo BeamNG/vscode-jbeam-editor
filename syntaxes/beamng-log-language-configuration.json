@@ -1,0 +1,5 @@
+{
+  "wordPattern": "[^\\s]+",
+  "autoClosingPairs": [],
+  "surroundingPairs": []
+}
