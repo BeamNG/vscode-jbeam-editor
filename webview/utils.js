@@ -226,6 +226,28 @@ drawPrimitives['text'] = function(context, env, item) {
   context.fillText(item.text, pos2D.x, pos2D.y);
 }
 
+// Function to draw 2D circles with optional outline and fill
+drawPrimitives['circle'] = function(context, env, item) {
+  context.save()
+  const pos2D = map3Dto2D(item.position, env)
+  context.beginPath() // Start a new path
+  context.arc(pos2D.x, pos2D.y, item.size, 0, 2 * Math.PI)
+
+  // Fill the circle if color is specified
+  if (item.color) {
+    context.fillStyle = item.color
+    context.fill()
+  }
+
+  // Outline the circle if outline color is specified
+  if (item.outlineColor) {
+    context.strokeStyle = item.outlineColor
+    context.lineWidth = item.outlineWidth || 1
+    context.stroke()
+  }
+  context.restore()
+}
+
 drawPrimitives['line3d'] = function(context, env, item) {
   // Create the line geometry from the provided points
   const points = []

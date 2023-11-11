@@ -56,7 +56,9 @@ export function redrawGroundPlane(nodesMin, nodesMax, selectedNodeIndices, point
       const node = pointsCache[selectedNodeIndices[0]]
       if(node) {
         //items.push({ type: 'arrow', start: new THREE.Vector3(0, 0, 0), end: node.pos3d, color: '#448844', width: 5, label: node.name || "", font: defaultfont })
-        items.push({ type: 'text', position: node.pos3d, font: 'bold 40px "Roboto Mono", monospace', color: '#448844', text: node.name || ""})
+        items.push({ type: 'circle', position: node.pos3d, size: 8, color: '#448844'})
+        items.push({ type: 'text', position: node.pos3d, font: 'bold 40px "Roboto Mono", monospace', color: '#448844', text: node.name || "", textBaseline: 'bottom'})
+        items.push({ type: 'line3d', pos1: new THREE.Vector3(node.pos3d.x, -node.pos3d.z, 0), pos2: new THREE.Vector3(node.pos3d.x, -node.pos3d.z, node.pos3d.y), color: '#aaaaaa', dashSize:0.02, gapSize:0.01})
       }
     } else if(selectedNodeIndices.length == 2) {
       const nodeA = pointsCache[selectedNodeIndices[0]]
