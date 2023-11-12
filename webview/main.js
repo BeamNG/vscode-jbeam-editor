@@ -81,7 +81,7 @@ export function init() {
     orthoCamera.top = height / 2;
     orthoCamera.bottom = -height / 2;
     orthoCamera.updateProjectionMatrix();
-    orthoCamera.position.z = 5;
+    orthoCamera.position.z = 3;
     orthoCamera.position.y = 0;
     orthoCamera.zoom = 2
   }
