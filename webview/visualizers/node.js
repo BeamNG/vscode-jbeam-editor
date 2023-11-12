@@ -295,42 +295,51 @@ function resetNodeFocus() {
 }
 
 function onMouseMove(event) {
-
-  if(wasWindowOutOfFocus) {
-    // re-apply any text editor highlighting
-    highlightNodeinTextEditor()
-    wasWindowOutOfFocus = false
+  // Check if the window was out of focus and reapply text editor highlighting
+  if (wasWindowOutOfFocus) {
+    highlightNodeinTextEditor();
+    wasWindowOutOfFocus = false;
   }
 
+  // Early exit if pointsCache is not available
+  if (!pointsCache || !pointsObject || !pointsObject.geometry) return;
+
+  // Update mouse position based on event
   const rect = renderer.domElement.getBoundingClientRect();
   mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
   mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-  if(!pointsCache) return
 
+  // Update raycaster with new mouse position
   raycaster.setFromCamera(mouse, camera);
 
+  // Define interaction parameters
+  const alphaDecay = 0.01;
+  const maxDistance = 1;
+  const minSize = 0.05; // Minimum size for nodes
+  const maxSize = 0.2;  // Maximum size for nodes
+
+  // Get attributes for batch updates
   const alphasAttribute = pointsObject.geometry.getAttribute('alpha');
   const colorsAttribute = pointsObject.geometry.getAttribute('color');
   const sizesAttribute = pointsObject.geometry.getAttribute('size');
-  
-  let alphaDecay = 0.01; // The rate at which alpha value decreases with distance
-  let maxDistance = 1; // Maximum distance to affect the alpha
-  
-  for (let i = 0; i < pointsCache.length; i++) {
-    if(selectedNodeIndices && selectedNodeIndices.includes(i)) continue
-    const distance = raycaster.ray.distanceToPoint(pointsCache[i].pos3d);
 
-    // Normalize the distance based on a predefined maximum distance
-    let normalizedDistance = distance / maxDistance;
-    normalizedDistance = THREE.MathUtils.clamp(normalizedDistance, 0, 1); // Ensure it's between 0 and 1
+  pointsCache.forEach((point, i) => {
+    if (selectedNodeIndices && selectedNodeIndices.includes(i)) return;
 
-    // Set alpha based on distance (closer points are less transparent)
-    alphasAttribute.setX(i, 1.0 - (normalizedDistance * alphaDecay))
-    sizesAttribute.setX(i, (1.0 - (normalizedDistance * 0.7)) * 0.05)
+    const distance = raycaster.ray.distanceToPoint(point.pos3d);
+    const normalizedDistance = THREE.MathUtils.clamp(distance / maxDistance, 0, 1);
 
-    let color = getColorFromDistance(distance, maxDistance, 0xFFA500, 0xddA500)
+    // Calculate alpha and size based on distance
+    alphasAttribute.setX(i, 1.0 - (normalizedDistance * alphaDecay));
+    let size = (1.0 - (normalizedDistance * 0.7)) * 0.05;
+    sizesAttribute.setX(i, Math.max(minSize, Math.min(size, maxSize))); // Clamp size between minSize and maxSize
+
+    // Adjust color based on distance
+    const color = getColorFromDistance(distance, maxDistance, 0xFFA500, 0xddA500);
     colorsAttribute.setXYZ(i, color.r, color.g, color.b);
-  }
+  });
+
+  // Flag attributes as needing an update
   alphasAttribute.needsUpdate = true;
   colorsAttribute.needsUpdate = true;
   sizesAttribute.needsUpdate = true;
