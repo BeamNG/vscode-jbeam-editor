@@ -1,9 +1,11 @@
-const vscode = require('vscode');
-const net = require('net');
+const vscode = require('vscode')
+const net = require('net')
 
 let reconnectInterval = 1000; // Initial delay of 1 second
 const maxReconnectInterval = 6000; // Maximum delay of 6 seconds
 
+const beamngCommandPipe = '\\\\.\\pipe\\BEAMNGCOMMANDLISTENER'
+const commandschemeWakeupMessage = 'beamng:v1/startToolchainServer'
 
 let client
 
@@ -45,13 +47,27 @@ function connectToServer() {
   });
 }
 
+function tryToWakeUpBeamNG() {
+  const pipe = net.createConnection(beamngCommandPipe);
+  pipe.on('connect', () => {
+      pipe.write(commandschemeWakeupMessage)
+  })
+  pipe.on('end', () => {
+    pipe.destroy()
+  })
+  pipe.on('error', (err) => {
+    pipe.destroy()
+  })
+  setTimeout(connectToServer, 500)
+}
+
 function attemptReconnect() {
   if (client) {
     client.destroy();
     client = null;
   }
   //console.log('attemptReconnect', reconnectInterval)
-  setTimeout(connectToServer, reconnectInterval);
+  setTimeout(tryToWakeUpBeamNG, reconnectInterval);
   // Increase the reconnect interval for the next attempt
   reconnectInterval = Math.min(reconnectInterval * 2, maxReconnectInterval);
 }
@@ -63,7 +79,7 @@ function sendPing() {
 
 function activate(context) {
   console.log('simConnection activated ...')
-  connectToServer()
+  tryToWakeUpBeamNG()
 }
 
 function deactivate() {
