@@ -57,7 +57,7 @@ function updateGrid(scene, env) {
 
   // Grid for the XZ plane (Right-Left)
   let gridXZ = new THREE.GridHelper(size, divisions, colorFront, colorBack);
-  gridXZ.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);  // Rotate around the X-axis to lay it flat
+  gridXZ.rotation.x = Math.PI / 2;
   gridXZ.material.opacity = 0.5;
   gridXZ.material.transparent = true;
   gridXZ.name = 'gridXZ'
@@ -348,21 +348,7 @@ function moveCameraCenter(pos) {
       .easing(Easing.Quadratic.Out)
       .start()
   } else {
-    const cameraDirection = new THREE.Vector3()
-    camera.getWorldDirection(cameraDirection)
-    
-    // Calculate the new camera position while keeping the orientation constant
-    const newOrthoCameraPosition = new THREE.Vector3().copy(pos);
-
-    // Adjust the camera position based on its direction
-    const cameraDistance = camera.position.distanceTo(orbitControls.target);
-    newOrthoCameraPosition.addScaledVector(cameraDirection, cameraDistance);
-
-    // Update the camera's position
-    camera.position.copy(newOrthoCameraPosition);
-
-    // Update the camera's target to be directly above the new position
-    orbitControls.target.copy(pos);
+    // TODO, not working properly
   }
 }
 
