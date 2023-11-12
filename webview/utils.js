@@ -494,7 +494,7 @@ class Tooltip {
     context.font = this.fontStr
     canvas.width = context.measureText(data.name).width;
     canvas.height = this.fontSize
-    console.log(canvas.width, canvas.height)
+    //console.log(canvas.width, canvas.height)
   
     context.fillStyle = 'rgba(200, 200, 200, 100)';
     context.fillRect(0, 0, canvas.width, canvas.height);
