@@ -48,6 +48,13 @@ export async function init() {
     }
   });
 
+  pane.addButton({
+    title: 'Ping Simulation',
+  }).on('click', () => {
+    ctx.vscode.postMessage({command: 'sendPing'})
+  })
+
+
   const folder3d = pane.addFolder({
     title: '3D Meshes',
   });

@@ -4,6 +4,8 @@ const jbeamSyntaxChecker = require('./jbeamSyntaxChecker');
 const jbeamSymbolProviderExt = require('./jbeamSymbolProviderExt');
 const jbeamHoverProvider = require('./jbeamHoverProvider');
 const logProcessor = require('./logProcessor');
+const simConnection = require('./simConnection');
+
 
 function activate(context) {
 
@@ -32,6 +34,7 @@ function activate(context) {
     }
   }))
 
+  simConnection.activate(context)
   threeDPreview.activate(context)
   jbeamSyntaxChecker.activate(context)
   jbeamSymbolProviderExt.activate(context)
@@ -40,6 +43,7 @@ function activate(context) {
 }
 
 function deactivate() {
+  simConnection.activate(deactivate)
   threeDPreview.deactivate()
   jbeamSyntaxChecker.deactivate()
   jbeamSymbolProviderExt.deactivate()

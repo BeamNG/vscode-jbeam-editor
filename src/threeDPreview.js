@@ -4,6 +4,7 @@ const path = require('path');
 const sjsonParser = require('./sjsonParser');
 const tableSchema = require('./tableSchema');
 const utilsExt = require('./utilsExt');
+const simConnection = require('./simConnection');
 
 let meshCache = {}
 let extensionContext // context from activate
@@ -212,6 +213,9 @@ function show3DSceneCommand() {
           if (openedFromTextEditor) {
             parseAndPostData(openedFromTextEditor.document);
           }
+          break
+        case 'sendPing':
+          simConnection.sendPing()
           break
         }
     },
