@@ -6,6 +6,7 @@ let orbitControls
 let selectedViewName = 'Front'
 let scene = null
 let renderer
+let tooltipPool
 let vscode
 let meshFilenameLookupLibrary = {}
 let meshLibraryFull = {}
@@ -398,3 +399,134 @@ function getColorFromDistance(distance, maxDistance, colorHexA, colorHexB) {
 
 // special keys that should be ignored in the data
 const excludedMagicKeys = ['__range', '__isarray', '__isNamed'];
+
+class Tooltip {
+  constructor(scene, camera) {
+    this.scene = scene;
+    this.camera = camera;
+    this.fontSize = 40
+    this.fontStr = `bold ${this.fontSize}px "Roboto Mono", monospace`
+    this.createTooltipMesh();
+  }
+
+  createTooltipMesh() {
+    const texture = new THREE.Texture(this.createTextCanvas(''));
+    texture.needsUpdate = true;
+
+    const material = new THREE.ShaderMaterial({
+      uniforms: {
+        map: { value: texture },
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          vec4 transformedOrigin = modelViewMatrix * vec4(0.0, 0.0, 0.0, 1.0);
+          vec4 offset = vec4(position.xy, 0.0, 0.0);
+          gl_Position = projectionMatrix * (transformedOrigin + offset);
+        }
+      `,
+      fragmentShader: `
+        uniform sampler2D map;
+        varying vec2 vUv;
+
+        void main() {
+          gl_FragColor = texture2D(map, vUv);
+        }
+      `,
+      transparent: true,
+      depthTest: false, // Ensures that the tooltip is always visible on top
+      side:THREE.DoubleSide,
+    });
+
+    const geometry = new THREE.PlaneGeometry(1, 1);
+    this.mesh = new THREE.Mesh(geometry, material);
+    this.mesh.visible = false;
+
+    this.scene.add(this.mesh);
+  }
+
+  updateTooltip(data) {
+    if (!data) {
+      this.mesh.visible = false;
+      return;
+    }
+    const canvas = this.createTextCanvas(data)
+    this.mesh.material.uniforms.map.value.image = canvas;
+    this.mesh.material.uniforms.map.value.needsUpdate = true;
+    const scale = 0.01; // Adjust this scale factor as needed
+
+    this.mesh.geometry.dispose(); // Dispose old geometry
+    this.mesh.geometry = new THREE.PlaneGeometry(canvas.width * scale, canvas.height * scale);
+
+    this.mesh.position.copy(data.pos3d)
+    this.mesh.position.y += 0.1
+    this.mesh.visible = true;
+  }
+
+  animate(time) {
+    tooltip.mesh.material.uniforms.cameraPos.value.copy(camera.position);
+  }
+
+  createTextCanvas(data) {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+  
+    context.font = this.fontStr
+    canvas.width = context.measureText(data.name).width;
+    canvas.height = this.fontSize
+    console.log(canvas.width, canvas.height)
+  
+    context.fillStyle = 'blue';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    context.font = this.fontStr
+    context.fillStyle = 'black';
+    context.fillText(data.name, 0, this.fontSize - 2)
+    return canvas;
+  }
+}
+
+class TooltipPool {
+  constructor(scene, camera, initialPoolSize) {
+    this.scene = scene;
+    this.camera = camera;
+    this.poolSize = initialPoolSize;
+    this.tooltips = [];
+    this.initPool();
+  }
+
+  initPool() {
+    for (let i = 0; i < this.poolSize; i++) {
+      this.addTooltipToPool();
+    }
+  }
+
+  addTooltipToPool() {
+    const tooltip = new Tooltip(this.scene, this.camera);
+    tooltip.mesh.visible = false;
+    this.tooltips.push(tooltip);
+  }
+
+  updateTooltips(dataList) {
+    // Adjust pool size if necessary
+    if (dataList.length > this.poolSize) {
+      for (let i = this.poolSize; i < dataList.length; i++) {
+        this.addTooltipToPool();
+      }
+      this.poolSize = dataList.length;
+      console.log('increased pool size to ', this.poolSize)
+    }
+
+    // Reset all tooltips
+    this.tooltips.forEach(tooltip => tooltip.mesh.visible = false);
+
+    // Update required tooltips
+    dataList.forEach((data, index) => {
+      if (index < this.poolSize) {
+        const tooltip = this.tooltips[index];
+        tooltip.updateTooltip(data);
+      }
+    });
+  }
+}

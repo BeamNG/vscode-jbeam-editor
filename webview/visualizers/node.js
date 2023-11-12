@@ -236,6 +236,16 @@ function updateNodeViz(moveCamera) {
   }
 
   ctx.visualizersGroundplane.redrawGroundPlane(nodesMin, nodesMax, selectedNodeIndices, pointsCache, jbeamData, currentPartName, nodeCounter)
+
+  const tooltips = []
+  for (let i = 0; i < pointsCache.length; i++) {
+    const node = pointsCache[i]
+    tooltips.push({ pos3d: node.pos3d, name: node.name})
+  }
+  if(!tooltipPool) {
+    tooltipPool = new TooltipPool(scene, camera, 5)
+  }
+  tooltipPool.updateTooltips(tooltips);
 }
 
 function onMouseDown(event) {
@@ -344,6 +354,8 @@ function onMouseMove(event) {
   colorsAttribute.needsUpdate = true;
   sizesAttribute.needsUpdate = true;
 }
+
+
 
 function onReceiveMessage(event) {
   const message = event.data;
