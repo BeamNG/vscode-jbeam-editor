@@ -421,9 +421,26 @@ class Tooltip {
         varying vec2 vUv;
         void main() {
           vUv = uv;
-          vec4 transformedOrigin = modelViewMatrix * vec4(0.0, 0.0, 0.0, 1.0);
-          vec4 offset = vec4(position.xy, 0.0, 0.0);
-          gl_Position = projectionMatrix * (transformedOrigin + offset);
+          // Create a billboard matrix with translation from modelViewMatrix and reset rotation
+          mat4 billBoardMatrix = mat4(
+              vec4(1.0, 0.0, 0.0, 0.0),
+              vec4(0.0, 1.0, 0.0, 0.0),
+              vec4(0.0, 0.0, 1.0, 0.0),
+              modelViewMatrix[3]
+          );
+      
+          // Calculate scaled position
+          float distance = length(billBoardMatrix[3].xyz - cameraPosition);
+      
+          // Adjust these values as needed for your scene
+          float minScale = 0.1;
+          float maxScale = 0.3; // Maximum scale limit
+          float scale = clamp(distance * 0.05, minScale, maxScale);
+      
+          vec4 scaledPosition = vec4(position * scale, 1.0);
+      
+          // Calculate final position
+          gl_Position = projectionMatrix * billBoardMatrix * scaledPosition;
         }
       `,
       fragmentShader: `
@@ -457,10 +474,12 @@ class Tooltip {
     const scale = 0.01; // Adjust this scale factor as needed
 
     this.mesh.geometry.dispose(); // Dispose old geometry
-    this.mesh.geometry = new THREE.PlaneGeometry(canvas.width * scale, canvas.height * scale);
+    const sizeX = canvas.width * scale
+    const sizeY = canvas.height * scale
+    this.mesh.geometry = new THREE.PlaneGeometry(sizeX, sizeY);
+    this.mesh.geometry.translate(sizeX * 0.5, sizeY * 0.5, 0)
 
     this.mesh.position.copy(data.pos3d)
-    this.mesh.position.y += 0.1
     this.mesh.visible = true;
   }
 
@@ -477,7 +496,7 @@ class Tooltip {
     canvas.height = this.fontSize
     console.log(canvas.width, canvas.height)
   
-    context.fillStyle = 'blue';
+    context.fillStyle = 'rgba(200, 200, 200, 100)';
     context.fillRect(0, 0, canvas.width, canvas.height);
 
     context.font = this.fontStr
