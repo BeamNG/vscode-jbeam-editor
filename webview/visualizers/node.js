@@ -193,7 +193,7 @@ function updateNodeViz(moveCamera) {
   } else {
     nodesMaterial = new THREE.ShaderMaterial({
       uniforms: {
-        scale: { value: window.innerHeight / 2 } // Assuming perspective camera and square points
+        scale: { value: window.innerHeight / 2 }, // Assuming perspective camera and square points
       },      
       vertexShader: `
         attribute float alpha;
@@ -208,7 +208,11 @@ function updateNodeViz(moveCamera) {
           vAlpha = alpha;
           vColor = color;
           vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-          gl_PointSize = size * (scale / -mvPosition.z);
+          if (isOrthographic) {
+            gl_PointSize = size * scale; // Fixed size for orthographic
+          } else {
+            gl_PointSize = size * (scale / -mvPosition.z); // Perspective size adjustment
+          }
           gl_Position = projectionMatrix * mvPosition;
         }
       `,
@@ -240,7 +244,7 @@ function updateNodeViz(moveCamera) {
   const tooltips = []
   for (let i = 0; i < pointsCache.length; i++) {
     const node = pointsCache[i]
-    tooltips.push({ pos3d: node.pos3d, name: node.name})
+    tooltips.push({ pos3d: node.pos3d, name: `${node.name} - ${node.nodeWeight}`})
   }
   if(!tooltipPool) {
     tooltipPool = new TooltipPool(scene, camera, 5)
