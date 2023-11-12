@@ -24,9 +24,11 @@ export async function init() {
     if (ev.value) {
       camera = cameraPersp;
       cameraPersp.position.copy(orthoCamera.position);
+      orbitControls.enableRotate = true
     } else {
       camera = orthoCamera;
       orthoCamera.position.copy(cameraPersp.position);
+      orbitControls.enableRotate = false
     }
     orbitControls.object = camera; // Update controls to new camera
   })
