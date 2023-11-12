@@ -18,7 +18,7 @@ function connectToServer() {
 
   // Connect to the TCP server
   client.connect(7000, '127.0.0.1', function() {
-    console.log('Connected to TCP Server');
+    console.log('TCP: Connected to Server');
     //client.write('Hello, server! Love, Client.');
     client.write('ping');
     reconnectInterval = 1000; // Reset reconnect interval on successful connection
@@ -26,13 +26,13 @@ function connectToServer() {
 
   // Handle data from the server
   client.on('data', function(data) {
-    console.log('Received: ' + data);
+    console.log('TCP: Received: ' + data);
   });
 
   // Handle closing the connection
   client.on('close', function() {
     if(!client.refusedConnection) {
-      console.log('Connection closed');
+      console.log('TCP: Connection closed');
     }
     attemptReconnect();
   })
@@ -40,7 +40,7 @@ function connectToServer() {
   // Handle error events
   client.on('error', function(err) {
     if(err.code !== 'ECONNREFUSED') {
-      console.error('Connection error: ' + err.message);
+      console.error('TCP: Connection error: ' + err.message);
     } else {
       client.refusedConnection = true
     }
