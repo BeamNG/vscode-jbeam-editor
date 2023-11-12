@@ -337,15 +337,33 @@ function updateProjectionPlane(scene, items, _env = {}) {
 function moveCameraCenter(pos) {
   const offset = new THREE.Vector3().subVectors(pos, orbitControls.target);
   const newCameraPosition = new THREE.Vector3().addVectors(camera.position, offset);
-  new Tween(orbitControls.target)
-    .to(pos, 120)
-    .easing(Easing.Quadratic.Out)
-    .start()
+  if(!camera.isOrthographicCamera) {
+    new Tween(orbitControls.target)
+      .to(pos, 120)
+      .easing(Easing.Quadratic.Out)
+      .start()
+      
+    new Tween(camera.position)
+      .to(newCameraPosition, 120)
+      .easing(Easing.Quadratic.Out)
+      .start()
+  } else {
+    const cameraDirection = new THREE.Vector3()
+    camera.getWorldDirection(cameraDirection)
     
-  new Tween(camera.position)
-    .to(newCameraPosition, 120)
-    .easing(Easing.Quadratic.Out)
-    .start()
+    // Calculate the new camera position while keeping the orientation constant
+    const newOrthoCameraPosition = new THREE.Vector3().copy(pos);
+
+    // Adjust the camera position based on its direction
+    const cameraDistance = camera.position.distanceTo(orbitControls.target);
+    newOrthoCameraPosition.addScaledVector(cameraDirection, cameraDistance);
+
+    // Update the camera's position
+    camera.position.copy(newOrthoCameraPosition);
+
+    // Update the camera's target to be directly above the new position
+    orbitControls.target.copy(pos);
+  }
 }
 
 /*
