@@ -42,7 +42,7 @@ function processJbeamFile(filename) {
     try {
       parsedData = sjsonParser.decodeSJSON(contentTextUtf8)
     } catch (e) {
-      //console.error('Error reading the file:', filename, e);
+      console.error(`Error parsing json file ${filename} - ${e.message}`);
       //throw e
       return false
     }
@@ -127,7 +127,7 @@ function loadJbeamFiles() {
   let findFilesPromises = []
   // Find .jbeam files
   findFilesPromises.push(vscode.workspace.findFiles(new vscode.RelativePattern(vehiclesPath, '**/*.jbeam'), null).then(files => {
-    console.log(`Found ${files.length} jbeam files ...`)
+    console.log(`Parsing ${files.length} jbeam files ...`)
     for(let file of files) {
       jbeamFileCounter++
       processJbeamFile(file.fsPath)
@@ -143,8 +143,6 @@ function loadJbeamFiles() {
 
   // now watch for changes
   fs.watch(rootPath, {recursive: true}, onFileChanged)
-
-
 }
 
 function activate(context) {
