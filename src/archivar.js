@@ -109,6 +109,7 @@ function onFileChanged(changeType, filename) {
   fileDebounceMap.set(filename, setTimeout(() => {
     // do not use changeType in here as we accumulate events with the bouncing!
     onFileChangedDebounced(filename)
+    fileDebounceMap.delete(filename)
   }, debounceTime));
 }
 
