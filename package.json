@@ -76,7 +76,12 @@
         "language": "beamng-log",
         "scopeName": "source.beamng-log",
         "path": "./syntaxes/beamng-log.tmLanguage.json"
-      }      
+      },      
+      {
+        "language": "partconfig",
+        "scopeName": "source.jbeam",
+        "path": "./syntaxes/jbeam.tmLanguage.json"
+      }
     ],
     "languages": [
       {
@@ -95,6 +100,12 @@
         "aliases": ["BeamNG Log", "beamng-log"],
         "extensions": ["beamng.log", "beamng.1.log", "beamng.2.log", "beamng.3.log"],
         "configuration": "./syntaxes/beamng-log-language-configuration.json"
+      },
+      {
+        "id": "partconfig",
+        "aliases": ["BeamNG Partconfig"],
+        "extensions": [ ".pc" ],
+        "configuration": "./syntaxes/jbeam-language-configuration.json"
       }
     ],
     "documentSymbolProvider": true,
