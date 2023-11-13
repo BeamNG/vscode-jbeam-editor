@@ -7,6 +7,8 @@ const logProcessor = require('./logProcessor');
 const simConnection = require('./simConnection');
 
 
+// so apparently, on changing the workspace kills the extension
+
 function activate(context) {
   context.subscriptions.push(vscode.commands.registerCommand('jbeam-editor.syncWithSim', function () {
     simConnection.sync()

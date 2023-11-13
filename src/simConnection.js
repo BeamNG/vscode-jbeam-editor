@@ -12,7 +12,7 @@ let client
 let buffer = ''
 let siminfo
 let simPlayerVehicleInfo
-let syncing = true
+let extensionContext
 
 function sendData(data) {
   if(!client) return
@@ -29,6 +29,8 @@ function openFileInWorkspace(relativeFilePath) {
 
 
 function onData(msg) {
+  const syncing = extensionContext?.globalState.get('syncing', false) ?? false
+
   if(msg.cmd == 'siminfo') {
     siminfo = msg.data
     console.log('Got simulation base info: ', siminfo, syncing)
@@ -42,8 +44,8 @@ function onData(msg) {
     simPlayerVehicleInfo = msg.data
     console.log('Got player info: ', simPlayerVehicleInfo, syncing)
     if(syncing && simPlayerVehicleInfo && simPlayerVehicleInfo.partConfig) {
-      syncing = false
       openFileInWorkspace(simPlayerVehicleInfo.partConfig)
+      extensionContext.globalState.update('syncing', false);
     }
     return
   }
@@ -141,21 +143,24 @@ function attemptReconnect() {
 }
 
 function sync() {
-  syncing = true
+  extensionContext.globalState.update('syncing', true);
   if(!siminfo || !siminfo.root) {
     console.error("siminfo missing")
     return
   }
+  vscode.workspace.updateWorkspaceFolders(0, null, { uri: vscode.Uri.file(siminfo.root) });
   sendData({cmd:'getPlayerVehicleInfo'})
 }
 
 
 function activate(context) {
+  extensionContext = context
   console.log('simConnection activated ...')
   tryToWakeUpBeamNG()
 }
 
 function deactivate() {
+  console.log('simConnection deactivated ...')
 }
 
 module.exports = {
