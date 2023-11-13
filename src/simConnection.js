@@ -14,6 +14,7 @@ let buffer = ''
 let siminfo
 let simPlayerVehicleInfo
 let extensionContext
+let statusBarItem
 
 function sendData(data) {
   if(!client) return
@@ -45,6 +46,12 @@ function onData(msg) {
   if(msg.cmd == 'siminfo') {
     siminfo = msg.data
     console.log('Got simulation base info: ', siminfo, syncing)
+
+    if(statusBarItem) {
+      statusBarItem.text = `Connected to BeamNG ${siminfo?.versiond ?? ''}`
+      statusBarItem.tooltip = JSON.stringify(siminfo, null, 2)
+    }
+
     if(syncing) {
       vscode.workspace.updateWorkspaceFolders(0, null, { uri: vscode.Uri.file(siminfo.root) });
       sendData({cmd:'getPlayerVehicleInfo'})
@@ -158,6 +165,9 @@ function attemptReconnect() {
     client = null;
     siminfo = null
     simPlayerVehicleInfo = null
+    if(statusBarItem) {
+      statusBarItem.text = 'Connecting to BeamNG ...';
+    }
   }
   console.log('attemptReconnect in ', reconnectInterval)
   setTimeout(tryToWakeUpBeamNG, reconnectInterval);
@@ -177,6 +187,13 @@ function sync() {
 
 
 function activate(context) {
+  statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100)
+  if(statusBarItem) {
+    statusBarItem.text = 'Connecting to BeamNG ...'
+    statusBarItem.tooltip = ''
+    statusBarItem.show()
+  }
+
   extensionContext = context
   //console.log('simConnection activated ...')
   tryToWakeUpBeamNG()
@@ -184,6 +201,9 @@ function activate(context) {
 
 function deactivate() {
   //console.log('simConnection deactivated ...')
+  if(statusBarItem) {
+    statusBarItem.dispose()
+  }
 }
 
 module.exports = {
