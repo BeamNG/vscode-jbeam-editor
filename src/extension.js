@@ -8,7 +8,10 @@ const simConnection = require('./simConnection');
 
 
 function activate(context) {
-
+  context.subscriptions.push(vscode.commands.registerCommand('jbeam-editor.syncWithSim', function () {
+    simConnection.sync()
+  }))
+  
   context.subscriptions.push(vscode.commands.registerCommand('jbeam-editor.openSettings', function () {
     vscode.commands.executeCommand('workbench.action.openSettings', '@ext:beamng.jbeam-editor');
   }))

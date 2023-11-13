@@ -1,5 +1,6 @@
 const vscode = require('vscode')
 const net = require('net')
+const path = require('path')
 
 let reconnectInterval = 1000; // Initial delay of 1 second
 const maxReconnectInterval = 6000; // Maximum delay of 6 seconds
@@ -9,17 +10,47 @@ const commandschemeWakeupMessage = 'beamng:v1/startToolchainServer'
 
 let client
 let buffer = ''
+let siminfo
+let simPlayerVehicleInfo
+let syncing = true
 
 function sendData(data) {
   if(!client) return
   client.write(JSON.stringify(data) + '\0')
 }
 
-function onData(data) {
-  console.log('TCP: Received: ', data);
+function openFileInWorkspace(relativeFilePath) {
+  const workspaceFolders = vscode.workspace.workspaceFolders;
+  if (workspaceFolders) {
+    const fileUri = vscode.Uri.file(path.join(workspaceFolders[0].uri.fsPath, relativeFilePath));
+    vscode.window.showTextDocument(fileUri);
+  }
 }
 
-function onRawData(data) {
+
+function onData(msg) {
+  if(msg.cmd == 'siminfo') {
+    siminfo = msg.data
+    console.log('Got simulation base info: ', siminfo, syncing)
+    if(syncing) {
+      vscode.workspace.updateWorkspaceFolders(0, null, { uri: vscode.Uri.file(siminfo.root) });
+      sendData({cmd:'getPlayerVehicleInfo'})
+    }
+    return
+  
+  } else if(msg.cmd == 'playerVehicleInfo') {
+    simPlayerVehicleInfo = msg.data
+    console.log('Got player info: ', simPlayerVehicleInfo, syncing)
+    if(syncing && simPlayerVehicleInfo && simPlayerVehicleInfo.partConfig) {
+      syncing = false
+      openFileInWorkspace(simPlayerVehicleInfo.partConfig)
+    }
+    return
+  }
+  console.log('TCP: Received: ', msg);
+}
+
+function _onRawData(data) {
   buffer += data
   
   let nullCharIndex;
@@ -32,6 +63,7 @@ function onRawData(data) {
       onData(parsedMessage)
     } catch (e) {
       console.error('Unable to decode JSON: ', message);
+      throw e
     }
   }
 }
@@ -52,12 +84,13 @@ function connectToServer() {
     reconnectInterval = 1000; // Reset reconnect interval on successful connection
     console.log('TCP: Connected to Server');
     sendPing()
+    sendData({cmd:'init'})
     sendData({cmd:'getPlayerVehicleInfo'})
   });
 
   // Handle data from the server
   client.on('data', function(dataRaw) {
-    onRawData(dataRaw)
+    _onRawData(dataRaw)
   });
 
   // Handle closing the connection
@@ -81,7 +114,9 @@ function connectToServer() {
 function tryToWakeUpBeamNG() {
   const pipe = net.createConnection(beamngCommandPipe);
   pipe.on('connect', () => {
-      pipe.write(commandschemeWakeupMessage)
+    pipe.write(commandschemeWakeupMessage)
+    console.log('sent wakeup')
+    pipe.destroy()
   })
   pipe.on('end', () => {
     pipe.destroy()
@@ -96,11 +131,22 @@ function attemptReconnect() {
   if (client) {
     client.destroy();
     client = null;
+    siminfo = null
+    simPlayerVehicleInfo = null
   }
-  //console.log('attemptReconnect', reconnectInterval)
+  console.log('attemptReconnect in ', reconnectInterval)
   setTimeout(tryToWakeUpBeamNG, reconnectInterval);
   // Increase the reconnect interval for the next attempt
   reconnectInterval = Math.min(reconnectInterval * 2, maxReconnectInterval);
+}
+
+function sync() {
+  syncing = true
+  if(!siminfo || !siminfo.root) {
+    console.error("siminfo missing")
+    return
+  }
+  sendData({cmd:'getPlayerVehicleInfo'})
 }
 
 
@@ -113,6 +159,7 @@ function deactivate() {
 }
 
 module.exports = {
+  sync,
   sendPing,
   activate,
   deactivate
