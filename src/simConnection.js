@@ -9,17 +9,17 @@ const commandschemeWakeupMessage = 'beamng:v1/startToolchainServer'
 
 let client
 
-function onData(data) {
-  console.log('TCP: Received: ' + data);
+function sendData(data) {
+  if(!client) return
+  client.write(JSON.stringify(data))
 }
 
-function sendJson(jsonData) {
-  if(!client) return
-  client.write(jsonData);
+function onData(data) {
+  console.log('TCP: Received: ', data);
 }
 
 function sendPing() {
-  sendJson('{"cmd":"ping"}')
+  sendData({cmd:'ping'})
 }
 
 function connectToServer() {
@@ -32,14 +32,13 @@ function connectToServer() {
   // Connect to the TCP server
   client.connect(7000, '127.0.0.1', function() {
     console.log('TCP: Connected to Server');
-    //client.write('Hello, server! Love, Client.');
     sendPing()
     reconnectInterval = 1000; // Reset reconnect interval on successful connection
   });
 
   // Handle data from the server
   client.on('data', function(data) {
-    onData(data)
+    onData(JSON.parse(data))
   });
 
   // Handle closing the connection
