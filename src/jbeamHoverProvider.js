@@ -58,23 +58,6 @@ function goToLineForHover(args) {
   }
 }
 
-function deepCloneAndRemoveKeys(obj, keysToRemove) {
-  if (typeof obj !== 'object' || obj === null) return obj; // Primitives or null
-
-  let clone = Array.isArray(obj) ? [] : {};
-
-  Object.keys(obj).forEach(key => {
-    if (keysToRemove.includes(key)) return; // Skip specified keys
-    clone[key] = deepCloneAndRemoveKeys(obj[key], keysToRemove); // Recurse for nested objects/arrays
-  });
-
-  return clone;
-}
-
-function getKeyByValueStringComparison(object, value) {
-  return Object.keys(object).find(key => String(object[key]) === value);
-}
-
 // this is the same as `document.getWordRangeAtPosition(position);` but it parses $ as well.
 // this is needed as we use $ for variables in JBeam
 // TODO: improve to parse anything in quotes first, then fall back to this version
@@ -139,7 +122,7 @@ class JBeamHoverProvider {
       const resultsRawData = utilsExt.findObjectsWithRange(parsedData, position.line, position.character, document.uri.toString());
       let foundObjCleanRaw
       if(resultsRawData && resultsRawData.length > 0) {
-        foundObjCleanRaw = deepCloneAndRemoveKeys(resultsRawData[0].obj, showFullDevData ? [] : utilsExt.excludedMagicKeys)
+        foundObjCleanRaw = utilsExt.deepCloneAndRemoveKeys(resultsRawData[0].obj, showFullDevData ? [] : utilsExt.excludedMagicKeys)
       }
 
       // fully unrolled data
@@ -150,7 +133,7 @@ class JBeamHoverProvider {
       if(tableInterpretedData) {
         resultsStructuredData = utilsExt.findObjectsWithRange(tableInterpretedData, position.line, position.character, document.uri.toString());
         if(resultsStructuredData && resultsStructuredData.length > 0) {
-          foundObjCleanStructured = deepCloneAndRemoveKeys(resultsStructuredData[0].obj, showFullDevData ? [] : utilsExt.excludedMagicKeys)
+          foundObjCleanStructured = utilsExt.deepCloneAndRemoveKeys(resultsStructuredData[0].obj, showFullDevData ? [] : utilsExt.excludedMagicKeys)
           // check for removed entries
           wasBlockMerged = !(resultsStructuredData && resultsStructuredData && (resultsRawData.length - 2 < resultsStructuredData.length))
           // this element was present in the raw data and merged in the structured version, so it's gone ...
@@ -173,9 +156,9 @@ class JBeamHoverProvider {
             // try to find the key of the thing hovered
             let keyOfEntry
             if(foundObjCleanStructured) {
-              keyOfEntry = getKeyByValueStringComparison(foundObjCleanStructured, shortWord)
+              keyOfEntry = utilsExt.getKeyByValueStringComparison(foundObjCleanStructured, shortWord)
               if(!keyOfEntry) {
-                keyOfEntry = getKeyByValueStringComparison(foundObjCleanRaw, shortWord)
+                keyOfEntry = utilsExt.getKeyByValueStringComparison(foundObjCleanRaw, shortWord)
               }
               if(keyOfEntry && resultsStructuredData && resultsStructuredData.length > 0) {
                 keyOfEntry = keyOfEntry.replace(/:.*$/, ''); // remove trailing : for the docs ... - btw, this is the namespace separator and empty means 'nodes'

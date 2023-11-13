@@ -143,11 +143,31 @@ function getNamespaceFromFilename(rootpath, filename) {
   return getNamespaceFromVirtualFilename(path.relative(rootpath, filename))
 }
 
+function getKeyByValueStringComparison(object, value) {
+  return Object.keys(object).find(key => String(object[key]) === value);
+}
+
+function deepCloneAndRemoveKeys(obj, keysToRemove) {
+  if (typeof obj !== 'object' || obj === null) return obj; // Primitives or null
+
+  let clone = Array.isArray(obj) ? [] : {};
+
+  Object.keys(obj).forEach(key => {
+    if (keysToRemove.includes(key)) return; // Skip specified keys
+    clone[key] = deepCloneAndRemoveKeys(obj[key], keysToRemove); // Recurse for nested objects/arrays
+  });
+
+  return clone;
+}
+
+
 module.exports = {
   excludedMagicKeys,
   findObjectsWithRange,
   convertUri,
   getNamespaceFromFilename,
   getNamespaceFromVirtualFilename,
+  getKeyByValueStringComparison,
   getRootpath,
+  deepCloneAndRemoveKeys,
 }

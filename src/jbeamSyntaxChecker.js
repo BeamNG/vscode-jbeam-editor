@@ -12,6 +12,24 @@ class PartConfigCompletionProvider {
   // see https://code.visualstudio.com/api/references/vscode-api#CompletionItemProvider.provideCompletionItems
   provideCompletionItems(document, position, token, context) {
 
+    const text = document.getText()
+    const range = document.getWordRangeAtPosition(position);
+    const word = document.getText(range);
+
+    let parsedData = sjsonParser.decodeSJSON(text)
+    if(parsedData) {
+      // not table unrolled, useful for documentation and alike
+      const resultsRawData = utilsExt.findObjectsWithRange(parsedData, position.line, position.character, document.uri.toString());
+      let foundObjCleanRaw
+      if(resultsRawData && resultsRawData.length > 0) {
+        foundObjCleanRaw = utilsExt.deepCloneAndRemoveKeys(resultsRawData[0].obj, utilsExt.excludedMagicKeys)
+      }
+
+
+      let keyOfEntry = utilsExt.getKeyByValueStringComparison(foundObjCleanRaw, word)
+      console.log("> keyOfEntry = ", keyOfEntry)
+    }
+
     let rootpath = utilsExt.getRootpath()
     let namespaces = ['/vehicles/common']
     if(rootpath) {
