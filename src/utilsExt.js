@@ -120,7 +120,7 @@ function convertUri(vscode, webPanel, filePath) {
   return webviewUri.toString()
 }
 
-const excludedMagicKeys = ['__range', '__isarray', '__isNamed'];
+const excludedMagicKeys = ['__range', '__isarray', '__isNamed', '__source'];
 
 module.exports = {
   excludedMagicKeys,

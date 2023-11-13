@@ -5,6 +5,7 @@ const jbeamSymbolProviderExt = require('./jbeamSymbolProviderExt');
 const jbeamHoverProvider = require('./jbeamHoverProvider');
 const logProcessor = require('./logProcessor');
 const simConnection = require('./simConnection');
+const archivar = require('./archivar');
 
 
 // so apparently, on changing the workspace kills the extension
@@ -19,14 +20,18 @@ function activate(context) {
   }))
 
   context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(event => {
-    // Check if the change affects your extension's configuration
+    // Check if the change affects your extension's configuration: reload everything affected
+    
     if (event.affectsConfiguration('jbeam-editor')) {
-      // reload everything...
       threeDPreview.deactivate()
       jbeamSyntaxChecker.deactivate()
       jbeamSymbolProviderExt.deactivate()
       jbeamHoverProvider.deactivate()
+      archivar.deactivate()
 
+      // be careful about the order
+
+      archivar.activate(context)
       threeDPreview.activate(context)
       jbeamSyntaxChecker.activate(context)
       jbeamSymbolProviderExt.activate(context)
@@ -39,6 +44,7 @@ function activate(context) {
     }
   }))
 
+  archivar.activate(context)
   simConnection.activate(context)
   threeDPreview.activate(context)
   jbeamSyntaxChecker.activate(context)
@@ -48,7 +54,8 @@ function activate(context) {
 }
 
 function deactivate() {
-  simConnection.activate(deactivate)
+  archivar.deactivate()
+  simConnection.deactivate()
   threeDPreview.deactivate()
   jbeamSyntaxChecker.deactivate()
   jbeamSymbolProviderExt.deactivate()

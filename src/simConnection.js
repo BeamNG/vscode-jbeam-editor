@@ -1,6 +1,7 @@
 const vscode = require('vscode')
 const net = require('net')
 const path = require('path')
+const archivar = require('./archivar');
 
 let reconnectInterval = 1000; // Initial delay of 1 second
 const maxReconnectInterval = 6000; // Maximum delay of 6 seconds
@@ -19,11 +20,21 @@ function sendData(data) {
   client.write(JSON.stringify(data) + '\0')
 }
 
-function openFileInWorkspace(relativeFilePath) {
+function openFileInWorkspace(filePath, gotoRange = null) {
   const workspaceFolders = vscode.workspace.workspaceFolders;
   if (workspaceFolders) {
-    const fileUri = vscode.Uri.file(path.join(workspaceFolders[0].uri.fsPath, relativeFilePath));
-    vscode.window.showTextDocument(fileUri);
+    if(gotoRange) {
+      const start = new vscode.Position(gotoRange[0], gotoRange[1]);
+      //const end = new vscode.Position(gotoRange[2], gotoRange[3]);
+      gotoRange = new vscode.Range(start, start) // end);  
+    }
+    if(!path.relative(workspaceFolders[0].uri.fsPath, filePath)) {
+      console.error(`unable to open file ${filePath} - not part of the workspace!`)
+      return
+    }
+
+    const fileUri = vscode.Uri.file(filePath)
+    vscode.window.showTextDocument(fileUri, {selection: gotoRange});
   }
 }
 
@@ -43,8 +54,15 @@ function onData(msg) {
   } else if(msg.cmd == 'playerVehicleInfo') {
     simPlayerVehicleInfo = msg.data
     console.log('Got player info: ', simPlayerVehicleInfo, syncing)
-    if(syncing && simPlayerVehicleInfo && simPlayerVehicleInfo.partConfig) {
-      openFileInWorkspace(simPlayerVehicleInfo.partConfig)
+    if(syncing && simPlayerVehicleInfo && simPlayerVehicleInfo.jbeam) {
+      const namespace = `/vehicles/${simPlayerVehicleInfo.jbeam}`
+      if(archivar.partData[namespace]) {
+        let mainPart = archivar.partData[namespace][simPlayerVehicleInfo.jbeam]
+        if(mainPart.__source) {
+          openFileInWorkspace(mainPart.__source, mainPart.__range)
+        }
+      }
+      
       extensionContext.globalState.update('syncing', false);
     }
     return
