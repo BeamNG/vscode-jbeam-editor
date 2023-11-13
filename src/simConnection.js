@@ -8,18 +8,36 @@ const beamngCommandPipe = '\\\\.\\pipe\\BEAMNGCOMMANDLISTENER'
 const commandschemeWakeupMessage = 'beamng:v1/startToolchainServer'
 
 let client
+let buffer = ''
 
 function sendData(data) {
   if(!client) return
-  client.write(JSON.stringify(data))
+  client.write(JSON.stringify(data) + '\0')
 }
 
 function onData(data) {
   console.log('TCP: Received: ', data);
 }
 
+function onRawData(data) {
+  buffer += data
+  
+  let nullCharIndex;
+  while ((nullCharIndex = buffer.indexOf('\0')) !== -1) {
+    const message = buffer.substring(0, nullCharIndex);
+    buffer = buffer.substring(nullCharIndex + 1); // Remove processed message from buffer
+
+    try {
+      const parsedMessage = JSON.parse(message);
+      onData(parsedMessage)
+    } catch (e) {
+      console.error('Unable to decode JSON: ', message);
+    }
+  }
+}
+
 function sendPing() {
-  sendData({cmd:'ping'})
+  sendData({cmd:'ping'}) 
 }
 
 function connectToServer() {
@@ -31,14 +49,15 @@ function connectToServer() {
 
   // Connect to the TCP server
   client.connect(7000, '127.0.0.1', function() {
+    reconnectInterval = 1000; // Reset reconnect interval on successful connection
     console.log('TCP: Connected to Server');
     sendPing()
-    reconnectInterval = 1000; // Reset reconnect interval on successful connection
+    sendData({cmd:'getPlayerVehicleInfo'})
   });
 
   // Handle data from the server
-  client.on('data', function(data) {
-    onData(JSON.parse(data))
+  client.on('data', function(dataRaw) {
+    onRawData(dataRaw)
   });
 
   // Handle closing the connection
