@@ -15,15 +15,18 @@ let nodeCounter
 let wasWindowOutOfFocus = false // to track if the user left the view
 
 function highlightNodeinTextEditor() {
-  if(!selectedNodeIndices || selectedNodeIndices.length !== 1) return
-  const node = pointsCache[selectedNodeIndices[0]]
-  if(node && node.hasOwnProperty('__range')) {
-    ctx.vscode.postMessage({
-      command: 'selectLine',
-      range: node.__range,
-      uri: uri,
-    });
-    //console.log(">postMessage>", node.__range)
+  if(!selectedNodeIndices) return
+
+  if(selectedNodeIndices.length === 1) {
+    const node = pointsCache[selectedNodeIndices[0]]
+    if(node && node.hasOwnProperty('__range')) {
+      ctx.vscode.postMessage({
+        command: 'selectLine',
+        range: node.__range,
+        uri: uri,
+      });
+      //console.log(">postMessage>", node.__range)
+    }
   }
 }
 
@@ -65,6 +68,12 @@ function focusNodes(nodesArrToFocus, triggerEditor = true) {
   if(triggerEditor) {
     highlightNodeinTextEditor()
   }
+
+  ctx.vscode.postMessage({
+    command: 'selectNodes',
+    nodes: selectedNodeIndices.map(nodeId => pointsCache[nodeId].name),
+    uri: uri,
+  });
 
   if(selectedNodeIndices.length == 0) selectedNodeIndices = null
 

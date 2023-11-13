@@ -217,6 +217,9 @@ function show3DSceneCommand() {
         case 'sendPing':
           simConnection.sendPing()
           break
+        case 'selectNodes':
+          simConnection.selectNodes(message.nodes)
+          break
         }
     },
     undefined,

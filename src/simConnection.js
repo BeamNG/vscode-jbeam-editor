@@ -74,6 +74,11 @@ function sendPing() {
   sendData({cmd:'ping'}) 
 }
 
+
+function selectNodes(nodes) {
+  sendData({cmd:'selectNodes', nodes: nodes}) 
+}
+
 function connectToServer() {
   if (client) {
     console.error('Client connection already existing')
@@ -164,6 +169,7 @@ function deactivate() {
 }
 
 module.exports = {
+  selectNodes,
   sync,
   sendPing,
   activate,
