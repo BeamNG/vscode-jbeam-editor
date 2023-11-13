@@ -67,7 +67,7 @@ function onData(msg) {
     }
     return
   }
-  console.log('TCP: Received: ', msg);
+  //console.log('TCP: Received: ', msg);
 }
 
 function _onRawData(data) {
@@ -178,12 +178,12 @@ function sync() {
 
 function activate(context) {
   extensionContext = context
-  console.log('simConnection activated ...')
+  //console.log('simConnection activated ...')
   tryToWakeUpBeamNG()
 }
 
 function deactivate() {
-  console.log('simConnection deactivated ...')
+  //console.log('simConnection deactivated ...')
 }
 
 module.exports = {
