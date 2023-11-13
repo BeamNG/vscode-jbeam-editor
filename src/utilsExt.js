@@ -1,3 +1,7 @@
+const vscode = require('vscode');
+const path = require('path')
+
+
 /*
 # Function Documentation: `findObjectsWithRange`
 
@@ -122,8 +126,28 @@ function convertUri(vscode, webPanel, filePath) {
 
 const excludedMagicKeys = ['__range', '__isarray', '__isNamed', '__source'];
 
+function getNamespaceFromVirtualFilename(filename) {
+  return '/' + filename.split(path.sep, 2).join(path.sep).replace(/\\/g, '/')
+}
+
+function getRootpath() {
+  const workspaceFolders = vscode.workspace.workspaceFolders;
+  if (!workspaceFolders) {
+    console.error("not in workspace")
+    return null
+  }
+  return workspaceFolders[0].uri.fsPath
+}
+  
+function getNamespaceFromFilename(rootpath, filename) {
+  return getNamespaceFromVirtualFilename(path.relative(rootpath, filename))
+}
+
 module.exports = {
   excludedMagicKeys,
   findObjectsWithRange,
   convertUri,
+  getNamespaceFromFilename,
+  getNamespaceFromVirtualFilename,
+  getRootpath,
 }

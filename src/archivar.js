@@ -12,14 +12,6 @@ let rootPath
 let jbeamFileCounter = 0
 let partCounter = 0
 
-function getNamespaceFromVirtualFilename(filename) {
-  return '/' + filename.split(path.sep, 2).join(path.sep).replace(/\\/g, '/')
-}
-
-function getNamespaceFromFilename(filename) {
-  return getNamespaceFromVirtualFilename(path.relative(rootPath, filename))
-}
-
 function fileExists(filePath) {
   try {
     // Check if the file exists by attempting to access its stats
@@ -33,7 +25,7 @@ function fileExists(filePath) {
 
 function processJbeamFile(filename) {
   if(!fileExists(filename)) return
-  const namespace = getNamespaceFromFilename(filename)
+  const namespace = utilsExt.getNamespaceFromFilename(rootPath, filename)
       
   jbeamFileCounter++
   const contentTextUtf8 = fs.readFileSync(filename, 'utf8');
@@ -71,7 +63,7 @@ function processJbeamFile(filename) {
 }
 
 function removeJbeamFileData(filename) {
-  const namespace = getNamespaceFromFilename(filename)
+  const namespace = utilsExt.getNamespaceFromFilename(rootPath, filename)
   if (!jbeamFileData || !jbeamFileData[namespace] || !jbeamFileData[namespace][filename]) {
     return
   }
@@ -114,13 +106,12 @@ function onFileChanged(changeType, filename) {
 }
 
 function loadJbeamFiles() {
-  const workspaceFolders = vscode.workspace.workspaceFolders;
-  if (!workspaceFolders) {
+  rootPath = utilsExt.getRootpath()
+  if (!rootPath) {
     console.error('unable to load jbeam: not in a workspace')
     return
   }
 
-  rootPath = workspaceFolders[0].uri.fsPath
   const vehiclesPath = vscode.Uri.file(path.join(rootPath, '/vehicles/')).fsPath
   jbeamFileCounter = 0
   partCounter = 0

@@ -1,9 +1,50 @@
 const vscode = require('vscode');
+const path = require('path')
 
 const sjsonParser = require('./sjsonParser');
 const tableSchema = require('./tableSchema');
+const archivar = require('./archivar');
+const utilsExt = require('./utilsExt');
 
 const jbeamDiagnostics = vscode.languages.createDiagnosticCollection('jbeam');
+
+class PartConfigCompletionProvider {
+  // see https://code.visualstudio.com/api/references/vscode-api#CompletionItemProvider.provideCompletionItems
+  provideCompletionItems(document, position, token, context) {
+
+    let rootpath = utilsExt.getRootpath()
+    let namespaces = ['/vehicles/common']
+    if(rootpath) {
+      namespaces.push(utilsExt.getNamespaceFromFilename(rootpath, document.uri.fsPath))
+    }
+  
+    let partNameUnique = {}
+    let list = []
+    for(let namespace of namespaces) {
+      if(!archivar.partData[namespace]) continue
+
+      for(let partName in archivar.partData[namespace]) {
+        const part = archivar.partData[namespace][partName]
+        let relPath
+        if(rootpath) {
+          relPath = path.relative(rootpath, part.__source)
+        } else {
+          relPath = part.__source
+        }
+        if(!partNameUnique[partName]) {
+          list.push({
+            label: partName,
+            detail: `${relPath}`,
+            kind: vscode.CompletionItemKind.Variable
+          })
+          partNameUnique[partName] = true
+        }
+      }
+    }
+    return list
+  }
+}
+
 
 function validateTextDocument(textDocument) {
   if (textDocument.languageId !== 'jbeam' && textDocument.languageId !== 'partconfig') {
@@ -89,13 +130,21 @@ function subscribeToDocumentChanges(context, diagnostics) {
   );
 }
 
+let completionDisposable
 function activate(context) {
   // Register our linter to get called for our language 'jbeam'
   subscribeToDocumentChanges(context, jbeamDiagnostics);
+
+  completionDisposable = vscode.languages.registerCompletionItemProvider(
+    { language: 'partconfig' },
+    new PartConfigCompletionProvider()
+  )
+  context.subscriptions.push(completionDisposable)
 }
 
 function deactivate() {
   jbeamDiagnostics.clear();
+  if(completionDisposable) completionDisposable.dispose()
 }
 
 module.exports = {

@@ -2,6 +2,7 @@ const vscode = require('vscode')
 const net = require('net')
 const path = require('path')
 const archivar = require('./archivar');
+const utilsExt = require('./utilsExt');
 
 let reconnectInterval = 1000; // Initial delay of 1 second
 const maxReconnectInterval = 6000; // Maximum delay of 6 seconds
@@ -22,14 +23,14 @@ function sendData(data) {
 }
 
 function openFileInWorkspace(filePath, gotoRange = null) {
-  const workspaceFolders = vscode.workspace.workspaceFolders;
-  if (workspaceFolders) {
+  let rootPath = utilsExt.getRootpath()
+  if (rootPath) {
     if(gotoRange) {
       const start = new vscode.Position(gotoRange[0], gotoRange[1]);
       //const end = new vscode.Position(gotoRange[2], gotoRange[3]);
       gotoRange = new vscode.Range(start, start) // end);  
     }
-    if(!path.relative(workspaceFolders[0].uri.fsPath, filePath)) {
+    if(!path.relative(rootPath, filePath)) {
       console.error(`unable to open file ${filePath} - not part of the workspace!`)
       return
     }
