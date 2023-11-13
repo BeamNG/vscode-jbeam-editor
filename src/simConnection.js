@@ -9,6 +9,19 @@ const commandschemeWakeupMessage = 'beamng:v1/startToolchainServer'
 
 let client
 
+function onData(data) {
+  console.log('TCP: Received: ' + data);
+}
+
+function sendJson(jsonData) {
+  if(!client) return
+  client.write(jsonData);
+}
+
+function sendPing() {
+  sendJson('{"cmd":"ping"}')
+}
+
 function connectToServer() {
   if (client) {
     console.error('Client connection already existing')
@@ -20,13 +33,13 @@ function connectToServer() {
   client.connect(7000, '127.0.0.1', function() {
     console.log('TCP: Connected to Server');
     //client.write('Hello, server! Love, Client.');
-    client.write('ping');
+    sendPing()
     reconnectInterval = 1000; // Reset reconnect interval on successful connection
   });
 
   // Handle data from the server
   client.on('data', function(data) {
-    console.log('TCP: Received: ' + data);
+    onData(data)
   });
 
   // Handle closing the connection
@@ -72,10 +85,6 @@ function attemptReconnect() {
   reconnectInterval = Math.min(reconnectInterval * 2, maxReconnectInterval);
 }
 
-function sendPing() {
-  if(!client) return
-  client.write('ping');
-}
 
 function activate(context) {
   console.log('simConnection activated ...')
