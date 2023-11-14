@@ -5,7 +5,7 @@ class SJSONException extends Error {
   }
 }
 
-function decodeSJSON(s) {
+function decodeWithMeta(s) {
   let lineNumber = 0
   let columnNumber = 0
   let metaData = []
@@ -35,7 +35,7 @@ function decodeSJSON(s) {
   }
 
   let lastNewline = 0
-  function skipWhiteSpace() {
+  function skipWhiteSpace(depth) {
     while (i < s.length) {
       if (s[i] === '\n') {
         // Increment line number on newline
@@ -56,7 +56,8 @@ function decodeSJSON(s) {
           // Single-line comment
           i += 2; // Skip '//' characters
           columnNumber += 2;
-          let commentMeta = {type: 'comment', range: [lineNumber, columnNumber, 0, 0]}
+          let commentMeta = {type: 'comment', range: [lineNumber, columnNumber, 0, 0], depth: depth}
+          addMetadata(commentMeta)
           let comment = ''
           while (i < s.length && s[i] !== '\n') {
             comment += s[i]
@@ -66,13 +67,13 @@ function decodeSJSON(s) {
           commentMeta.range[2] = lineNumber
           commentMeta.range[3] = columnNumber
           commentMeta.comment = comment
-          addMetadata(commentMeta)
           continue;
         } else if (s[i + 1] === '*') {
           // Multi-line comment
           i += 2; // Skip the '/*'
           columnNumber += 2;
-          let commentMeta = {type: 'comment', range: [lineNumber, columnNumber, 0, 0]}
+          let commentMeta = {type: 'comment', range: [lineNumber, columnNumber, 0, 0], depth: depth}
+          addMetadata(commentMeta)
           let comment = ''
           while (i < s.length && !(s[i] === '*' && s[i + 1] === '/')) {
             comment += s[i]
@@ -85,7 +86,6 @@ function decodeSJSON(s) {
             commentMeta.range[2] = lineNumber
             commentMeta.range[3] = columnNumber
             commentMeta.comment = comment
-            addMetadata(commentMeta)
             i++;
             columnNumber++;
           }
@@ -141,8 +141,8 @@ function decodeSJSON(s) {
     return Number(numberStr);
   }
 
-  function parseValue() {
-    skipWhiteSpace();
+  function parseValue(parentMeta, depth) {
+    skipWhiteSpace(depth)
     const ch = s[i];
 
     if (ch === '"') return readString();
@@ -151,34 +151,37 @@ function decodeSJSON(s) {
     if (ch === 'f') { i += 5; columnNumber += 5; return false; }
     if (ch === 'n') { i += 4; columnNumber += 4; return null; }
 
-    if (ch === '{') return parseObject();
-    if (ch === '[') return parseArray();
+    if (ch === '{') return parseObject(parentMeta, depth);
+    if (ch === '[') return parseArray(parentMeta, depth);
 
     jsonError('Unexpected character');
   }
 
-  function parseArray() {
+  function parseArray(parentMeta, depth) {
     const arr = {}
-    let meta = {type: 'array', range: [lineNumber, columnNumber, 0, 0]}
+    let meta = {type: 'array', range: [lineNumber, columnNumber, 0, 0], parent: parentMeta, depth: depth}
+    addMetadata(meta)
     i++; // skip '['
     columnNumber++;
-    skipWhiteSpace();
+    depth++
+    skipWhiteSpace(depth)
     let idx = 0
     while (s[i] !== ']') {
 
-      let valueMeta = {type: 'value', range: [lineNumber, columnNumber, 0, 0]}
-      const val = parseValue()
+      let valueMeta = {type: 'value', range: [lineNumber, columnNumber, 0, 0], parent: meta, depth: depth}
+      addMetadata(valueMeta)
+
+      const val = parseValue(meta, depth + 1)
       arr[idx++] = val
       valueMeta.range[2] = lineNumber
       valueMeta.range[3] = columnNumber
       valueMeta.value = val
-      addMetadata(valueMeta)
 
-      skipWhiteSpace();
+      skipWhiteSpace(depth)
       if (s[i] === ',') {
         i++; // skip ','
         columnNumber++;
-        skipWhiteSpace();
+        skipWhiteSpace(depth)
       }
     }
     i++; // skip ']'
@@ -187,45 +190,53 @@ function decodeSJSON(s) {
     meta.range[3] = columnNumber
     meta.obj = arr
     arr.__meta = meta
-    addMetadata(meta)
     return arr;
   }
 
-  function parseObject() {
+  function parseObject(parentMeta, depth) {
     const obj = {};
-    let meta = {type: 'object', range: [lineNumber, columnNumber, 0, 0]}
-    
+    let meta = {type: 'object', range: [lineNumber, columnNumber, 0, 0], parent: parentMeta, depth: depth}
+    addMetadata(meta)
+
     i++; // skip '{'
     columnNumber++;
-    skipWhiteSpace();
+    depth++
+    skipWhiteSpace(depth)
     while (s[i] !== '}') {
       if (s[i] !== '"') jsonError('Expected key');
 
-      let keyMeta = {type: 'key', range: [lineNumber, columnNumber, 0, 0]}
+      let keyMeta = {type: 'key', range: [lineNumber, columnNumber, 0, 0], parent: meta, depth: depth}
       const key = readString()
       keyMeta.range[2] = lineNumber
       keyMeta.range[3] = columnNumber
       keyMeta.value = key
       addMetadata(keyMeta)
 
-      skipWhiteSpace();
+      skipWhiteSpace(depth)
+
+      let metaSep = {type: 'objSeparator', range: [lineNumber, columnNumber, 0, 0], parent: meta, previousKey: keyMeta, depth: depth}
+      addMetadata(metaSep)
+      
       if (s[i] !== ':' && s[i] !== '=') jsonError('Expected ":" or "="');
       i++; // skip ':' or '='
       columnNumber++;
+      
+      metaSep.range[2] = lineNumber
+      metaSep.range[3] = columnNumber
 
-      let valueMeta = {type: 'value', range: [lineNumber, columnNumber, 0, 0]}
-      const val = parseValue()
+      let valueMeta = {type: 'value', range: [lineNumber, columnNumber, 0, 0], parentMeta: meta, depth: depth}
+      const val = parseValue(meta, depth + 1)
       obj[key] = val
       valueMeta.range[2] = lineNumber
       valueMeta.range[3] = columnNumber
       valueMeta.value = val
       addMetadata(valueMeta)
 
-      skipWhiteSpace();
+      skipWhiteSpace(depth)
       if (s[i] === ',') {
         i++; // skip ','
         columnNumber++;
-        skipWhiteSpace();
+        skipWhiteSpace(depth)
       }
     }
     i++; // skip '}'
@@ -234,25 +245,91 @@ function decodeSJSON(s) {
     meta.range[3] = columnNumber
     meta.obj = obj
     obj.__meta = meta
-    addMetadata(meta)
     return obj;
   }
 
-  const values = parseValue()
+  const values = parseValue(null, 0)
 
   // create line cache
   let lineData = []
   for (const item of metaData) {
-    const lineIndex = item.range[0]
-    if (!lineData[lineIndex]) {
-      lineData[lineIndex] = []
+    for (let lineIndex = item.range[0]; lineIndex <= item.range[2]; lineIndex++) {
+      if (!lineData[lineIndex]) {
+        lineData[lineIndex] = []
+      }
+      lineData[lineIndex].push(item)
     }
-    lineData[lineIndex].push(item)
   }
 
-  return {values: values, metaData: metaData, lineData:lineData}
+
+  // range is [lineStart, colStart, lineEnd, colEnd]
+  function rangeInRange(range1, range2) {
+    // Check if range1 starts after or on the same line as range2 and ends before or on the same line as range2
+    return (range1 && range2 &&
+      range1[0] >= range2[0] &&
+      range1[2] <= range2[2] &&
+      range1[1] >= range2[1] &&
+      range1[3] <= range2[3]
+    )
+  }
+
+    // range is [lineStart, colStart, lineEnd, colEnd]
+    function cursorInRange(line, position, range) {
+      // Check if the line is within the range
+      if (line < range[0] || line > range[2]) {
+        return false;
+      }
+
+      // If it's the starting line, check if the character position is after the start
+      if (line === range[0] && position < range[1]) {
+        return false;
+      }
+
+      // If it's the ending line, check if the character position is before the end
+      if (line === range[2] && position >= range[3]) {
+        return false;
+      }
+      return true
+    }
+
+    function getMetaForCur(line, position) {
+      if (!lineData || line < 0 || position < 0) {
+        // Invalid input or line/position out of range
+        return []
+      }
+      if (line >= lineData.length || !lineData[line] || line < 0) {
+        // No metadata for the specified line
+        return []
+      }
+      // Filter metadata entries within the specified line and position range
+      const metaDataForLine = lineData[line].filter(item =>
+        cursorInRange(line, position, item.range)
+      )
+      metaDataForLine.sort((a, b) => {
+        return b.depth - a.depth
+      })
+      return metaDataForLine;
+    }
+  
+  return {
+    // data
+    data: values,
+    metaData: metaData,
+    lineData: lineData,
+
+    //helpers
+    cursorInRange: cursorInRange,
+    rangeInRange: rangeInRange,
+    getMetaForCur: getMetaForCur,
+
+  }
+}
+
+function decodeSJSON() {
+
 }
 
 module.exports = {
-  decodeSJSON
-};
+  decodeWithMeta,
+  decodeSJSON,
+}
