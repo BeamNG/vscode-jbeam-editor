@@ -6,8 +6,9 @@ class SJSONException extends Error {
 }
 
 function decodeSJSON(s) {
-  let lineNumber = 0;
-  let columnNumber = 0;
+  let lineNumber = 0
+  let columnNumber = 0
+  let metaData = []
 
   const escapes = {
     't': '\t',
@@ -26,6 +27,11 @@ function decodeSJSON(s) {
 
   function jsonError(msg) {
     throw new SJSONException(msg, [lineNumber, columnNumber, lineNumber, columnNumber])
+  }
+
+  function addMetadata(data) {
+    metaData.push(data)
+    data.id = metaData.length - 1
   }
 
   let lastNewline = 0
@@ -50,22 +56,36 @@ function decodeSJSON(s) {
           // Single-line comment
           i += 2; // Skip '//' characters
           columnNumber += 2;
+          let commentMeta = {type: 'comment', range: [lineNumber, columnNumber, 0, 0]}
+          let comment = ''
           while (i < s.length && s[i] !== '\n') {
+            comment += s[i]
             i++;
             columnNumber++;
           }
+          commentMeta.range[2] = lineNumber
+          commentMeta.range[3] = columnNumber
+          commentMeta.comment = comment
+          addMetadata(commentMeta)
           continue;
         } else if (s[i + 1] === '*') {
           // Multi-line comment
           i += 2; // Skip the '/*'
           columnNumber += 2;
+          let commentMeta = {type: 'comment', range: [lineNumber, columnNumber, 0, 0]}
+          let comment = ''
           while (i < s.length && !(s[i] === '*' && s[i + 1] === '/')) {
+            comment += s[i]
             if (s[i] === '\n') {
               lineNumber++; // Increment line number inside multi-line comment
               columnNumber = 0
               //console.log('3Line: ', lineNumber, s.substring(lastNewline + 1, i))
               lastNewline = i
             }
+            commentMeta.range[2] = lineNumber
+            commentMeta.range[3] = columnNumber
+            commentMeta.comment = comment
+            addMetadata(commentMeta)
             i++;
             columnNumber++;
           }
@@ -138,15 +158,22 @@ function decodeSJSON(s) {
   }
 
   function parseArray() {
-    const arr = {};
-    arr.__isarray = true
-    arr.__range = [lineNumber, columnNumber, 0, 0]
+    const arr = {}
+    let meta = {type: 'array', range: [lineNumber, columnNumber, 0, 0]}
     i++; // skip '['
     columnNumber++;
     skipWhiteSpace();
     let idx = 0
     while (s[i] !== ']') {
-      arr[idx++] = parseValue();
+
+      let valueMeta = {type: 'value', range: [lineNumber, columnNumber, 0, 0]}
+      const val = parseValue()
+      arr[idx++] = val
+      valueMeta.range[2] = lineNumber
+      valueMeta.range[3] = columnNumber
+      valueMeta.value = val
+      addMetadata(valueMeta)
+
       skipWhiteSpace();
       if (s[i] === ',') {
         i++; // skip ','
@@ -156,25 +183,44 @@ function decodeSJSON(s) {
     }
     i++; // skip ']'
     columnNumber++;
-    arr.__range[2] = lineNumber
-    arr.__range[3] = columnNumber
+    meta.range[2] = lineNumber
+    meta.range[3] = columnNumber
+    meta.obj = arr
+    arr.__meta = meta
+    addMetadata(meta)
     return arr;
   }
 
   function parseObject() {
     const obj = {};
-    obj.__range = [lineNumber, columnNumber, 0, 0]
+    let meta = {type: 'object', range: [lineNumber, columnNumber, 0, 0]}
+    
     i++; // skip '{'
     columnNumber++;
     skipWhiteSpace();
     while (s[i] !== '}') {
       if (s[i] !== '"') jsonError('Expected key');
-      const key = readString();
+
+      let keyMeta = {type: 'key', range: [lineNumber, columnNumber, 0, 0]}
+      const key = readString()
+      keyMeta.range[2] = lineNumber
+      keyMeta.range[3] = columnNumber
+      keyMeta.value = key
+      addMetadata(keyMeta)
+
       skipWhiteSpace();
       if (s[i] !== ':' && s[i] !== '=') jsonError('Expected ":" or "="');
       i++; // skip ':' or '='
       columnNumber++;
-      obj[key] = parseValue();
+
+      let valueMeta = {type: 'value', range: [lineNumber, columnNumber, 0, 0]}
+      const val = parseValue()
+      obj[key] = val
+      valueMeta.range[2] = lineNumber
+      valueMeta.range[3] = columnNumber
+      valueMeta.value = val
+      addMetadata(valueMeta)
+
       skipWhiteSpace();
       if (s[i] === ',') {
         i++; // skip ','
@@ -184,12 +230,27 @@ function decodeSJSON(s) {
     }
     i++; // skip '}'
     columnNumber++;
-    obj.__range[2] = lineNumber
-    obj.__range[3] = columnNumber
+    meta.range[2] = lineNumber
+    meta.range[3] = columnNumber
+    meta.obj = obj
+    obj.__meta = meta
+    addMetadata(meta)
     return obj;
   }
 
-  return parseValue();
+  const values = parseValue()
+
+  // create line cache
+  let lineData = []
+  for (const item of metaData) {
+    const lineIndex = item.range[0]
+    if (!lineData[lineIndex]) {
+      lineData[lineIndex] = []
+    }
+    lineData[lineIndex].push(item)
+  }
+
+  return {values: values, metaData: metaData, lineData:lineData}
 }
 
 module.exports = {
