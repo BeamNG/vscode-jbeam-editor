@@ -8,6 +8,39 @@ const utilsExt = require('./utilsExt');
 
 const jbeamDiagnostics = vscode.languages.createDiagnosticCollection('jbeam');
 
+function getPartnamesForNamespaces(namespaces, slotName, callback) {
+  let partNameUnique = {}
+  let list = []
+  for(let namespace of namespaces) {
+    if(!archivar.partData[namespace]) continue
+
+    for(let partName in archivar.partData[namespace]) {
+      const part = archivar.partData[namespace][partName]
+      if(part.slotType !== slotName) continue
+      let relPath
+      if(rootpath) {
+        relPath = path.relative(rootpath, part.__source)
+      } else {
+        relPath = part.__source
+      }
+      if(!partNameUnique[partName]) {
+        list.push(callback(part, relPath))
+        partNameUnique[partName] = true
+      }
+    }
+  }
+  return list
+}
+
+function getPartnamesForDocument(document, slotName, callback) {
+  let rootpath = utilsExt.getRootpath()
+  let namespaces = ['/vehicles/common']
+  if(rootpath) {
+    namespaces.push(utilsExt.getNamespaceFromFilename(rootpath, document.uri.fsPath))
+  }
+  return getPartnamesForNamespaces(namespaces, slotName, callback)
+}
+
 class PartConfigCompletionProvider {
   // see https://code.visualstudio.com/api/references/vscode-api#CompletionItemProvider.provideCompletionItems
   provideCompletionItems(document, position, token, context) {
@@ -16,50 +49,34 @@ class PartConfigCompletionProvider {
     const range = document.getWordRangeAtPosition(position);
     const word = document.getText(range);
 
-    let parsedData = sjsonParser.decodeSJSON(text)
-    if(parsedData) {
-      // not table unrolled, useful for documentation and alike
-      const resultsRawData = utilsExt.findObjectsWithRange(parsedData, position.line, position.character, document.uri.toString());
-      let foundObjCleanRaw
-      if(resultsRawData && resultsRawData.length > 0) {
-        foundObjCleanRaw = utilsExt.deepCloneAndRemoveKeys(resultsRawData[0].obj, utilsExt.excludedMagicKeys)
-      }
-
-
-      let keyOfEntry = utilsExt.getKeyByValueStringComparison(foundObjCleanRaw, word)
-      console.log("> keyOfEntry = ", keyOfEntry)
+    let dataBundle = sjsonParser.decodeWithMeta(text)
+    if(!dataBundle) {
+      return
+    }
+    let meta = sjsonParser.getMetaForCur(dataBundle, position.line, position.character)
+    if(!meta || meta.lenght == 0) {
+      return
     }
 
-    let rootpath = utilsExt.getRootpath()
-    let namespaces = ['/vehicles/common']
-    if(rootpath) {
-      namespaces.push(utilsExt.getNamespaceFromFilename(rootpath, document.uri.fsPath))
-    }
-  
-    let partNameUnique = {}
-    let list = []
-    for(let namespace of namespaces) {
-      if(!archivar.partData[namespace]) continue
-
-      for(let partName in archivar.partData[namespace]) {
-        const part = archivar.partData[namespace][partName]
-        let relPath
-        if(rootpath) {
-          relPath = path.relative(rootpath, part.__source)
-        } else {
-          relPath = part.__source
-        }
-        if(!partNameUnique[partName]) {
-          list.push({
-            label: partName,
-            detail: `${relPath}`,
-            kind: vscode.CompletionItemKind.Variable
-          })
-          partNameUnique[partName] = true
-        }
+    let completionPartFoundFct = function(part, relPath) {
+      return {
+        label: partName,
+        detail: `${relPath}`,
+        kind: vscode.CompletionItemKind.Variable
       }
     }
-    return list
+
+
+    // we are above a value
+    const firstMeta = meta[0]
+    if((firstMeta.type == 'value' || firstMeta.type == 'objSeparator') && firstMeta.depth == 3) {
+      let partSlotname = firstMeta.key.value
+      let res = getPartnamesForDocument(document, partSlotname, completionPartFoundFct)
+      console.log(`Completion items for ${position.line}:${position.character} ('${word}') - part: '${partSlotname}': ${res}`)
+      return res
+    } else {
+      console.log(`unable to provide completion for this meta: ${position.line}:${position.character}: `, meta)
+    }
   }
 }
 
