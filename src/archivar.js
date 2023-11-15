@@ -25,8 +25,6 @@ function fileExists(filePath) {
 
 function processJbeamFile(filename) {
   if(!fileExists(filename)) return
-
-  console.log(">>> ", filename)
   const namespace = utilsExt.getNamespaceFromFilename(rootPath, filename)
       
   jbeamFileCounter++
@@ -145,7 +143,7 @@ function loadJbeamFiles() {
 }
 
 function activate(context) {
-  //loadJbeamFiles()
+  loadJbeamFiles()
 }
 
 function deactivate() {
