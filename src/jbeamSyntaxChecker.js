@@ -67,6 +67,21 @@ function debugHighlight(document, range, type) {
   editor.setDecorations(highlights[type], [rangeToHighlight]);
 }
 
+// checks if the position is in qotes or not
+function checkQuotesWithoutNewlineInLine(text, position) {
+  const lines = text.split('\n');
+  if (position.line >= lines.length) return false;
+
+  const line = lines[position.line];
+  const noNewLineBeforeQuote = (str) => /[^\n]*"/.test(str)
+
+  const firstHalfReversed = line.substring(0, position.character).split('').reverse().join('');
+  const secondHalf = line.substring(position.character);
+
+  return noNewLineBeforeQuote(firstHalfReversed) && noNewLineBeforeQuote(secondHalf);
+}
+
+
 class PartConfigCompletionProvider {
   // see https://code.visualstudio.com/api/references/vscode-api#CompletionItemProvider.provideCompletionItems
   provideCompletionItems(document, position, token, context) {
@@ -78,6 +93,8 @@ class PartConfigCompletionProvider {
     if(range) {
       word = document.getText(range)
     }
+    
+    let isInQuotes = checkQuotesWithoutNewlineInLine(text, position)
 
     let dataBundle = sjsonParser.decodeWithMeta(text)
     if(!dataBundle) {
@@ -96,12 +113,16 @@ class PartConfigCompletionProvider {
     //if(meta.length > 2) debugHighlight(document, meta[2].range, 2)
 
     let completionPartFoundFct = function(partName, part, relPath) {
-      return {
+      let res = {
         label: partName,
         //detail: `${relPath}`,
         kind: vscode.CompletionItemKind.Variable,
         range: range,
       }
+      if(!isInQuotes) {
+        res.insertText = `"${partName}"` // add quotes
+      }
+      return res
     }
 
 
