@@ -25,38 +25,45 @@ function fileExists(filePath) {
 
 function processJbeamFile(filename) {
   if(!fileExists(filename)) return
+
+  console.log(">>> ", filename)
   const namespace = utilsExt.getNamespaceFromFilename(rootPath, filename)
       
   jbeamFileCounter++
   const contentTextUtf8 = fs.readFileSync(filename, 'utf8');
   if(contentTextUtf8) {
-    let parsedData
+    let dataBundle
     try {
-      parsedData = sjsonParser.decodeSJSON(contentTextUtf8)
+      dataBundle = sjsonParser.decodeWithMeta(contentTextUtf8, filename)
+      if(dataBundle.errors.length > 0) {
+        console.error(`Error parsing json file ${filename} - ${dataBundle.errors}`)
+        return false
+      }
     } catch (e) {
-      console.error(`Error parsing json file ${filename} - ${e.message}`);
-      //throw e
+      console.error(`Error parsing json file ${filename} - ${e.message}`)
+      throw e
       return false
     }
-    if(parsedData) {
+    if(dataBundle) {
       if(!jbeamFileData[namespace]) {
         jbeamFileData[namespace] = {}
       }
-      parsedData.__source = filename
-      jbeamFileData[namespace][filename] = parsedData
-      //console.log(`${filename} [${namespace}] contains ${Object.keys(parsedData).length} parts ...`);
+      jbeamFileData[namespace][filename] = dataBundle
+      //console.log(`${filename} [${namespace}] contains ${Object.keys(dataBundle.data).length} parts ...`);
 
 
-      let partNames = Object.keys(parsedData).filter(key => !utilsExt.excludedMagicKeys.includes(key))
+      let partNames = Object.keys(dataBundle.data).filter(key => !utilsExt.excludedMagicKeys.includes(key))
       for(let partName of partNames) {
-        const part = parsedData[partName]
-        part.__source = filename
+        const part = dataBundle.data[partName]
+        part.__meta.origin = filename
         if(!partData[namespace]) {
           partData[namespace] = {}
         }
         partData[namespace][partName] = part
         partCounter++
       }
+    } else {
+      console.error(`Unable to read file: ${filename}`)
     }
   }
   return true
@@ -138,7 +145,7 @@ function loadJbeamFiles() {
 }
 
 function activate(context) {
-  loadJbeamFiles()
+  //loadJbeamFiles()
 }
 
 function deactivate() {

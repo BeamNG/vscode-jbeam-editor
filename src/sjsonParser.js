@@ -5,9 +5,75 @@ class SJSONException extends Error {
   }
 }
 
-function decodeWithMeta(s) {
+
+// range is [lineStart, colStart, lineEnd, colEnd]
+function rangeInRange(range1, range2) {
+  // Check if range1 starts after or on the same line as range2 and ends before or on the same line as range2
+  return (range1 && range2 &&
+    range1[0] >= range2[0] &&
+    range1[2] <= range2[2] &&
+    range1[1] >= range2[1] &&
+    range1[3] <= range2[3]
+  )
+}
+
+// range is [lineStart, colStart, lineEnd, colEnd]
+function cursorInRange(line, position, range) {
+  // Check if the line is within the range
+  if (line < range[0] || line > range[2]) {
+    return false;
+  }
+
+  // If it's the starting line, check if the character position is after the start
+  if (line === range[0] && position < range[1]) {
+    return false;
+  }
+
+  // If it's the ending line, check if the character position is before the end
+  if (line === range[2] && position > range[3]) {
+    return false;
+  }
+  return true
+}
+
+function getMetaForCur(dataBundle, line, position) {
+  let lineData = dataBundle.lineData
+
+  if (!lineData || line < 0 || position < 0) {
+    // Invalid input or line/position out of range
+    return []
+  }
+  if (line >= lineData.length || !lineData[line] || line < 0) {
+    // No metadata for the specified line
+    return []
+  }
+  // Filter metadata entries within the specified line and position range
+  const metaDataForLine = lineData[line].filter(item =>
+    cursorInRange(line, position, item.range)
+  )
+  metaDataForLine.sort((a, b) => {
+    return b.depth - a.depth
+  })
+  return metaDataForLine;
+}
+
+function getPreviousMeta(dataBundle, meta) {
+  if(!dataBundle.metaData || !meta || meta.id <= 0 || !dataBundle.metaData[meta.id - 1]) return null
+  return dataBundle.metaData[meta.id - 1]
+}
+
+const helperFunctions = {
+  rangeInRange,
+  cursorInRange,
+  getMetaForCur,
+  getPreviousMeta,
+}
+
+function decodeWithMeta(s, origin) {
   let lineNumber = 0
   let columnNumber = 0
+  let errors = []
+  let abortExecution = false
   let metaData = []
 
   const escapes = {
@@ -26,7 +92,8 @@ function decodeWithMeta(s) {
   let i = 0;
 
   function jsonError(msg) {
-    throw new SJSONException(msg, [lineNumber, columnNumber, lineNumber, columnNumber])
+    errors.push({message: msg, range:[lineNumber, columnNumber, lineNumber, columnNumber]})
+    abortExecution = true
   }
 
   function addMetadata(data) {
@@ -36,7 +103,7 @@ function decodeWithMeta(s) {
 
   let lastNewline = 0
   function skipWhiteSpace(depth) {
-    while (i < s.length) {
+    while (i < s.length && !abortExecution) {
       if (s[i] === '\n') {
         // Increment line number on newline
         lineNumber++;
@@ -59,7 +126,7 @@ function decodeWithMeta(s) {
           let commentMeta = {type: 'comment', range: [lineNumber, columnNumber, 0, 0], depth: depth}
           addMetadata(commentMeta)
           let comment = ''
-          while (i < s.length && s[i] !== '\n') {
+          while (i < s.length && s[i] !== '\n' && !abortExecution) {
             comment += s[i]
             i++;
             columnNumber++;
@@ -75,7 +142,7 @@ function decodeWithMeta(s) {
           let commentMeta = {type: 'comment', range: [lineNumber, columnNumber, 0, 0], depth: depth}
           addMetadata(commentMeta)
           let comment = ''
-          while (i < s.length && !(s[i] === '*' && s[i + 1] === '/')) {
+          while (i < s.length && !(s[i] === '*' && s[i + 1] === '/') && !abortExecution) {
             comment += s[i]
             if (s[i] === '\n') {
               lineNumber++; // Increment line number inside multi-line comment
@@ -90,27 +157,27 @@ function decodeWithMeta(s) {
             columnNumber++;
           }
           if (i >= s.length) {
-            jsonError('Unterminated comment');
+            jsonError('Unterminated comment')
+            return
           }
           i += 2; // Skip the '*/'
           columnNumber+=2;
           continue;
         } else {
-          jsonError('Invalid comment');
+          jsonError('Invalid comment')
+          return
         }
       }
       break; // If it's not whitespace, a comment or a newline, break the loop
     }
   }
-  
-  
-  
+    
   function readString() {
     // TODO: Add support for escape characters and unicode
     let result = '';
     i++; // Skip the initial quote
     columnNumber++;
-    while (i < s.length && s[i] !== '"') {
+    while (i < s.length && s[i] !== '"' && !abortExecution) {
       const ch = s[i];
       if (ch === '\\') {
         const esc = escapes[s[i + 1]];
@@ -134,11 +201,14 @@ function decodeWithMeta(s) {
 
   function readNumber() {
     let numberMatch = s.substring(i).match(/^-?\d+(\.\d+)?([eE][+-]?\d+)?/);
-    if (!numberMatch) jsonError('Invalid number');
-    let numberStr = numberMatch[0];
-    i += numberStr.length;
+    if (!numberMatch) {
+      jsonError('Invalid number')
+      return
+    }
+    let numberStr = numberMatch[0]
+    i += numberStr.length
     columnNumber += numberStr.length
-    return Number(numberStr);
+    return Number(numberStr)
   }
 
   function parseValue(parentMeta, depth) {
@@ -146,15 +216,15 @@ function decodeWithMeta(s) {
     const ch = s[i];
 
     if (ch === '"') return readString();
-    if (ch === '-' || (ch >= '0' && ch <= '9')) return readNumber();
-    if (ch === 't') { i += 4; columnNumber += 4; return true; }
-    if (ch === 'f') { i += 5; columnNumber += 5; return false; }
-    if (ch === 'n') { i += 4; columnNumber += 4; return null; }
+    if (ch === '-' || (ch >= '0' && ch <= '9')) return readNumber()
+    if (ch === 't') { i += 4; columnNumber += 4; return true }
+    if (ch === 'f') { i += 5; columnNumber += 5; return false }
+    if (ch === 'n') { i += 4; columnNumber += 4; return null }
 
-    if (ch === '{') return parseObject(parentMeta, depth);
-    if (ch === '[') return parseArray(parentMeta, depth);
+    if (ch === '{') return parseObject(parentMeta, depth)
+    if (ch === '[') return parseArray(parentMeta, depth)
 
-    jsonError('Unexpected character');
+    jsonError('Unexpected character')
   }
 
   function parseArray(parentMeta, depth) {
@@ -166,7 +236,7 @@ function decodeWithMeta(s) {
     depth++
     skipWhiteSpace(depth)
     let idx = 0
-    while (s[i] !== ']') {
+    while (s[i] !== ']' && !abortExecution) {
 
       let valueMeta = {type: 'value', range: [lineNumber, columnNumber, 0, 0], parent: meta, depth: depth}
       addMetadata(valueMeta)
@@ -202,8 +272,11 @@ function decodeWithMeta(s) {
     columnNumber++;
     depth++
     skipWhiteSpace(depth)
-    while (s[i] !== '}') {
-      if (s[i] !== '"') jsonError('Expected key');
+    while (s[i] !== '}' && !abortExecution) {
+      if (s[i] !== '"') {
+        jsonError('Expected key')
+        return
+      }
 
       let keyMeta = {type: 'key', range: [lineNumber, columnNumber, 0, 0], parent: meta, depth: depth}
       const key = readString()
@@ -214,17 +287,20 @@ function decodeWithMeta(s) {
 
       skipWhiteSpace(depth)
 
-      let metaSep = {type: 'objSeparator', range: [lineNumber, columnNumber, 0, 0], parent: meta, previousKey: keyMeta, depth: depth}
+      let metaSep = {type: 'objSeparator', range: [lineNumber, columnNumber, 0, 0], parent: meta, key: keyMeta, depth: depth}
       addMetadata(metaSep)
       
-      if (s[i] !== ':' && s[i] !== '=') jsonError('Expected ":" or "="');
+      if (s[i] !== ':' && s[i] !== '=') {
+        jsonError('Expected ":" or "="')
+        return
+      }
       i++; // skip ':' or '='
       columnNumber++;
       
       metaSep.range[2] = lineNumber
       metaSep.range[3] = columnNumber
 
-      let valueMeta = {type: 'value', range: [lineNumber, columnNumber, 0, 0], parentMeta: meta, depth: depth}
+      let valueMeta = {type: 'value', range: [lineNumber, columnNumber, 0, 0], parentMeta: meta, depth: depth, key: keyMeta}
       const val = parseValue(meta, depth + 1)
       obj[key] = val
       valueMeta.range[2] = lineNumber
@@ -261,75 +337,24 @@ function decodeWithMeta(s) {
     }
   }
 
-
-  // range is [lineStart, colStart, lineEnd, colEnd]
-  function rangeInRange(range1, range2) {
-    // Check if range1 starts after or on the same line as range2 and ends before or on the same line as range2
-    return (range1 && range2 &&
-      range1[0] >= range2[0] &&
-      range1[2] <= range2[2] &&
-      range1[1] >= range2[1] &&
-      range1[3] <= range2[3]
-    )
+  if(metaData.length > 0) {
+    metaData[0].origin = origin
   }
 
-    // range is [lineStart, colStart, lineEnd, colEnd]
-    function cursorInRange(line, position, range) {
-      // Check if the line is within the range
-      if (line < range[0] || line > range[2]) {
-        return false;
-      }
-
-      // If it's the starting line, check if the character position is after the start
-      if (line === range[0] && position < range[1]) {
-        return false;
-      }
-
-      // If it's the ending line, check if the character position is before the end
-      if (line === range[2] && position >= range[3]) {
-        return false;
-      }
-      return true
-    }
-
-    function getMetaForCur(line, position) {
-      if (!lineData || line < 0 || position < 0) {
-        // Invalid input or line/position out of range
-        return []
-      }
-      if (line >= lineData.length || !lineData[line] || line < 0) {
-        // No metadata for the specified line
-        return []
-      }
-      // Filter metadata entries within the specified line and position range
-      const metaDataForLine = lineData[line].filter(item =>
-        cursorInRange(line, position, item.range)
-      )
-      metaDataForLine.sort((a, b) => {
-        return b.depth - a.depth
-      })
-      return metaDataForLine;
-    }
   
+  // return dataBundle
   return {
     // data
     data: values,
+    errors: errors,
     metaData: metaData,
     lineData: lineData,
 
-    //helpers
-    cursorInRange: cursorInRange,
-    rangeInRange: rangeInRange,
-    getMetaForCur: getMetaForCur,
-
+    ...helperFunctions
   }
-}
-
-function decodeSJSON() {
-
 }
 
 module.exports = {
   decodeWithMeta,
-  decodeSJSON,
+  ...helperFunctions,
 }

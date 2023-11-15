@@ -11,20 +11,24 @@ const jbeamDiagnostics = vscode.languages.createDiagnosticCollection('jbeam');
 function getPartnamesForNamespaces(namespaces, slotName, callback) {
   let partNameUnique = {}
   let list = []
+  const rootpath = utilsExt.getRootpath()
   for(let namespace of namespaces) {
-    if(!archivar.partData[namespace]) continue
+    if(!archivar.partData[namespace]) {
+      console.error(`Namepspace not found: ${namespace}`)
+      continue
+    }
 
     for(let partName in archivar.partData[namespace]) {
       const part = archivar.partData[namespace][partName]
       if(part.slotType !== slotName) continue
       let relPath
       if(rootpath) {
-        relPath = path.relative(rootpath, part.__source)
+        relPath = path.relative(rootpath, part.__meta.origin)
       } else {
-        relPath = part.__source
+        relPath = part.__meta.origin
       }
       if(!partNameUnique[partName]) {
-        list.push(callback(part, relPath))
+        list.push(callback(partName, part, relPath))
         partNameUnique[partName] = true
       }
     }
@@ -33,50 +37,95 @@ function getPartnamesForNamespaces(namespaces, slotName, callback) {
 }
 
 function getPartnamesForDocument(document, slotName, callback) {
-  let rootpath = utilsExt.getRootpath()
+  const rootpath = utilsExt.getRootpath()
   let namespaces = ['/vehicles/common']
   if(rootpath) {
     namespaces.push(utilsExt.getNamespaceFromFilename(rootpath, document.uri.fsPath))
   }
   return getPartnamesForNamespaces(namespaces, slotName, callback)
 }
+const highlights = [
+  vscode.window.createTextEditorDecorationType({backgroundColor: 'rgba(255, 0, 0, 0.3)'}),
+  vscode.window.createTextEditorDecorationType({backgroundColor: 'rgba(0, 255, 0, 0.3)'}),
+  vscode.window.createTextEditorDecorationType({backgroundColor: 'rgba(255, 0, 255, 0.3)'}),
+]
+
+function debugHighlight(document, range, type) {
+  let editor = vscode.window.visibleTextEditors.find(editor => {
+    return document.uri === editor.document.uri;
+  })
+
+  if(!range) {
+    editor.setDecorations(highlights[type], []);
+    return  
+  }
+  
+  const start = new vscode.Position(range[0], range[1]);
+  const end = new vscode.Position(range[2], range[3]);
+  const rangeToHighlight = new vscode.Range(start, end);
+
+  editor.setDecorations(highlights[type], [rangeToHighlight]);
+}
 
 class PartConfigCompletionProvider {
   // see https://code.visualstudio.com/api/references/vscode-api#CompletionItemProvider.provideCompletionItems
   provideCompletionItems(document, position, token, context) {
+    console.log("provideCompletionItems", document, position, token, context)
 
     const text = document.getText()
-    const range = document.getWordRangeAtPosition(position);
-    const word = document.getText(range);
+    const range = document.getWordRangeAtPosition(position)
+    let word
+    if(range) {
+      word = document.getText(range)
+    }
 
     let dataBundle = sjsonParser.decodeWithMeta(text)
     if(!dataBundle) {
+      console.log('unable to get data from document: ', document.uri.fsPath, text)
       return
     }
     let meta = sjsonParser.getMetaForCur(dataBundle, position.line, position.character)
-    if(!meta || meta.lenght == 0) {
+    if(!meta || meta.length == 0) {
+      console.log('unable to get data below cursor: ', document.uri.fsPath, text, position)
       return
     }
+    const firstMeta = meta[0]
 
-    let completionPartFoundFct = function(part, relPath) {
+    if(meta.length > 0) debugHighlight(document, meta[0].range, 0)
+    //if(meta.length > 1) debugHighlight(document, meta[1].range, 1)
+    //if(meta.length > 2) debugHighlight(document, meta[2].range, 2)
+
+    let completionPartFoundFct = function(partName, part, relPath) {
       return {
         label: partName,
-        detail: `${relPath}`,
-        kind: vscode.CompletionItemKind.Variable
+        //detail: `${relPath}`,
+        kind: vscode.CompletionItemKind.Variable,
+        range: range,
       }
     }
 
 
     // we are above a value
-    const firstMeta = meta[0]
     if((firstMeta.type == 'value' || firstMeta.type == 'objSeparator') && firstMeta.depth == 3) {
       let partSlotname = firstMeta.key.value
+      debugHighlight(document, firstMeta.key.range, 1)
       let res = getPartnamesForDocument(document, partSlotname, completionPartFoundFct)
-      console.log(`Completion items for ${position.line}:${position.character} ('${word}') - part: '${partSlotname}': ${res}`)
+      // add empty
+      res.unshift({
+        label: "",
+        kind: vscode.CompletionItemKind.Variable,
+        range: range,
+      })
+      console.log(`Completion items for ${position.line}:${position.character} ('${word ? word : ''}') - part: '${partSlotname}': ${JSON.stringify(res, null, 2)}`)
       return res
     } else {
-      console.log(`unable to provide completion for this meta: ${position.line}:${position.character}: `, meta)
+      console.log(`unable to provide completion for this meta: ${position.line}:${position.character}: ${JSON.stringify(meta, null, 2)}`)
     }
+  }
+
+  resolveCompletionItem(item, token) {
+    console.log('resolveCompletionItem', item, token)
+
   }
 }
 
@@ -172,7 +221,8 @@ function activate(context) {
 
   completionDisposable = vscode.languages.registerCompletionItemProvider(
     { language: 'partconfig' },
-    new PartConfigCompletionProvider()
+    new PartConfigCompletionProvider(),
+    ":\"" // triggerCharacters
   )
   context.subscriptions.push(completionDisposable)
 }
