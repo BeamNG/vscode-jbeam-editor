@@ -141,30 +141,8 @@ function validateTextDocument(textDocument) {
   if (textDocument.languageId !== 'partconfig') {
     return;
   }
-
-  const diagnosticsList = []
-  const text = textDocument.getText();
-  
-  // generic json things
-  let parsedData
-  try {
-    parsedData = sjsonParser.decodeSJSON(text);
-  } catch (e) {
-    const pos = new vscode.Position(
-      e.range ? e.range[0] : e.line ? e.line : 0,
-      e.range ? e.range[1] : e.column ? e.column : 0
-    )
-    const diagnostic = new vscode.Diagnostic(
-      new vscode.Range(pos, pos),
-      `Exception while parsing SJSON: ${e.message}`,
-      vscode.DiagnosticSeverity.Error
-    );
-    diagnosticsList.push(diagnostic);
-    //throw e
-  }
-
-  // Update the diagnostics collection for the file
-  partconfigDiagnostics.set(textDocument.uri, diagnosticsList);
+  let dataBundle = sjsonParser.decodeWithMetaWithDiagnostics(textDocument.getText(), textDocument.uri.fsPath)
+  partconfigDiagnostics.set(textDocument.uri, dataBundle.diagnosticsList);
 }
 
 function subscribeToDocumentChanges(context, diagnostics) {

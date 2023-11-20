@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const sjsonParser = require('./json/sjsonParser');
 const tableSchema = require('./json/tableSchema');
-const utilsExt = require('./utils/utils');
+const utilsExt = require('./utilsExt');
 const simConnection = require('./simConnection');
 
 let meshCache = {}
@@ -247,6 +247,7 @@ function show3DSceneCommand() {
     const uri = doc.uri.toString()
     try {
       let parsedData = sjsonParser.decodeSJSON(text);
+      // TODO: FIXME
       if(!parsedData) {
         console.error("Could not parse SJSON!")
         return

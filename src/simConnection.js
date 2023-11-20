@@ -38,7 +38,7 @@ const vscode = require('vscode')
 const net = require('net')
 const path = require('path')
 const archivar = require('./archivar');
-const utilsExt = require('./utils/utils');
+const utilsExt = require('./utilsExt');
 
 let reconnectInterval = 1000; // Initial delay of 1 second
 const maxReconnectInterval = 6000; // Maximum delay of 6 seconds
@@ -206,7 +206,7 @@ function attemptReconnect() {
       statusBarItem.text = 'Connecting to BeamNG ...';
     }
   }
-  console.log('attemptReconnect in ', reconnectInterval)
+  //console.log('attemptReconnect in ', reconnectInterval)
   setTimeout(tryToWakeUpBeamNG, reconnectInterval);
   // Increase the reconnect interval for the next attempt
   reconnectInterval = Math.min(reconnectInterval * 2, maxReconnectInterval);

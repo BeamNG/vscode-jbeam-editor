@@ -47,7 +47,7 @@
   Notes: This function is used to process and enhance the JBEAM data, making it ready for further use or analysis. The diagnostics array contains information about any issues encountered during processing.
 */
 
-const utilsExt = require('../utils/utils');
+const utilsExt = require('../utilsExt');
 
 let ignoreSections = {maxIDs: true, options: true};
 

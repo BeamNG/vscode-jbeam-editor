@@ -44,6 +44,7 @@ console.log(result.metaData); // Output: [{ type: 'object', range: [1, 1, 1, 24]
 
   Notes: This function is designed to handle SJSON data with metadata, allowing for advanced parsing and analysis.
 */
+const vscode = require('vscode');
 
 class SJSONException extends Error {
   constructor(message, range) {
@@ -401,7 +402,45 @@ function decodeWithMeta(s, origin) {
   }
 }
 
+function decodeWithMetaWithDiagnostics(contentTextUtf8, filename) {
+  let dataBundle
+  let diagnosticsList = []
+  try {
+    dataBundle = decodeWithMeta(contentTextUtf8, filename);
+  } catch (e) {
+    const pos = new vscode.Position(
+      e.range ? e.range[0] : e.line ? e.line : 0,
+      e.range ? e.range[1] : e.column ? e.column : 0
+    )
+    const diagnostic = new vscode.Diagnostic(
+      new vscode.Range(pos, pos),
+      `Json parsing exception: ${e.message}`,
+      vscode.DiagnosticSeverity.Error
+    );
+    diagnosticsList.push(diagnostic);
+  }
+
+  if(dataBundle && dataBundle.errors && dataBundle.errors.length > 0) {
+    for(let e of dataBundle.errors) {
+      const pos = new vscode.Position(
+        e.range ? e.range[0] : e.line ? e.line : 0,
+        e.range ? e.range[1] : e.column ? e.column : 0
+      )
+      const diagnostic = new vscode.Diagnostic(
+        new vscode.Range(pos, pos),
+        `Json error: ${e.message}`,
+        vscode.DiagnosticSeverity.Error
+      );
+      diagnosticsList.push(diagnostic);
+    }
+  }
+  dataBundle.diagnosticsList = diagnosticsList
+  return dataBundle
+}
+
+
 module.exports = {
   decodeWithMeta,
+  decodeWithMetaWithDiagnostics,
   ...helperFunctions,
 }
