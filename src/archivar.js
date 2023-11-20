@@ -34,11 +34,11 @@ function processJbeamFile(filename) {
     try {
       dataBundle = sjsonParser.decodeWithMeta(contentTextUtf8, filename)
       if(dataBundle.errors.length > 0) {
-        console.error(`Error parsing json file ${filename} - ${dataBundle.errors}`)
+        console.error(`Error parsing json file ${filename} - ${JSON.stringify(dataBundle.errors, null, 2)}`)
         return false
       }
     } catch (e) {
-      console.error(`Error parsing json file ${filename} - ${e.message}`)
+      console.error(`Error parsing json file. Exception ${filename} - ${e.message}`)
       throw e
       return false
     }
