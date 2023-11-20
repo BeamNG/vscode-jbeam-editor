@@ -79,7 +79,7 @@ function processJbeamFile(filename) {
       //console.log(`${filename} [${namespace}] contains ${Object.keys(dataBundle.data).length} parts ...`);
 
 
-      let partNames = Object.keys(dataBundle.data).filter(key => !utilsExt.excludedMagicKeys.includes(key))
+      let partNames = Object.keys(dataBundle.data).filter(key => key !== '__meta')
       for(let partName of partNames) {
         const part = dataBundle.data[partName]
         part.__meta.origin = filename

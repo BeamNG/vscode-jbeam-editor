@@ -4,8 +4,9 @@ const path = require('path')
 const sjsonParser = require('../json/sjsonParser');
 const tableSchema = require('../json/tableSchema');
 const archivar = require('../archivar');
-const utilsExt = require('../utils/utils');
+const utilsExt = require('../utilsExt');
 
+const jbeamDiagnostics = vscode.languages.createDiagnosticCollection('jbeam');
 
 function validateTextDocument(textDocument) {
   if (textDocument.languageId !== 'jbeam') {
@@ -18,7 +19,7 @@ function validateTextDocument(textDocument) {
   // generic json things
   let parsedData
   try {
-    parsedData = sjsonParser.decodeSJSON(text);
+    parsedData = sjsonParser.decodeSJSON(text);  // TODO: FIXME
   } catch (e) {
     const pos = new vscode.Position(
       e.range ? e.range[0] : e.line ? e.line : 0,

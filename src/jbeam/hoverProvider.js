@@ -1,7 +1,7 @@
 const vscode = require('vscode');
 const sjsonParser = require('../json/sjsonParser');
 const tableSchema = require('../json/tableSchema');
-const utilsExt = require('../utils/utils');
+const utilsExt = require('../utilsExt');
 const docHelper = require('../docHelper');
 
 const highlightDecorationType = vscode.window.createTextEditorDecorationType({
@@ -95,7 +95,7 @@ class JBeamHoverProvider {
     const showFullDevData = vscode.workspace.getConfiguration('jbeam-editor').get('hover.dev.showFullDevData', false)
 
     let docHints = []
-    let parsedData = sjsonParser.decodeSJSON(text);
+    let parsedData = sjsonParser.decodeSJSON(text); // TODO: FIXME
     if(parsedData) {
       // not table unrolled, useful for documentation and alike
       const resultsRawData = utilsExt.findObjectsWithRange(parsedData, position.line, position.character, document.uri.toString());

@@ -93,7 +93,7 @@ export function redrawGroundPlane(nodesMin, nodesMax, selectedNodeIndices, point
       }
     } else {
       // everything being drawn
-      let txt = Object.keys(jbeamData).filter(key => !excludedMagicKeys.includes(key)).length + ' different parts'
+      let txt = Object.keys(jbeamData).filter(key => key !== '__meta').length + ' different parts'
       items.push({ type: 'text', position: new THREE.Vector3(freeBoxText.x, 0, freeBoxText.z), font: 'bold 120px "Roboto Mono", monospace', color: '#aaaaaa', text: txt, textAlign: 'left', textBaseline: 'top'})
       let rowCounter = 0
       for (let partName in jbeamData) {
