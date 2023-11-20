@@ -86,17 +86,17 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, diagnostics
     // empty section
     return 0
   }
-  if (typeof header !== "object" || !header.hasOwnProperty('__isarray') || !header.__isarray) {
-    diagnostics.push(['error', 'Invalid table header', header.__range])
+  if (typeof header !== "object" || header.__meta.type !== 'array') {
+    diagnostics.push(['error', 'Invalid table header', header.__meta.range])
     return -1
   }
 
-  if (!header.hasOwnProperty('__isarray') || !header.__isarray) {
-    diagnostics.push(['error', 'Invalid table header. Must be a list, not a dict', header.__range])
+  if (header.__meta.type !== 'array') {
+    diagnostics.push(['error', 'Invalid table header. Must be a list, not a dict', header.__meta.range])
     return -1
   }
 
-  let headerSize = Object.keys(header).filter(key => !utilsExt.excludedMagicKeys.includes(key)).length;
+  let headerSize = Object.keys(header).filter(key => key !== '__meta').length;
   let headerSize1 = headerSize;
   let newListSize = 0;
   let newList = {}
@@ -108,80 +108,73 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, diagnostics
 
   // Walk the list entries
   let newRowId = 0
-  let keys = Object.keys(jbeamTable).filter(key => !utilsExt.excludedMagicKeys.includes(key))
+  let keys = Object.keys(jbeamTable).filter(key => key !== '__meta')
   for (const rowKey of keys) {
     let rowValue = jbeamTable[rowKey];
     if (typeof rowValue !== "object") {
-      diagnostics.push(['error', 'Invalid table row', rowValue.__range])
+      diagnostics.push(['error', 'Invalid table row', rowValue.__meta.range])
       return -1
     }
-    if (!rowValue.hasOwnProperty('__isarray') || !rowValue.__isarray) {
+    if (rowValue.__meta.type !== 'array') {
       // Case where options is a dict on its own, filling a whole line
       Object.assign(localOptions, replaceSpecialValues(rowValue));
-      //localOptions.__astNodeIdx = null;
+      delete localOptions['__meta'] // TODO: record all the meta's somewhere
     } else {
       let newID = newRowId++
 
-      const rowSize = Object.keys(rowValue).filter(key => !utilsExt.excludedMagicKeys.includes(key)).length
+      const rowSize = Object.keys(rowValue).filter(key => key !== '__meta').length
       if (rowSize == headerSize + 1) {
         if(typeof rowValue[headerSize] !== 'object') {
-          diagnostics.push(['error', `Inline option (argument ${headerSize + 1}) need to be a dict, not a ${typeof rowValue[headerSize]}: ${rowValue[headerSize]}`, rowValue.__range])  
+          diagnostics.push(['error', `Inline option (argument ${headerSize + 1}) need to be a dict, not a ${typeof rowValue[headerSize]}: ${rowValue[headerSize]}`, rowValue.__meta.range])  
         }
       } else if (rowSize > headerSize + 1) {
         let msg = 1`Invalid table header, must be as long as all table cells (plus one additional options column):\n`;
         msg += `Table header: ${JSON.stringify(header)}\n`
         msg += `Mismatched row: ${JSON.stringify(rowValue)}`
-        diagnostics.push(['error', msg, rowValue.__range])
+        diagnostics.push(['error', msg, rowValue.__meta.range])
         return -1
       } else if (rowSize < headerSize) {
         for (let i = 0; i < headerSize; i++) {
           if(i < rowSize) continue
           if(header[i] == 'nonFlexMaterials') continue // known problem
-          diagnostics.push(['warning', `Row is missing argument ${i + 1}: ${header[i]}`, rowValue.__range])
+          diagnostics.push(['warning', `Row is missing argument ${i + 1}: ${header[i]}`, rowValue.__meta.range])
         }
       }
 
       // Walk the table row
       let newRow = Object.assign({}, localOptions);
-      utilsExt.excludedMagicKeys.forEach(key => {
-        delete newRow[key];
-      });
+      delete newRow['__meta'];
 
       // Check if inline options are provided, merge them then
       // Assuming `headerSize1` is the number of keys to skip
-      const allKeys = Object.keys(rowValue).filter(key => !utilsExt.excludedMagicKeys.includes(key)); // Get all keys of the rowValue object
+      const allKeys = Object.keys(rowValue).filter(key => key !== '__meta') // Get all keys of the rowValue object
       const relevantKeys = allKeys.slice(headerSize1); // Get the keys after the first `headerSize1` keys
 
       // Iterate over the remaining keys
       for (const key of relevantKeys) {
         let value = rowValue[key];
-        if (typeof value === 'object' && (!value.hasOwnProperty('__isarray') || !value.__isarray)  && allKeys.length > headerSize1) {
+        if (typeof value === 'object' && value.__meta.type === 'object' && allKeys.length > headerSize1) {
           Object.assign(newRow, replaceSpecialValues(value));
           // remove options from rowValue
           delete rowValue[key];
           header[key] = "options";
         }
       }
-      //newRow.__astNodeIdx = rowValue.__astNodeIdx;
-
       // Now care about the rest
-      const allKeys2 = Object.keys(rowValue).filter(key => !utilsExt.excludedMagicKeys.includes(key));
+      const allKeys2 = Object.keys(rowValue).filter(key => key !== '__meta')
       //for (let [rk, _] of Object.entries(rowValue)) {
       for (let rk in allKeys2) {
         if (header[rk] === null) {
           let msg = `*** Unable to parse row, header for entry is missing: \n`
           msg += `*** Header: ${JSON.stringify(header)} missing key: ${rk} -- is the section header too short?\n`
           msg += `*** Row: ${JSON.stringify(rowValue)}`
-          diagnostics.push(['error', msg, rowValue.__range])
+          diagnostics.push(['error', msg, rowValue.__meta.range])
         } else {
           newRow[header[rk]] = replaceSpecialValues(rowValue[rk]);
         }
       }
-      if(rowValue.hasOwnProperty('__range')) {
-        newRow.__range = rowValue.__range
-      }
-      if(rowValue.hasOwnProperty('__isarray')) {
-        newRow.__isarray = rowValue.__isarray
+      if(rowValue.hasOwnProperty('__meta')) {
+        newRow.__meta = rowValue.__meta
       }
 
       if (newRow.hasOwnProperty('id') && newRow.id !== null) {
@@ -194,19 +187,15 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, diagnostics
         newRow.id = newRow.id
         newRow.name = newRow.id
         
-        newRow.__isNamed = true
+        newRow.__meta.isNamed = true
       }
 
-      newList.__range = jbeamTable.__range
-      newList.__isarray = jbeamTable.__isarray
-
+      
       newList[newID] = newRow;
       newListSize++;
     }
   }
-
-  //newList.__astNodeIdx = jbeamTable.__astNodeIdx;
-
+  newList.__meta = jbeamTable.__meta
   return newList;
 }
 
@@ -216,9 +205,9 @@ function processPart(part, diagnostics) {
   part.beams = part.beams || {};
 
   // Walk everything and look for options
-  part.options = part.options || {};
+  part.options = part.options || {}
   for (let keyEntry in part) {
-    if (!part.hasOwnProperty(keyEntry)) continue;
+    if (!part.hasOwnProperty(keyEntry)) continue
 
     let entry = part[keyEntry];
     if (typeof entry !== "object") {
@@ -229,16 +218,15 @@ function processPart(part, diagnostics) {
   }
 
   // Walk all sections of the part
-  let sectionNames = Object.keys(part)
-  for (let sectionNameIdx in sectionNames) {
-    let sectionName = sectionNames[sectionNameIdx]
+  let sectionNames = Object.keys(part).filter(key => key !== '__meta')
+  for (let sectionName of sectionNames) {
     if (!part.hasOwnProperty(sectionName)) continue;
 
     let section = part[sectionName];
 
     // Verify key names to be properly formatted
     if (!/^[a-zA-Z_]+[a-zA-Z0-9_]*$/.test(sectionName)) {
-      diagnostics.push(['error', `Invalid attribute name '${sectionName}'`, section.__range])
+      diagnostics.push(['error', `Invalid attribute name '${sectionName}'`, section.__meta.range])
       return false
     }
 
@@ -246,7 +234,7 @@ function processPart(part, diagnostics) {
     part.maxIDs[sectionName] = 0;
 
     if (typeof section === "object" && !ignoreSections[sectionName] && Object.keys(section).length > 0) {
-      if(!section.hasOwnProperty('__isarray') || !section.__isarray) {
+      if(section.__meta.type !== 'array') {
         // section dictionaries to be written
       } else {
         if (!part.validTables[sectionName]) {
@@ -270,7 +258,7 @@ function processPart(part, diagnostics) {
         try {
           node.pos = [node.posX, node.posZ, -node.posY] // FLIP!
         } catch (e) {
-          diagnostics.push(['error', e.message, node.__range])
+          diagnostics.push(['error', e.message, node.__meta])
         }
       }
     }
@@ -282,15 +270,14 @@ function processPart(part, diagnostics) {
 function processAllParts(parsedData) {
   let tableInterpretedData = {}
   let diagnostics = [] // contains parsing errors and warnings
-  const keys = Object.keys(parsedData).filter(key => key !== '__range' && key !== '__isarray')
-  for (let partNameIdx in keys) {
-    let partName = keys[partNameIdx]
+  const keys = Object.keys(parsedData).filter(key => key !== '__meta')
+  for (let partName of keys) {
     if (!parsedData.hasOwnProperty(partName)) continue;
     let part = parsedData[partName];
     let result = processPart(part, diagnostics);
       
     if (result !== true) {
-      diagnostics.push(['error', `Unable to process part '${partName}'`, part.__range])
+      diagnostics.push(['error', `Unable to process part '${partName}'`, part.__meta])
     }
     tableInterpretedData[partName] = part
   }
