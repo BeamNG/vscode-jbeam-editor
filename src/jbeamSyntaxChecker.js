@@ -81,14 +81,13 @@ function checkQuotesWithoutNewlineInLine(text, position) {
   return noNewLineBeforeQuote(firstHalfReversed) && noNewLineBeforeQuote(secondHalf);
 }
 
-
 class PartConfigCompletionProvider {
   // see https://code.visualstudio.com/api/references/vscode-api#CompletionItemProvider.provideCompletionItems
   provideCompletionItems(document, position, token, context) {
     console.log("provideCompletionItems", document, position, token, context)
 
     const text = document.getText()
-    const range = document.getWordRangeAtPosition(position)
+    const range = document.getWordRangeAtPosition(position, /[^\"]+/)
     let word
     if(range) {
       word = document.getText(range)
@@ -133,9 +132,10 @@ class PartConfigCompletionProvider {
       let res = getPartnamesForDocument(document, partSlotname, completionPartFoundFct)
       // add empty
       res.unshift({
-        label: "",
+        label: "<empty>",
         kind: vscode.CompletionItemKind.Variable,
         range: range,
+        insertText: "",
       })
       console.log(`Completion items for ${position.line}:${position.character} ('${word ? word : ''}') - part: '${partSlotname}': ${JSON.stringify(res, null, 2)}`)
       return res
@@ -146,7 +146,6 @@ class PartConfigCompletionProvider {
 
   resolveCompletionItem(item, token) {
     console.log('resolveCompletionItem', item, token)
-
   }
 }
 
