@@ -1,8 +1,8 @@
 const vscode = require('vscode');
-const sjsonParser = require('./sjsonParser');
-const tableSchema = require('./tableSchema');
-const utilsExt = require('./utilsExt');
-const docHelper = require('./docHelper');
+const sjsonParser = require('../json/sjsonParser');
+const tableSchema = require('../json/tableSchema');
+const utilsExt = require('../utils/utils');
+const docHelper = require('../docHelper');
 
 const highlightDecorationType = vscode.window.createTextEditorDecorationType({
   backgroundColor: 'rgba(255, 255, 0, 0.1)', // yellow background for highlighting

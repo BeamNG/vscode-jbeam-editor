@@ -1,3 +1,50 @@
+/*
+  File: sjsonParser.js
+
+  Description:
+  This JavaScript module provides functionality for parsing and decoding structured JSON (SJSON) data with metadata.
+  It includes error handling, data structure creation, and metadata extraction capabilities.
+
+  Classes and Functions:
+  - `SJSONException`: Custom error class for SJSON parsing errors.
+  - `rangeInRange`: Checks if one range is completely contained within another.
+  - `cursorInRange`: Checks if a cursor position is within a given range.
+  - `getMetaForCur`: Retrieves metadata for a specified line and position.
+  - `getPreviousMeta`: Retrieves metadata for the previous entry.
+  - `decodeWithMeta`: Parses SJSON data with metadata and returns a data bundle.
+
+*/
+
+/*
+  Function: `decodeWithMeta`
+
+  Description:
+  Parses structured JSON (SJSON) data with metadata and returns a data bundle. It handles error checking, data structure creation, and metadata extraction.
+
+  Parameters:
+  - `s`: The SJSON data to parse.
+  - `origin`: The origin or source of the SJSON data.
+
+  Returns:
+  An object containing the following properties:
+  - `data`: The parsed SJSON data.
+  - `errors`: An array of parsing errors, if any.
+  - `metaData`: An array of metadata entries associated with the parsed data.
+  - `lineData`: A cache of metadata entries indexed by line number for quick access.
+
+  Example Usage:
+
+  const sjsonData = '{ "name": "John", "age": 30 }';
+const origin = 'sample.json';
+const result = decodeWithMeta(sjsonData, origin);
+
+console.log(result.data); // Output: { name: 'John', age: 30 }
+console.log(result.errors); // Output: []
+console.log(result.metaData); // Output: [{ type: 'object', range: [1, 1, 1, 24], ... }]
+
+  Notes: This function is designed to handle SJSON data with metadata, allowing for advanced parsing and analysis.
+*/
+
 class SJSONException extends Error {
   constructor(message, range) {
     super(`${message} near ${range[0]}:${range[1]}`);

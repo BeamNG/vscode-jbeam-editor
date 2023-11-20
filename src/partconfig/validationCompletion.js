@@ -1,12 +1,12 @@
 const vscode = require('vscode');
 const path = require('path')
 
-const sjsonParser = require('./sjsonParser');
-const tableSchema = require('./tableSchema');
-const archivar = require('./archivar');
-const utilsExt = require('./utilsExt');
+const sjsonParser = require('../json/sjsonParser');
+const tableSchema = require('../json/tableSchema');
+const archivar = require('../archivar');
+const utilsExt = require('../utils/utils');
 
-const jbeamDiagnostics = vscode.languages.createDiagnosticCollection('jbeam');
+const partconfigDiagnostics = vscode.languages.createDiagnosticCollection('partconfig');
 
 function getPartnamesForNamespaces(namespaces, slotName, callback) {
   let partNameUnique = {}
@@ -84,7 +84,7 @@ function checkQuotesWithoutNewlineInLine(text, position) {
 class PartConfigCompletionProvider {
   // see https://code.visualstudio.com/api/references/vscode-api#CompletionItemProvider.provideCompletionItems
   provideCompletionItems(document, position, token, context) {
-    console.log("provideCompletionItems", document, position, token, context)
+    //console.log("provideCompletionItems", document, position, token, context)
 
     const text = document.getText()
     const range = document.getWordRangeAtPosition(position, /[^\"]+/)
@@ -145,13 +145,13 @@ class PartConfigCompletionProvider {
   }
 
   resolveCompletionItem(item, token) {
-    console.log('resolveCompletionItem', item, token)
+    //console.log('resolveCompletionItem', item, token)
   }
 }
 
 
 function validateTextDocument(textDocument) {
-  if (textDocument.languageId !== 'jbeam' && textDocument.languageId !== 'partconfig') {
+  if (textDocument.languageId !== 'partconfig') {
     return;
   }
 
@@ -176,38 +176,8 @@ function validateTextDocument(textDocument) {
     //throw e
   }
 
-  // jbeam specific things
-  if(textDocument.languageId === 'jbeam' && parsedData) {
-    try {
-      let [tableInterpretedData, diagnosticsTable] = tableSchema.processAllParts(parsedData)
-      for (const w of diagnosticsTable) {
-        // w[0] = type: error/warning
-        // w[1] = message
-        // w[2] = range = [linefrom, positionfrom, lineto, positionto]
-        const diagnostic = new vscode.Diagnostic(
-          new vscode.Range(new vscode.Position(w[2][0]-1, w[2][1]-1), new vscode.Position(w[2][2]-1, w[2][3])),
-          w[1],
-          w[0] == 'warning' ? vscode.DiagnosticSeverity.Warning : vscode.DiagnosticSeverity.Error
-        );
-        diagnosticsList.push(diagnostic);      
-      }
-    } catch (e) {
-      const pos = new vscode.Position(
-        e.range ? e.range[0] : e.line ? e.line : 0,
-        e.range ? e.range[1] : e.column ? e.column : 0
-      )
-      const diagnostic = new vscode.Diagnostic(
-        new vscode.Range(pos, pos),
-        `Exception while parsing tables: ${e.message}`,
-        vscode.DiagnosticSeverity.Error
-      );
-      diagnosticsList.push(diagnostic);
-      throw e
-    }
-  }
-
   // Update the diagnostics collection for the file
-  jbeamDiagnostics.set(textDocument.uri, diagnosticsList);
+  partconfigDiagnostics.set(textDocument.uri, diagnosticsList);
 }
 
 function subscribeToDocumentChanges(context, diagnostics) {
@@ -230,15 +200,13 @@ function subscribeToDocumentChanges(context, diagnostics) {
 
   // Clear diagnostics for closed documents
   context.subscriptions.push(
-    vscode.workspace.onDidCloseTextDocument(doc => jbeamDiagnostics.delete(doc.uri))
+    vscode.workspace.onDidCloseTextDocument(doc => partconfigDiagnostics.delete(doc.uri))
   );
 }
 
 let completionDisposable
 function activate(context) {
-  // Register our linter to get called for our language 'jbeam'
-  subscribeToDocumentChanges(context, jbeamDiagnostics);
-
+  subscribeToDocumentChanges(context, partconfigDiagnostics);
   completionDisposable = vscode.languages.registerCompletionItemProvider(
     { language: 'partconfig' },
     new PartConfigCompletionProvider(),
@@ -248,7 +216,7 @@ function activate(context) {
 }
 
 function deactivate() {
-  jbeamDiagnostics.clear();
+  partconfigDiagnostics.clear();
   if(completionDisposable) completionDisposable.dispose()
 }
 

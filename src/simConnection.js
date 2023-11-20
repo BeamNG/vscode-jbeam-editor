@@ -1,8 +1,44 @@
+/*
+  Module: `simConnection.js`
+
+  Description:
+  This module provides functionality for connecting to the BeamNG.drive game via TCP and interacting with the simulation.
+
+  Exports:
+  - `selectNodes(nodes)`: Selects nodes in the simulation.
+  - `sync()`: Initiates synchronization with the simulation.
+  - `sendPing()`: Sends a ping request to the simulation.
+  - `activate(context)`: Initializes and activates the connection to the simulation.
+  - `deactivate()`: Deactivates the connection to the simulation.
+
+  Usage Example:
+  ```javascript
+  const simConnection = require('./simConnection');
+
+  // Activate the connection to the simulation
+  simConnection.activate(context);
+
+  // Send a ping request
+  simConnection.sendPing();
+
+  // Select nodes in the simulation
+  simConnection.selectNodes(['node1', 'node2']);
+
+  // Initiate synchronization with the simulation
+  simConnection.sync();
+
+  // Deactivate the connection when no longer needed
+  simConnection.deactivate();
+  ```
+
+Notes: This module allows interaction with BeamNG.drive simulation from within Visual Studio Code.
+*/
+
 const vscode = require('vscode')
 const net = require('net')
 const path = require('path')
 const archivar = require('./archivar');
-const utilsExt = require('./utilsExt');
+const utilsExt = require('./utils/utils');
 
 let reconnectInterval = 1000; // Initial delay of 1 second
 const maxReconnectInterval = 6000; // Maximum delay of 6 seconds

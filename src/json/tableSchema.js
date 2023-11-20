@@ -1,4 +1,53 @@
-const utilsExt = require('./utilsExt');
+/*
+  File: utilsExt.js
+
+  Description:
+  This JavaScript module provides utility functions and processing logic for handling structured data used in the context of BeamNG.drive JBEAM files.
+
+  Functions and Constants:
+  - `processAllParts`: Processes all parts of parsed data, applying custom logic and generating diagnostics.
+  - `ignoreSections`: An object specifying sections to ignore during processing.
+  - `specialVals`: A set of special constant values used in data processing.
+  - `typeIds`: An object mapping type IDs to their corresponding values.
+  - `replaceSpecialValues`: A function for replacing special values in data.
+
+  Notes: This module enhances the processing capabilities for JBEAM data, allowing for more advanced and custom operations.
+*/
+
+/*
+  Function: `processAllParts`
+
+  Description:
+  Processes all parts of parsed JBEAM data, applying custom logic to each part and generating diagnostics for any errors or warnings.
+
+  Parameters:
+  - `parsedData`: An object containing parsed JBEAM data with parts to be processed.
+
+  Returns:
+  An array containing two elements:
+  1. An object with processed JBEAM parts.
+  2. An array of diagnostics, including parsing errors and warnings.
+
+  Example Usage:
+  ```javascript
+  const parsedJBEAMData = {
+    part1: {  ... JBEAM data for part 1 ...  },
+    part2: {  ... JBEAM data for part 2 ...  },
+    // ... more parts ...
+  };
+
+  const [processedParts, diagnostics] = processAllParts(parsedJBEAMData);
+
+  // Log processed parts and diagnostics
+  console.log(processedParts);
+  console.log(diagnostics);
+  ```
+
+  // Handle diagnostics (errors and warnings) as needed in your application.
+  Notes: This function is used to process and enhance the JBEAM data, making it ready for further use or analysis. The diagnostics array contains information about any issues encountered during processing.
+*/
+
+const utilsExt = require('../utils/utils');
 
 let ignoreSections = {maxIDs: true, options: true};
 

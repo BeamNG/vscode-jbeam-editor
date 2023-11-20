@@ -23,9 +23,9 @@
  * - Deactivating the extension will clear the diagnostics and symbols from the editor.
  */
 const vscode = require('vscode');
-const sjsonParser = require('./sjsonParser');
-const tableSchema = require('./tableSchema');
-const utilsExt = require('./utilsExt');
+const sjsonParser = require('../json/sjsonParser');
+const tableSchema = require('../json/tableSchema');
+const utilsExt = require('../utils/utils');
 
 class JBeamSymbolProvider {
   provideDocumentSymbols(document, token) {

@@ -1,10 +1,20 @@
+/*
+  This JavaScript file is part of a Visual Studio Code (VSCode) extension
+  designed for working with JBEAM files used in the video game "BeamNG.drive."
+
+  File Overview:
+  - It defines functions to parse and process JBEAM files.
+  - Maintains data related to JBEAM files and their parts.
+  - Handles file changes within a workspace.
+
+*/
 const vscode = require('vscode');
 
-const sjsonParser = require('./sjsonParser');
-const tableSchema = require('./tableSchema');
+const sjsonParser = require('./json/sjsonParser');
+const tableSchema = require('./json/tableSchema');
 const path = require('path')
 const fs = require('fs');
-const utilsExt = require('./utilsExt');
+const utilsExt = require('./utils/utils');
 
 let jbeamFileData = {} // the root that holds all data
 let partData = {}
