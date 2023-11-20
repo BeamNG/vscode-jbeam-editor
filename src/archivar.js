@@ -14,13 +14,16 @@ const sjsonParser = require('./json/sjsonParser');
 const tableSchema = require('./json/tableSchema');
 const path = require('path')
 const fs = require('fs');
-const utilsExt = require('./utils/utils');
+const utilsExt = require('./utilsExt');
 
 let jbeamFileData = {} // the root that holds all data
 let partData = {}
 let rootPath
 let jbeamFileCounter = 0
 let partCounter = 0
+
+const archivarDiagnostics = vscode.languages.createDiagnosticCollection('archivar');
+const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 
 function fileExists(filePath) {
   try {
@@ -36,7 +39,7 @@ function fileExists(filePath) {
 function processJbeamFile(filename) {
   if(!fileExists(filename)) return
   const namespace = utilsExt.getNamespaceFromFilename(rootPath, filename)
-      
+  let diagnosticsList = []
   jbeamFileCounter++
   const contentTextUtf8 = fs.readFileSync(filename, 'utf8');
   if(contentTextUtf8) {
@@ -44,13 +47,29 @@ function processJbeamFile(filename) {
     try {
       dataBundle = sjsonParser.decodeWithMeta(contentTextUtf8, filename)
       if(dataBundle.errors.length > 0) {
-        console.error(`Error parsing json file ${filename} - ${JSON.stringify(dataBundle.errors, null, 2)}`)
-        return false
+        for(let e of dataBundle.errors) {
+          const pos = new vscode.Position(
+            e.range ? e.range[0] : e.line ? e.line : 0,
+            e.range ? e.range[1] : e.column ? e.column : 0
+          )
+          const diagnostic = new vscode.Diagnostic(
+            new vscode.Range(pos, pos),
+            `Error parsing json file ${filename}`,
+            vscode.DiagnosticSeverity.Error
+          );
+          diagnosticsList.push(diagnostic);
+        }
+
+        //console.error(`Error parsing json file ${filename} - ${JSON.stringify(dataBundle.errors, null, 2)}`)
       }
     } catch (e) {
-      console.error(`Error parsing json file. Exception ${filename} - ${e.message}`)
-      throw e
-      return false
+      const pos = new vscode.Position(0, 0)
+      const diagnostic = new vscode.Diagnostic(
+        new vscode.Range(pos, pos),
+        `Error parsing json file ${filename}. Exception: ${e.message}`,
+        vscode.DiagnosticSeverity.Error
+      );
+      diagnosticsList.push(diagnostic);
     }
     if(dataBundle) {
       if(!jbeamFileData[namespace]) {
@@ -73,7 +92,16 @@ function processJbeamFile(filename) {
     } else {
       console.error(`Unable to read file: ${filename}`)
     }
+  } else {
+    const pos = new vscode.Position(0, 0)
+    const diagnostic = new vscode.Diagnostic(
+      new vscode.Range(pos, pos),
+      `Error parsing json file ${filename}`,
+      vscode.DiagnosticSeverity.Error
+    );
+    diagnosticsList.push(diagnostic);
   }
+  archivarDiagnostics.set(vscode.Uri.file(filename), diagnosticsList);
   return true
 }
 
@@ -98,10 +126,10 @@ const debounceTime = 50 // milliseconds
 function onFileChangedDebounced(filename) {
   //console.log('onFileChanged', changeType, filename)
   if(path.extname(filename) == '.jbeam') {
-    partCounter = 0
     removeJbeamFileData(filename)
     processJbeamFile(filename)
-    console.log(`Part count diff after updating file: ${partCounter}: ${filename}`)
+    //console.log(`Part count diff after updating file: ${partCounter}: ${filename}`)
+    statusBar.text = `$(project) ${jbeamFileCounter} JBeam files $(repo) ${partCounter} parts`
   }
 }
 
@@ -121,9 +149,13 @@ function onFileChanged(changeType, filename) {
 }
 
 function loadJbeamFiles() {
+  statusBar.text = `Parsing jbeam files ...`
+  statusBar.show()
+
   rootPath = utilsExt.getRootpath()
   if (!rootPath) {
     console.error('unable to load jbeam: not in a workspace')
+    statusBar.hide()
     return
   }
 
@@ -134,14 +166,14 @@ function loadJbeamFiles() {
   let findFilesPromises = []
   // Find .jbeam files
   findFilesPromises.push(vscode.workspace.findFiles(new vscode.RelativePattern(vehiclesPath, '**/*.jbeam'), null).then(files => {
-    console.log(`Parsing ${files.length} jbeam files ...`)
+    statusBar.text = `Parsing ${files.length} jbeam files ...`
     for(let file of files) {
       jbeamFileCounter++
       processJbeamFile(file.fsPath)
     }
   }));
   Promise.all(findFilesPromises).then(allFilesArrays => {
-    console.log(`Parsed ${jbeamFileCounter} jbeam files containing ${partCounter} parts`)
+    statusBar.text = `$(project) ${jbeamFileCounter} JBeam files $(repo) ${partCounter} parts`
 
     //for(let namespace in partData) {
     //  console.log(` * ${namespace} - ${Object.keys(partData[namespace]).length} parts`)
