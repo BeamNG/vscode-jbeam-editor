@@ -25,21 +25,27 @@
 const vscode = require('vscode');
 const sjsonParser = require('../json/sjsonParser');
 const tableSchema = require('../json/tableSchema');
-const utilsExt = require('../utils/utils');
+const utilsExt = require('../utilsExt');
 
 class JBeamSymbolProvider {
   provideDocumentSymbols(document, token) {
     const symbols = [];
 
-    const text = document.getText()
-    let parsedData = sjsonParser.decodeSJSON(text);
-    let [tableInterpretedData, diagnostics] = tableSchema.processAllParts(parsedData)
+    const contentTextUtf8 = document.getText()
+
+    let dataBundle = sjsonParser.decodeWithMeta(contentTextUtf8, document.uri.fsPath)
+    if(!dataBundle) {
+      console.log('unable to get data from document: ', document.uri.fsPath, text)
+      return
+    }
+
+    let [tableInterpretedData, diagnostics] = tableSchema.processAllParts(dataBundle.data)
 
     for (const [partName, part] of Object.entries(tableInterpretedData)) {
-      if(!part.__range && part.__range[0] > 0) continue
+      if(!part.__meta && part.__meta.range[0] > 0) continue
       const range = new vscode.Range(
-        new vscode.Position(part.__range[0], part.__range[1]),
-        new vscode.Position(part.__range[2], part.__range[3])
+        new vscode.Position(part.__meta.range[0], part.__meta.range[1]),
+        new vscode.Position(part.__meta.range[2], part.__meta.range[3])
       )
       
       let infoText = ''
@@ -66,19 +72,19 @@ class JBeamSymbolProvider {
       );
 
       for (const [sectionName, section] of Object.entries(part)) {
-        if(sectionName === '__isarray' || sectionName === '__range'  || sectionName === '__isNamed' || !section.__range) continue
+        if(sectionName === '__meta' || !section.__meta) continue
         const range = new vscode.Range(
-          new vscode.Position(section.__range[0] - 1, section.__range[1] - 1),
-          new vscode.Position(section.__range[2] - 1, section.__range[3] - 1)
+          new vscode.Position(section.__meta.range[0], section.__meta.range[1]),
+          new vscode.Position(section.__meta.range[2], section.__meta.range[3])
         )
         let infoText = ''
         if(true) {
-          infoText += Object.keys(section).filter(key => !utilsExt.excludedMagicKeys.includes(key)).length
+          infoText += Object.keys(section).filter(key => key !== '__meta').length
         }
         const subSymbol = new vscode.DocumentSymbol(
           sectionName,
           infoText,
-          section.__isarray ? vscode.SymbolKind.Array : vscode.SymbolKind.Object,
+          section.__meta.type == 'array' ? vscode.SymbolKind.Array : vscode.SymbolKind.Object,
           range,
           range
         )
