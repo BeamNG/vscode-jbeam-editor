@@ -124,8 +124,6 @@ function convertUri(vscode, webPanel, filePath) {
   return webviewUri.toString()
 }
 
-const excludedMagicKeys = ['__meta', /* the rest ar obsolete: */ '__range', '__isarray', '__isNamed', '__source',];
-
 function getNamespaceFromVirtualFilename(filename) {
   return '/' + filename.split(path.sep, 2).join(path.sep).replace(/\\/g, '/')
 }
@@ -175,7 +173,6 @@ function checkQuotesWithoutNewlineInLine(text, position) {
 }
 
 module.exports = {
-  excludedMagicKeys,
   findObjectsWithRange,
   convertUri,
   getNamespaceFromFilename,
