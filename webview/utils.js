@@ -401,9 +401,6 @@ function getColorFromDistance(distance, maxDistance, colorHexA, colorHexB) {
   return color;
 }
 
-// special keys that should be ignored in the data
-const excludedMagicKeys = ['__range', '__isarray', '__isNamed'];
-
 class Tooltip {
   constructor(scene, camera) {
     this.scene = scene;
