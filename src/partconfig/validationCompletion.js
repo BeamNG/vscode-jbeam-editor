@@ -4,7 +4,7 @@ const path = require('path')
 const sjsonParser = require('../json/sjsonParser');
 const tableSchema = require('../json/tableSchema');
 const archivar = require('../archivar');
-const utilsExt = require('../utils/utils');
+const utilsExt = require('../utilsExt');
 
 const partconfigDiagnostics = vscode.languages.createDiagnosticCollection('partconfig');
 
@@ -67,19 +67,6 @@ function debugHighlight(document, range, type) {
   editor.setDecorations(highlights[type], [rangeToHighlight]);
 }
 
-// checks if the position is in qotes or not
-function checkQuotesWithoutNewlineInLine(text, position) {
-  const lines = text.split('\n');
-  if (position.line >= lines.length) return false;
-
-  const line = lines[position.line];
-  const noNewLineBeforeQuote = (str) => /[^\n]*"/.test(str)
-
-  const firstHalfReversed = line.substring(0, position.character).split('').reverse().join('');
-  const secondHalf = line.substring(position.character);
-
-  return noNewLineBeforeQuote(firstHalfReversed) && noNewLineBeforeQuote(secondHalf);
-}
 
 class PartConfigCompletionProvider {
   // see https://code.visualstudio.com/api/references/vscode-api#CompletionItemProvider.provideCompletionItems
@@ -93,7 +80,7 @@ class PartConfigCompletionProvider {
       word = document.getText(range)
     }
     
-    let isInQuotes = checkQuotesWithoutNewlineInLine(text, position)
+    let isInQuotes = utilsExt.checkQuotesWithoutNewlineInLine(text, position)
 
     let dataBundle = sjsonParser.decodeWithMeta(text)
     if(!dataBundle) {

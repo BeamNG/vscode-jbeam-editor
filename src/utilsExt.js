@@ -160,6 +160,19 @@ function deepCloneAndRemoveKeys(obj, keysToRemove) {
   return clone;
 }
 
+// checks if the position is in qotes or not
+function checkQuotesWithoutNewlineInLine(text, position) {
+  const lines = text.split('\n');
+  if (position.line >= lines.length) return false;
+
+  const line = lines[position.line];
+  const noNewLineBeforeQuote = (str) => /[^\n]*"/.test(str)
+
+  const firstHalfReversed = line.substring(0, position.character).split('').reverse().join('');
+  const secondHalf = line.substring(position.character);
+
+  return noNewLineBeforeQuote(firstHalfReversed) && noNewLineBeforeQuote(secondHalf);
+}
 
 module.exports = {
   excludedMagicKeys,
@@ -170,4 +183,5 @@ module.exports = {
   getKeyByValueStringComparison,
   getRootpath,
   deepCloneAndRemoveKeys,
+  checkQuotesWithoutNewlineInLine,
 }
