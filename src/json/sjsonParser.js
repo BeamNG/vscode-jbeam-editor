@@ -247,7 +247,7 @@ function decodeWithMeta(s, origin) {
   }
 
   function readNumber() {
-    let numberMatch = s.substring(i).match(/^-?\d+(\.\d+)?([eE][+-]?\d+)?/);
+    let numberMatch = s.substring(i).match(/^[+-]?(?:\d+\.\d*|\.\d+|\d+)(?:[eE][+-]?\d+)?/);
     if (!numberMatch) {
       jsonError('Invalid number')
       return
@@ -263,7 +263,7 @@ function decodeWithMeta(s, origin) {
     const ch = s[i];
 
     if (ch === '"') return readString();
-    if (ch === '-' || (ch >= '0' && ch <= '9')) return readNumber()
+    if (ch === '-' || ch === '+' || (ch >= '0' && ch <= '9')) return readNumber()
     if (ch === 't') { i += 4; columnNumber += 4; return true }
     if (ch === 'f') { i += 5; columnNumber += 5; return false }
     if (ch === 'n') { i += 4; columnNumber += 4; return null }
