@@ -87,7 +87,7 @@ class PartConfigCompletionProvider {
       console.log('unable to get data from document: ', document.uri.fsPath, text)
       return
     }
-    let meta = sjsonParser.getMetaForCur(dataBundle, position.line, position.character)
+    let meta = sjsonParser.getMetaForCurBundle(dataBundle, position.line, position.character)
     if(!meta || meta.length == 0) {
       console.log('unable to get data below cursor: ', document.uri.fsPath, text, position)
       return

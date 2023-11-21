@@ -82,8 +82,8 @@ function getDocEntry(key) {
 
 class JBeamHoverProvider {
   provideHover(document, position, token) { // token = CancellationToken
-    const text = document.getText();
-    const range = document.getWordRangeAtPosition(position, /[^\"]+/)
+    const contentTextUtf8 = document.getText();
+    const range = document.getWordRangeAtPosition(position, /[^\",]+/)
     const word = document.getText(range);
 
     const contents = new vscode.MarkdownString();
@@ -95,26 +95,28 @@ class JBeamHoverProvider {
     const showFullDevData = vscode.workspace.getConfiguration('jbeam-editor').get('hover.dev.showFullDevData', false)
 
     let docHints = []
-    let parsedData = sjsonParser.decodeSJSON(text); // TODO: FIXME
-    if(parsedData) {
-      // not table unrolled, useful for documentation and alike
-      const resultsRawData = utilsExt.findObjectsWithRange(parsedData, position.line, position.character, document.uri.toString());
-      let foundObjCleanRaw
-      if(resultsRawData && resultsRawData.length > 0) {
-        foundObjCleanRaw = utilsExt.deepCloneAndRemoveKeys(resultsRawData[0].obj, showFullDevData ? [] : utilsExt.excludedMagicKeys)
+    let dataBundle = sjsonParser.decodeWithMeta(contentTextUtf8, document.uri.fsPath)
+    if(dataBundle) {
+
+
+      let metaRaw = sjsonParser.getMetaForCurAnyData(dataBundle.data, position.line, position.character)
+      if(!metaRaw || metaRaw.length == 0) {
+        console.log('unable to get data below cursor: ', document.uri.fsPath, text, position)
+        return
       }
 
       // fully unrolled data
-      let [tableInterpretedData, diagnostics] = tableSchema.processAllParts(parsedData)
-      let resultsStructuredData
+      let [tableInterpretedData, diagnostics] = tableSchema.processAllParts(dataBundle.data)
+
       let foundObjCleanStructured
+      let metaStructured
       let wasBlockMerged = false
       if(tableInterpretedData) {
-        resultsStructuredData = utilsExt.findObjectsWithRange(tableInterpretedData, position.line, position.character, document.uri.toString());
-        if(resultsStructuredData && resultsStructuredData.length > 0) {
-          foundObjCleanStructured = utilsExt.deepCloneAndRemoveKeys(resultsStructuredData[0].obj, showFullDevData ? [] : utilsExt.excludedMagicKeys)
+        metaStructured = sjsonParser.getMetaForCurAnyData(tableInterpretedData, position.line, position.character, document.uri)
+        if(metaStructured && metaStructured.length > 0) {
+          foundObjCleanStructured = utilsExt.deepCloneAndRemoveKeys(metaStructured[0].objStructured, showFullDevData ? [] : ['__meta'])
           // check for removed entries
-          wasBlockMerged = !(resultsStructuredData && resultsStructuredData && (resultsRawData.length - 2 < resultsStructuredData.length))
+          wasBlockMerged = !(metaStructured && (metaRaw.length - 2 < metaStructured.length))
           // this element was present in the raw data and merged in the structured version, so it's gone ...
         }
       }
@@ -124,9 +126,9 @@ class JBeamHoverProvider {
 
       if(showDocs || showDocHints) {
         // no try to get the docs with both data being present ...
-        if(resultsRawData && resultsRawData.length > 0) {
-          const shortWord = word.slice(0, 40) // because there can be a lot of garbage in there, like half the document ...
-          const finalBreadCrumb = (`${resultsRawData[0].breadcrumbPlainText} > ${shortWord}`)
+        if(metaRaw && metaRaw.length > 0) {
+          const shortWord = word.slice(0, 40).trim() // because there can be a lot of garbage in there, like half the document ...
+          const finalBreadCrumb = (`${metaRaw[0].breadcrumbPlainText} > ${shortWord}`)
           docHints.push(finalBreadCrumb)
           let doc = getDocEntry(finalBreadCrumb)
           if(showDocs && doc) {
@@ -139,9 +141,9 @@ class JBeamHoverProvider {
               if(!keyOfEntry) {
                 keyOfEntry = utilsExt.getKeyByValueStringComparison(foundObjCleanRaw, shortWord)
               }
-              if(keyOfEntry && resultsStructuredData && resultsStructuredData.length > 0) {
+              if(keyOfEntry && metaStructured && metaStructured.length > 0) {
                 keyOfEntry = keyOfEntry.replace(/:.*$/, ''); // remove trailing : for the docs ... - btw, this is the namespace separator and empty means 'nodes'
-                keyOfEntry = `${resultsStructuredData[0].breadcrumbPlainText} > ${keyOfEntry}`
+                keyOfEntry = `${metaStructured[0].breadcrumbPlainText} > ${keyOfEntry}`
                 docHints.push(keyOfEntry)
                 doc = getDocEntry(keyOfEntry)
                 if(showDocs && doc) {
@@ -163,16 +165,16 @@ class JBeamHoverProvider {
 
       // now add the data if available
       if(vscode.workspace.getConfiguration('jbeam-editor').get('hover.showData', true)) {
-        if(resultsStructuredData) {
+        if(metaStructured) {
           if(!wasBlockMerged && foundObjCleanStructured) {
             const text = JSON.stringify(foundObjCleanStructured, null, 2)
             if(text.length < 32768) {
-              contents.appendMarkdown(`<span style="margin:5px;width:150px;"><b>Data</b><br/>$(type-hierarchy-sub)${resultsStructuredData[0].breadcrumbMarkdown}<br/>`)
+              contents.appendMarkdown(`<span style="margin:5px;width:150px;"><b>Data</b><br/>$(type-hierarchy-sub)${metaStructured[0].breadcrumbMarkdown}<br/>`)
               contents.appendCodeblock(JSON.stringify(foundObjCleanStructured, null, 2), 'json')
               contents.appendMarkdown('</span><br/>')
             }
           } else {
-            contents.appendMarkdown(`<span style="margin:5px;width:150px;"><b>Data</b><br/>$(type-hierarchy-sub)${resultsStructuredData[0].breadcrumbMarkdown}</span><br/>`)
+            contents.appendMarkdown(`<span style="margin:5px;width:150px;"><b>Data</b><br/>$(type-hierarchy-sub)${metaStructured[0].breadcrumbMarkdown}</span><br/>`)
           }
         }
       }
@@ -187,12 +189,7 @@ class JBeamHoverProvider {
           contents.appendMarkdown('<ul></span><br/>')
         }
       }
-
     }
-
-
-
-
     return new vscode.Hover(contents, range);
   }
 }

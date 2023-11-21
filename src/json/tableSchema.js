@@ -175,6 +175,7 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, diagnostics
       }
       if(rowValue.hasOwnProperty('__meta')) {
         newRow.__meta = rowValue.__meta
+        newRow.__meta.objStructured = newRow
       }
 
       if (newRow.hasOwnProperty('id') && newRow.id !== null) {
@@ -281,6 +282,7 @@ function processAllParts(parsedData) {
     }
     tableInterpretedData[partName] = part
   }
+  tableInterpretedData.__meta = parsedData.__meta
   return [tableInterpretedData, diagnostics]
 }
 

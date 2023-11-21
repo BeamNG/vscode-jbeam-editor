@@ -9,7 +9,7 @@
   - `SJSONException`: Custom error class for SJSON parsing errors.
   - `rangeInRange`: Checks if one range is completely contained within another.
   - `cursorInRange`: Checks if a cursor position is within a given range.
-  - `getMetaForCur`: Retrieves metadata for a specified line and position.
+  - `getMetaForCurBundle`: Retrieves metadata for a specified line and position.
   - `getPreviousMeta`: Retrieves metadata for the previous entry.
   - `decodeWithMeta`: Parses SJSON data with metadata and returns a data bundle.
 
@@ -84,7 +84,7 @@ function cursorInRange(line, position, range) {
   return true
 }
 
-function getMetaForCur(dataBundle, line, position) {
+function getMetaForCurBundle(dataBundle, line, position) {
   let lineData = dataBundle.lineData
 
   if (!lineData || line < 0 || position < 0) {
@@ -105,6 +105,53 @@ function getMetaForCur(dataBundle, line, position) {
   return metaDataForLine;
 }
 
+function getMetaForCurAnyData(data, line, position, documentUri) {
+  // Helper function to recursively search the object and add breadcrumbs to __meta
+  function recursiveSearch(data, currentDepth) {
+    if (!data) return [];
+
+    const result = [];
+
+    if (data.__meta && cursorInRange(line, position, data.__meta.range)) {
+      // Add breadcrumb to the existing __meta object
+      if (!data.__meta.breadcrumb) {
+        data.__meta.breadcrumb = []
+      }
+      data.__meta.breadcrumb.push(...breadcrumbTrail.map((b) => ({ name: b.name, meta: b.meta })));
+      result.push(data.__meta);
+
+      // Iterate over the properties of the object to go deeper into the tree
+      for (const key in data) {
+        if (key === '__meta') continue; // Skip __meta property
+
+        if (data.hasOwnProperty(key)) {
+          const value = data[key]
+
+          if (typeof value === 'object' && value !== null && value.__meta) {
+            // Add the current object to the breadcrumb trail before going deeper
+            breadcrumbTrail.push({ name: key, meta: value.__meta });
+            const childResult = recursiveSearch(value, currentDepth + 1);
+            result.push(...childResult);
+            // Pop the current object from the breadcrumb trail as we backtrack
+            breadcrumbTrail.pop();
+          }
+        }
+      }
+    }
+
+    return result;
+  }
+
+  let breadcrumbTrail = []; // Array to keep track of the breadcrumb trail
+  const metaDataForLine = recursiveSearch(data, 0);
+
+  metaDataForLine.sort((a, b) => {
+    return b.depth - a.depth;
+  });
+
+  return metaDataForLine;
+}
+
 function getPreviousMeta(dataBundle, meta) {
   if(!dataBundle.metaData || !meta || meta.id <= 0 || !dataBundle.metaData[meta.id - 1]) return null
   return dataBundle.metaData[meta.id - 1]
@@ -113,7 +160,8 @@ function getPreviousMeta(dataBundle, meta) {
 const helperFunctions = {
   rangeInRange,
   cursorInRange,
-  getMetaForCur,
+  getMetaForCurBundle,
+  getMetaForCurAnyData,
   getPreviousMeta,
 }
 
