@@ -148,7 +148,7 @@ function finalizeMeshes() {
                 //depthWrite: false,
                 //depthTest: true,
               })
-      
+
               // Create a wireframe geometry from the mesh's geometry
               const wireframe = colladaNode.children.find(child => child instanceof THREE.LineSegments)
               if(!wireframe) {
@@ -169,7 +169,7 @@ function finalizeMeshes() {
               colladaNode.position.z = -flexbody.pos?.y ?? 0
             }
             colladaNode.rotation.x = -Math.PI / 2;
-            colladaNode.__range = flexbody.__range
+            colladaNode.__meta = flexbody.__meta
             colladaNode.traverse((n) => {
               n.castShadow = true
             })
@@ -201,7 +201,7 @@ function finalizeMeshes() {
                 roughness: 0.5,
                 // TODO: FIX transparency between objects
               })
-      
+
               // Create a wireframe geometry from the mesh's geometry
               const wireframe = colladaNode.children.find(child => child instanceof THREE.LineSegments)
               if(!wireframe) {
@@ -213,10 +213,10 @@ function finalizeMeshes() {
                 }));
                 wireframe.name = 'prop_wireframe'
                 mesh.add(wireframe);
-              }        
+              }
             }
             colladaNode.rotation.x = -Math.PI / 2;
-            colladaNode.__range = prop.__range
+            colladaNode.__meta = prop.__meta
             colladaNode.traverse((n) => {
               n.castShadow = true
             })
@@ -283,7 +283,7 @@ function focusMeshes(meshesArrToFocus) {
       colladaNode.material.opacity = selected ? 1 : defaultMeshOpacity
       colladaNode.material.color.set(selected ? 0xff69b4 : 0xaaaaaa);
       colladaNode.material.needsUpdate = true
-    }  
+    }
   }
   if(selectedMeshIndices == []) selectedMeshIndices = null
 }
@@ -321,7 +321,7 @@ function onCursorChangeEditor(message) {
   };
 
   for (let i = 0; i < loadedMeshes.length; i++) {
-    if (loadedMeshes[i].__range && cursorInRange(loadedMeshes[i].__range)) {
+    if (loadedMeshes[i].__meta && cursorInRange(loadedMeshes[i].__meta.range)) {
       meshesFound.push(i)
     }
   }
@@ -343,11 +343,11 @@ function onReceiveMessage(event) {
       daeFindfilesDone = true
       if (daeLoadingCounter == 0 && daeFindfilesDone) {
         finalizeMeshes();
-      }      
+      }
       break
     case 'cursorChanged':
       onCursorChangeEditor(message)
-      break      
+      break
   }
 }
 
@@ -375,7 +375,7 @@ export function onConfigChanged() {
   const shoudlLoadCommonFolder = (ctx?.config?.sceneView?.meshes?.loadCommonFolder ?? false)
   if(shoudlLoadCommonFolder !== loadedCommonFolders) {
     // changed, lets reload the meshes
-    startLoadingMeshes()    
+    startLoadingMeshes()
   }
 
   // update meshes

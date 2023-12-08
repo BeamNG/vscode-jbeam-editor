@@ -22,17 +22,17 @@ function highlightNodeinTextEditor() {
     if(node && node.hasOwnProperty('__range')) {
       ctx.vscode.postMessage({
         command: 'selectLine',
-        range: node.__range,
+        range: node.__meta.range,
         uri: uri,
       });
-      //console.log(">postMessage>", node.__range)
+      //console.log(">postMessage>", node.__meta.range)
     }
   }
 }
 
 function focusNodes(nodesArrToFocus, triggerEditor = true) {
   if (!nodesArrToFocus || !pointsObject) return
-    
+
   let sumX = 0
   let sumY = 0
   let sumZ = 0
@@ -87,13 +87,13 @@ function focusNodes(nodesArrToFocus, triggerEditor = true) {
 
 function onCursorChangeEditor(message) {
   if(!pointsCache) return
-  
+
   if(currentPartName !== message.currentPartName) {
     currentPartName = message.currentPartName
     selectedNodeIndices = null
     updateNodeViz(true)
   }
-  
+
   let nodesFound = []
   // Helper function to check if the cursor is within a given range
   const cursorInRange = (range) => {
@@ -102,7 +102,7 @@ function onCursorChangeEditor(message) {
   };
 
   for (let i = 0; i < pointsCache.length; i++) {
-    if (cursorInRange(pointsCache[i].__range)) {
+    if (cursorInRange(pointsCache[i].__meta.range)) {
       nodesFound.push(i)
     }
   }
@@ -116,7 +116,7 @@ function updateNodeViz(moveCamera) {
   pointsCache = []
   let sum = {x: 0, y: 0, z: 0}
   nodesMin = {x: Infinity, y: Infinity, z: Infinity}
-  nodesMax = {x: -Infinity, y: -Infinity, z: -Infinity}  
+  nodesMax = {x: -Infinity, y: -Infinity, z: -Infinity}
   nodesCenter = null
   for (let partName in jbeamData) {
     if(currentPartName && partName !== currentPartName) continue
@@ -131,7 +131,7 @@ function updateNodeViz(moveCamera) {
           sum.x += x
           if(x < nodesMin.x) nodesMin.x = x
           else if(x > nodesMax.x) nodesMax.x = x
-          
+
           const y = node.pos[1]
           vertexPositions.push(y)
           sum.y += y
@@ -160,7 +160,7 @@ function updateNodeViz(moveCamera) {
     // do not leak Inf everywhere ...
     nodesMin = null
     nodesMax = null
-  }  
+  }
   if(moveCamera) {
     selectedNodeIndices = null
     for (let partName in jbeamData) {
@@ -203,15 +203,15 @@ function updateNodeViz(moveCamera) {
     nodesMaterial = new THREE.ShaderMaterial({
       uniforms: {
         scale: { value: window.innerHeight / 2 }, // Assuming perspective camera and square points
-      },      
+      },
       vertexShader: `
         attribute float alpha;
         attribute vec3 color;
         attribute float size;
-    
+
         varying float vAlpha;
         varying vec3 vColor;
-    
+
         uniform float scale;
         void main() {
           vAlpha = alpha;
@@ -241,7 +241,7 @@ function updateNodeViz(moveCamera) {
       depthTest: true
     })
   }
-  
+
   if(!pointsObject) {
     pointsObject = new THREE.Points(nodesGeometry, nodesMaterial);
     pointsObject.name = 'pointsObject'
@@ -305,7 +305,7 @@ function resetNodeFocus() {
   const alphasAttribute = pointsObject.geometry.getAttribute('alpha');
   const colorsAttribute = pointsObject.geometry.getAttribute('color');
   const sizesAttribute = pointsObject.geometry.getAttribute('size');
-  
+
   for (let i = 0; i < pointsCache.length; i++) {
     if(selectedNodeIndices && selectedNodeIndices.includes(i)) continue
     alphasAttribute.setX(i, 0.3)
@@ -400,14 +400,14 @@ function onMouseOut(event) {
 export function init() {
   window.addEventListener('message', onReceiveMessage);
   window.addEventListener('mousedown', onMouseDown, false);
-  window.addEventListener('mousemove', onMouseMove, false); 
-  window.addEventListener('mouseout', onMouseOut, false); 
+  window.addEventListener('mousemove', onMouseMove, false);
+  window.addEventListener('mouseout', onMouseOut, false);
 }
 
 export function dispose() {
   window.removeEventListener('message', onReceiveMessage);
   window.removeEventListener('mousedown', onMouseDown);
-  window.removeEventListener('mousemove', onMouseMove); 
+  window.removeEventListener('mousemove', onMouseMove);
   window.removeEventListener('mouseout', onMouseOut)
   if(pointsObject) {
     if (pointsObject.geometry) pointsObject.geometry.dispose()

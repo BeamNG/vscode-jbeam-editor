@@ -291,7 +291,7 @@ function updateProjectionPlane(scene, items, _env = {}) {
   if(!canvas) {
     canvas = document.createElement('canvas');
     canvas.width = env.canvasWidth;
-    canvas.height = env.canvasHeight;  
+    canvas.height = env.canvasHeight;
   }
   const context = canvas.getContext('2d');
 
@@ -310,7 +310,7 @@ function updateProjectionPlane(scene, items, _env = {}) {
   if(groundPlaneTexture) groundPlaneTexture.dispose()
   groundPlaneTexture = new THREE.CanvasTexture(canvas);
   groundPlaneTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-  
+
   if(groundPlaneMaterial) groundPlaneMaterial.dispose()
   groundPlaneMaterial = new THREE.MeshBasicMaterial({ map: groundPlaneTexture, transparent: true, side: THREE.DoubleSide });
 
@@ -342,7 +342,7 @@ function moveCameraCenter(pos) {
       .to(pos, 120)
       .easing(Easing.Quadratic.Out)
       .start()
-      
+
     new Tween(camera.position)
       .to(newCameraPosition, 120)
       .easing(Easing.Quadratic.Out)
@@ -397,7 +397,7 @@ function getColorFromDistance(distance, maxDistance, colorHexA, colorHexB) {
   let clampedDistance = Math.min(distance, maxDistance);
   let normalizedDistance = clampedDistance / maxDistance;
   let color = new THREE.Color(colorHexB);
-  color.lerp(new THREE.Color(colorHexA), normalizedDistance); 
+  color.lerp(new THREE.Color(colorHexA), normalizedDistance);
   return color;
 }
 
@@ -429,17 +429,17 @@ class Tooltip {
               vec4(0.0, 0.0, 1.0, 0.0),
               modelViewMatrix[3]
           );
-      
+
           // Calculate scaled position
           float distance = length(billBoardMatrix[3].xyz - cameraPosition);
-      
+
           // Adjust these values as needed for your scene
           float minScale = 0.1;
           float maxScale = 0.3; // Maximum scale limit
           float scale = clamp(distance * 0.05, minScale, maxScale);
-      
+
           vec4 scaledPosition = vec4(position * scale, 1.0);
-      
+
           // Calculate final position
           gl_Position = projectionMatrix * billBoardMatrix * scaledPosition;
         }
@@ -491,12 +491,12 @@ class Tooltip {
   createTextCanvas(data) {
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
-  
+
     context.font = this.fontStr
     canvas.width = context.measureText(data.name).width;
     canvas.height = this.fontSize
     //console.log(canvas.width, canvas.height)
-  
+
     context.fillStyle = 'rgba(200, 200, 200, 100)';
     context.fillRect(0, 0, canvas.width, canvas.height);
 

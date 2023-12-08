@@ -23,7 +23,7 @@ function updateBeamViz() {
           beam.node1 = node1
           let node2 = part.nodes[beam['id2:']]
           beam.node2 = node2
-      
+
           if (node1 && node2) {
             beam.nodePos1 = new THREE.Vector3(node1.pos[0], node1.pos[1], node1.pos[2])
             beam.nodePos2 = new THREE.Vector3(node2.pos[0], node2.pos[1], node2.pos[2])
@@ -110,9 +110,9 @@ function onMouseMove(event) {
 
   const alphasAttribute = linesObject.geometry.getAttribute('alpha')
   const colorsAttribute = linesObject.geometry.getAttribute('color')
-  
+
   let maxDistance = 1 // Maximum distance to affect the alpha
-  
+
   for (let i = 0; i < beamCache.length; i++) {
     if(selectedBeamIndices && selectedBeamIndices.includes(i)) continue
     const distance = Math.min(raycaster.ray.distanceToPoint(beamCache[i].nodePos1), raycaster.ray.distanceToPoint(beamCache[i].nodePos2))
@@ -135,7 +135,7 @@ function onMouseMove(event) {
 
 function focusBeams(beamsArrToFocus, triggerEditor = true) {
   if (!beamsArrToFocus || !linesObject || !linesObject.geometry) return
-    
+
   let sumX = 0
   let sumY = 0
   let sumZ = 0
@@ -190,7 +190,7 @@ function onCursorChangeEditor(message) {
     currentPartName = message.currentPartName
     updateBeamViz()
   }
-  
+
   let beamsFound = []
   // Helper function to check if the cursor is within a given range
   const cursorInRange = (range) => {
@@ -199,7 +199,7 @@ function onCursorChangeEditor(message) {
   };
 
   for (let i = 0; i < beamCache.length; i++) {
-    if (cursorInRange(beamCache[i].__range)) {
+    if (cursorInRange(beamCache[i].__meta.range)) {
       beamsFound.push(i)
     }
   }
@@ -219,18 +219,18 @@ function onReceiveMessage(event) {
       break;
     case 'cursorChanged':
       onCursorChangeEditor(message)
-      break      
+      break
   }
 }
 
 export function init() {
   window.addEventListener('message', onReceiveMessage);
-  window.addEventListener('mousemove', onMouseMove, false); 
+  window.addEventListener('mousemove', onMouseMove, false);
 }
 
 export function dispose() {
   window.removeEventListener('message', onReceiveMessage);
-  window.removeEventListener('mousemove', onMouseMove); 
+  window.removeEventListener('mousemove', onMouseMove);
   if(linesObject) {
     if (linesObject.geometry) linesObject.geometry.dispose()
     if (linesObject.geometry) linesObject.geometry.dispose()

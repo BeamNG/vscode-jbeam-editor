@@ -20,7 +20,7 @@ function updateTriViz() {
   let triIndices = []
   triCache = []
   let triIndexCounter = 0
-  
+
   for (let partName in jbeamData) {
     if (currentPartName && partName !== currentPartName) continue;
     let part = jbeamData[partName];
@@ -56,7 +56,7 @@ function updateTriViz() {
     if(triMaterial) triMaterial.dispose();
     scene.remove(triObject);
   }
-  
+
   if(triGeometry) {
     triGeometry.dispose()
   }
@@ -119,7 +119,7 @@ function updateTriViz() {
       linewidth: 1,
       transparent: true,
       // TODO: FIX transparency between objects
-      //depthWrite: false, 
+      //depthWrite: false,
       //depthTest: true,
       //renderOrder: 2,
     }));
@@ -136,7 +136,7 @@ function focusTris(trisArrToFocus) {
     return
   }
   triObject.visible = true
-    
+
   let sumX = 0
   let sumY = 0
   let sumZ = 0
@@ -185,7 +185,7 @@ function focusTris(trisArrToFocus) {
       colorsAttribute.setXYZ(i*3+1, 0, 0, 0.65)
       colorsAttribute.setXYZ(i*3+2, 0, 0, 0.65)
     }
-    
+
     alphasAttribute.needsUpdate = true;
     colorsAttribute.needsUpdate = true;
     highlightAttribute.needsUpdate = true;
@@ -211,8 +211,8 @@ function onCursorChangeEditor(message) {
   }
   isInSection = (currentSectionName === 'triangles')
 
-  
-  
+
+
   let trisFound = []
   // Helper function to check if the cursor is within a given range
   const cursorInRange = (range) => {
@@ -221,7 +221,7 @@ function onCursorChangeEditor(message) {
   };
 
   for (let i = 0; i < triCache.length; i++) {
-    if (cursorInRange(triCache[i].__range)) {
+    if (cursorInRange(triCache[i].__meta.range)) {
       trisFound.push(i)
     }
   }
@@ -241,7 +241,7 @@ function onReceiveMessage(event) {
       break;
     case 'cursorChanged':
       onCursorChangeEditor(message)
-      break      
+      break
   }
 }
 
