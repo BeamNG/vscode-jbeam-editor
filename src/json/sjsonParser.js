@@ -133,8 +133,6 @@ function getMetaForCurAnyData(data, line, position, documentUri, breadcrumbCateg
         .join(' > ');
 
       data.__meta.breadcrumbsMarkdown[breadcrumbCategory] = data.__meta.breadcrumbs[breadcrumbCategory]
-        .slice(ignoreBreadHeadCounter)
-        .filter(item => !(item.value.__meta && item.value.__meta.isNamed))
         .map(item => {
           const commandId = 'jbeam-editor.gotoLine';
           let args = {
