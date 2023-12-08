@@ -19,7 +19,7 @@
     "3D",
     "beamng"
   ],
-  "version": "0.2.5",
+  "version": "0.3.0",
   "engines": {
     "vscode": "^1.84.0"
   },
@@ -76,7 +76,7 @@
         "language": "beamng-log",
         "scopeName": "source.beamng-log",
         "path": "./syntaxes/beamng-log.tmLanguage.json"
-      },      
+      },
       {
         "language": "partconfig",
         "scopeName": "source.jbeam",

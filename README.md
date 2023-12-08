@@ -45,7 +45,7 @@ This is a lightweight visualizer and tool for working with the physics definitio
   ![](assets/threedViewer.gif)
 
   ![](assets/meshSupport.png)
-  
+
 * Node multi selection
 
   ![](assets/nodeMultiselect.gif)
@@ -119,7 +119,6 @@ This is a lightweight visualizer and tool for working with the physics definitio
 * dedicated documentation view
 * walkthrough: https://code.visualstudio.com/api/references/contribution-points#contributes.walkthroughs
 * getting started page
-* beamng.log parser
 
 ## Requirements
 
@@ -146,6 +145,25 @@ If all worked, it should show up like this now:
 ![](assets/fileformatHelp4.png)
 
 ## Release Notes
+
+### 0.3
+* Bugfixes:
+  * improved groundplane size for large models
+  * improved stability
+  * nodes are picked in 2d space for better accurancy
+  * exchanged left/right mouse button for pan/rotate
+  * fixed node sizes in orthographic view
+  * fixed json number parsing for numbers with a leading plus sign
+* Features:
+  * completely new json parser with better and improved metadata support and improved error diagnostics
+  * added 3D line to mark the origin 0,0,0
+  * beamng.log parser
+  * triangles are not visible unless editing that section
+  * only show 3d meshes if in flexbodies section
+  * support for floating 3D labels. Used to display node names right now
+  * added simconnection: will connect to the simulation and interact with it (if running)
+  * added knowledge of all existing jbeam files for part finding reasons
+  * added partconfig parsing and completion basics - experimental
 
 ### 0.2.5
 * Bugfixes:

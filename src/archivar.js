@@ -162,7 +162,7 @@ function loadJbeamFiles() {
   const vehiclesPath = vscode.Uri.file(path.join(rootPath, '/vehicles/')).fsPath
   jbeamFileCounter = 0
   partCounter = 0
-  
+
   let findFilesPromises = []
   // Find .jbeam files
   findFilesPromises.push(vscode.workspace.findFiles(new vscode.RelativePattern(vehiclesPath, '**/*.jbeam'), null).then(files => {
