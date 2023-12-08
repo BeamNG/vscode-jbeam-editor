@@ -434,7 +434,7 @@ class Tooltip {
           );
 
           float distance = length(billBoardMatrix[3].xyz - cameraPosition);
-          float scale = 0.2; // distance * 0.05;
+          float scale = distance * 0.15;
           vec4 scaledPosition = vec4(position * scale, 1.0);
 
           // Calculate final position
