@@ -18,7 +18,10 @@ const settings = {
 // see https://cocopon.github.io/tweakpane/quick-tour/
 
 export async function init() {
-  let pane = new ctx.tweakPane.Pane({title:'Settings'})
+  let pane = new ctx.tweakPane.Pane({
+    title:'Settings',
+    expanded: false,
+  })
 
   pane.addBinding( settings, 'perspective').on('change', function(ev) {
     if (ev.value) {

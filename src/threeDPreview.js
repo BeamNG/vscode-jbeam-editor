@@ -211,7 +211,7 @@ function show3DSceneCommand() {
         case 'sceneReady':
           // send over the data of the active text document
           if (openedFromTextEditor) {
-            parseAndPostData(openedFromTextEditor.document);
+            parseAndPostData(openedFromTextEditor);
           }
           break
         case 'sendPing':
@@ -236,8 +236,34 @@ function show3DSceneCommand() {
     return false
   }
 
-  function parseAndPostData(document, updatedOnly = false) {
+  function getPartAndSectionName(data, range) {
+    let partNameFound = null
+    let sectionNameFound = null
+
+    for (let partName in data) {
+      const part = data[partName]
+      if(!part.__meta.range) continue
+      if (range[0] >= part.__meta.range[0] && range[0] <= part.__meta.range[2]) {
+        partNameFound = partName
+        for (let sectionName in part) {
+          const section = part[sectionName]
+          if(!section.__meta.range) continue
+          if (range[0] >= section.__meta.range[0] && range[0] <= section.__meta.range[2]) {
+            sectionNameFound = sectionName
+            break
+          }
+        }
+        break
+      }
+    }
+    return [partNameFound, sectionNameFound]
+  }
+
+  function parseAndPostData(editor, updatedOnly = false) {
     if(!webPanel) return
+
+    const document = editor.document
+    const selection = editor.selection
 
     let meshLoadingEnabled = isMeshLoadingAllowed(document)
     if(!meshLoadingEnabled) {
@@ -256,12 +282,17 @@ function show3DSceneCommand() {
       dataBundle.tableInterpretedData = tableInterpretedData
       docCache[uri] = dataBundle
 
+      const range = [selection.start.line, selection.start.character, selection.end.line, selection.end.character]
+      let [partNameFound, sectionNameFound] = getPartAndSectionName(tableInterpretedData, range)
+
       webPanel.webview.postMessage({
         command: 'jbeamData',
         data: tableInterpretedData,
         uri: uri,
         meshCache: meshCache,
         updatedOnly: updatedOnly,
+        currentPartName: partNameFound,
+        currentSectionName: sectionNameFound,
         meshLoadingEnabled: meshLoadingEnabled,
       });
     } catch (e) {
@@ -274,14 +305,14 @@ function show3DSceneCommand() {
   vscode.window.onDidChangeActiveTextEditor(editor => {
     if (editor) {
       if (editor.document.languageId !== 'jbeam') return;
-      parseAndPostData(editor.document);
+      parseAndPostData(editor);
     }
   })
   // Listen for changes in the document of the active editor
   vscode.workspace.onDidChangeTextDocument(event => {
     if (event.document.languageId !== 'jbeam') return;
     if (vscode.window.activeTextEditor && webPanel && webPanel.visible && event.document === vscode.window.activeTextEditor.document) {
-      parseAndPostData(event.document, true);
+      parseAndPostData(vscode.window.activeTextEditor, true);
     }
   });
   vscode.window.onDidChangeTextEditorSelection(event => {
@@ -299,25 +330,8 @@ function show3DSceneCommand() {
     //let metaRaw = sjsonParser.getMetaForCurAnyData(dataBundle.tableInterpretedData, position.line, position.character, document.uri, 'raw', 1)
 
     // find the part the cursor is in
-    let partNameFound = null
-    let sectionNameFound = null
+    let [partNameFound, sectionNameFound] = getPartAndSectionName(data, range)
 
-    for (let partName in tableInterpretedData) {
-      const part = tableInterpretedData[partName]
-      if(!part.__meta.range) continue
-      if (range[0] >= part.__meta.range[0] && range[0] <= part.__meta.range[2]) {
-        partNameFound = partName
-        for (let sectionName in part) {
-          const section = part[sectionName]
-          if(!section.__meta.range) continue
-          if (range[0] >= section.__meta.range[0] && range[0] <= section.__meta.range[2]) {
-            sectionNameFound = sectionName
-            break
-          }
-        }
-        break
-      }
-    }
     webPanel.webview.postMessage({
       command: 'cursorChanged',
       currentPartName: partNameFound,

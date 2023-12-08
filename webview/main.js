@@ -10,7 +10,7 @@ let delta = 0
 function animate(time) {
   // Request the next frame
   window.animationFrameId = requestAnimationFrame(animate);
-  
+
   // Calculate the time delta since the last frame
   currentTime = (new Date()).getTime();
   delta = currentTime - lastTime;
@@ -92,10 +92,10 @@ export function init() {
   renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
   document.body.appendChild(renderer.domElement);
   renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.domElement.style.width = '100%';  
+  renderer.domElement.style.width = '100%';
   renderer.domElement.style.height = '100%';
   renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.gammaFactor = 2.2; 
+  renderer.gammaFactor = 2.2;
   renderer.gammaOutput = true;
   renderer.setClearColor(0x808080);
   //renderer.sortObjects = true
@@ -103,14 +103,14 @@ export function init() {
   orbitControls = new OrbitControls(camera, renderer.domElement);
 
   // the camera center
-  const sphereGeometry = new THREE.SphereGeometry(0.025);
+  const sphereGeometry = new THREE.SphereGeometry(0.01);
   const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0x333333 });
   //sphereMaterial.opacity = 0.5;
   //sphereMaterial.transparent = true;
   cameraCenterSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
   cameraCenterSphere.name = 'cameraCenterSphere'
-  scene.add(cameraCenterSphere);  
-  
+  scene.add(cameraCenterSphere);
+
 
   // Ambient light affects all objects in the scene globally.
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // soft white light
@@ -146,7 +146,7 @@ export function init() {
   bottomLight.target.position.set(0, 0, 0); // Points towards the center of the scene
   bottomLight.name = 'bottomLight'
   scene.add(bottomLight);
-  
+
 
   // Renderer settings for gamma correction
   renderer.gammaFactor = 2.2;
@@ -155,7 +155,7 @@ export function init() {
 
   // After adding lights, always update the scene graph
   scene.updateMatrixWorld(true);
-  
+
   if(true) {
     // Create a floor
     const floorGeometry = new THREE.PlaneGeometry(200, 200);
@@ -187,7 +187,7 @@ export function init() {
   animate(0)
 
   window.addEventListener('resize', onResize)
-  
+
   // let VSCode know that we are good to receive data :)
   ctx.vscode.postMessage({command: 'sceneReady'})
 }
@@ -203,7 +203,7 @@ export function destroy() {
   if (window.animationFrameId) {
     cancelAnimationFrame(window.animationFrameId);
   }
-  
+
   // Dispose of scene objects
   scene.traverse(object => {
     if (object.geometry) object.geometry.dispose();
@@ -216,7 +216,7 @@ export function destroy() {
       }
     }
   })
-  
+
   renderer.dispose();
   if (orbitControls) orbitControls.dispose();
   ctx.visualizersMain.dispose()
