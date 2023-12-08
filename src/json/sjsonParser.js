@@ -105,7 +105,9 @@ function getMetaForCurBundle(dataBundle, line, position) {
   return metaDataForLine;
 }
 
-function getMetaForCurAnyData(data, line, position, documentUri) {
+function getMetaForCurAnyData(data, line, position, documentUri, breadcrumbCategory, ignoreBreadHeadCounter = 0) {
+  let breadcrumbTrail = []; // Array to keep track of the breadcrumb trail
+
   // Helper function to recursively search the object and add breadcrumbs to __meta
   function recursiveSearch(data, currentDepth) {
     if (!data) return [];
@@ -114,10 +116,20 @@ function getMetaForCurAnyData(data, line, position, documentUri) {
 
     if (data.__meta && cursorInRange(line, position, data.__meta.range)) {
       // Add breadcrumb to the existing __meta object
-      if (!data.__meta.breadcrumb) {
-        data.__meta.breadcrumb = []
+      if (!data.__meta.breadcrumbs) {
+        data.__meta.breadcrumbs = {}
+        data.__meta.breadcrumbsPlainText = {}
       }
-      data.__meta.breadcrumb.push(...breadcrumbTrail.map((b) => ({ name: b.name, meta: b.meta })));
+      if (!data.__meta.breadcrumbs[breadcrumbCategory]) {
+        data.__meta.breadcrumbs[breadcrumbCategory] = []
+      }
+
+      data.__meta.breadcrumbs[breadcrumbCategory].push(...breadcrumbTrail);
+      data.__meta.breadcrumbsPlainText[breadcrumbCategory] = data.__meta.breadcrumbs[breadcrumbCategory]
+        .slice(ignoreBreadHeadCounter)
+        .filter(item => !(item.value.__meta && item.value.__meta.isNamed))
+        .map(item => item.key)
+        .join(' > ');
       result.push(data.__meta);
 
       // Iterate over the properties of the object to go deeper into the tree
@@ -129,7 +141,7 @@ function getMetaForCurAnyData(data, line, position, documentUri) {
 
           if (typeof value === 'object' && value !== null && value.__meta) {
             // Add the current object to the breadcrumb trail before going deeper
-            breadcrumbTrail.push({ name: key, meta: value.__meta });
+            breadcrumbTrail.push({ key: key, value: value });
             const childResult = recursiveSearch(value, currentDepth + 1);
             result.push(...childResult);
             // Pop the current object from the breadcrumb trail as we backtrack
@@ -138,11 +150,9 @@ function getMetaForCurAnyData(data, line, position, documentUri) {
         }
       }
     }
-
     return result;
   }
 
-  let breadcrumbTrail = []; // Array to keep track of the breadcrumb trail
   const metaDataForLine = recursiveSearch(data, 0);
 
   metaDataForLine.sort((a, b) => {
@@ -267,7 +277,7 @@ function decodeWithMeta(s, origin) {
       break; // If it's not whitespace, a comment or a newline, break the loop
     }
   }
-    
+
   function readString() {
     // TODO: Add support for escape characters and unicode
     let result = '';
@@ -385,14 +395,14 @@ function decodeWithMeta(s, origin) {
 
       let metaSep = {type: 'objSeparator', range: [lineNumber, columnNumber, 0, 0], parent: meta, key: keyMeta, depth: depth}
       addMetadata(metaSep)
-      
+
       if (s[i] !== ':' && s[i] !== '=') {
         jsonError('Expected ":" or "="')
         return
       }
       i++; // skip ':' or '='
       columnNumber++;
-      
+
       metaSep.range[2] = lineNumber
       metaSep.range[3] = columnNumber
 
@@ -437,7 +447,7 @@ function decodeWithMeta(s, origin) {
     metaData[0].origin = origin
   }
 
-  
+
   // return dataBundle
   return {
     // data

@@ -6,7 +6,7 @@ const docHelper = require('../docHelper');
 
 const highlightDecorationType = vscode.window.createTextEditorDecorationType({
   backgroundColor: 'rgba(255, 255, 0, 0.1)', // yellow background for highlighting
-});  
+});
 const fadeDecorationType = vscode.window.createTextEditorDecorationType({
   color: 'rgba(200, 200, 200, 0.9)',
 });
@@ -65,7 +65,7 @@ function getDocEntry(key) {
     res += `$(type-hierarchy-sub) ${key}<br/>`
     res += `$(book) ${d.description}<br/>`
     let ticon = ''
-    
+
     if(d.type == 'number') ticon = '$(symbol-numeric)'
     else if(d.type == 'boolean') ticon = '$(symbol-boolean)'
     else if(d.type == 'string') ticon = '$(symbol-string)'
@@ -99,7 +99,7 @@ class JBeamHoverProvider {
     if(dataBundle) {
 
 
-      let metaRaw = sjsonParser.getMetaForCurAnyData(dataBundle.data, position.line, position.character)
+      let metaRaw = sjsonParser.getMetaForCurAnyData(dataBundle.data, position.line, position.character, document.uri, 'raw', 1)
       if(!metaRaw || metaRaw.length == 0) {
         console.log('unable to get data below cursor: ', document.uri.fsPath, text, position)
         return
@@ -112,7 +112,7 @@ class JBeamHoverProvider {
       let metaStructured
       let wasBlockMerged = false
       if(tableInterpretedData) {
-        metaStructured = sjsonParser.getMetaForCurAnyData(tableInterpretedData, position.line, position.character, document.uri)
+        metaStructured = sjsonParser.getMetaForCurAnyData(tableInterpretedData, position.line, position.character, document.uri, 'structured', 1)
         if(metaStructured && metaStructured.length > 0) {
           foundObjCleanStructured = utilsExt.deepCloneAndRemoveKeys(metaStructured[0].objStructured, showFullDevData ? [] : ['__meta'])
           // check for removed entries
