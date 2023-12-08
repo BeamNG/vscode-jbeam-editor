@@ -146,7 +146,7 @@ If all worked, it should show up like this now:
 
 ## Release Notes
 
-### 0.3.0
+### 0.3.1
 * Bugfixes:
   * fixed node selection scrolling the viewport when leaving and re-entering the 3D view
 
