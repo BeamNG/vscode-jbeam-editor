@@ -3,6 +3,7 @@ let currentPartName = null
 let uri = null
 let pointsCache // the high level points in the cache
 let selectedNodeIndices = null // array of selected nodes
+let currentSectionName = null
 
 let pointsObject // the scene object
 
@@ -28,6 +29,27 @@ function highlightNodeinTextEditor() {
       //console.log(">postMessage>", node.__meta.range)
     }
   }
+}
+
+function updateLabels() {
+  if(currentSectionName !== 'nodes') {
+    if(tooltipPool) {
+      tooltipPool.updateTooltips([])
+    }
+    return
+  }
+
+  const tooltips = []
+  for (let i = 0; i < pointsCache.length; i++) {
+    if(selectedNodeIndices && !selectedNodeIndices.includes(i)) continue
+    const node = pointsCache[i]
+    tooltips.push({ pos3d: node.pos3d, name: `${node.name}`}) //  - ${node.nodeWeight}
+  }
+
+  if(!tooltipPool) {
+    tooltipPool = new TooltipPool(scene, camera, 5)
+  }
+  tooltipPool.updateTooltips(tooltips)
 }
 
 function focusNodes(nodesArrToFocus, triggerEditor = true) {
@@ -83,10 +105,13 @@ function focusNodes(nodesArrToFocus, triggerEditor = true) {
   }
 
   ctx.visualizersGroundplane.redrawGroundPlane(nodesMin, nodesMax, selectedNodeIndices, pointsCache, jbeamData, currentPartName, nodeCounter)
+  updateLabels()
 }
 
 function onCursorChangeEditor(message) {
   if(!pointsCache) return
+
+  currentSectionName = message.currentSectionName
 
   if(currentPartName !== message.currentPartName) {
     currentPartName = message.currentPartName
@@ -250,15 +275,7 @@ function updateNodeViz(moveCamera) {
 
   ctx.visualizersGroundplane.redrawGroundPlane(nodesMin, nodesMax, selectedNodeIndices, pointsCache, jbeamData, currentPartName, nodeCounter)
 
-  const tooltips = []
-  for (let i = 0; i < pointsCache.length; i++) {
-    const node = pointsCache[i]
-    tooltips.push({ pos3d: node.pos3d, name: `${node.name} - ${node.nodeWeight}`})
-  }
-  if(!tooltipPool) {
-    tooltipPool = new TooltipPool(scene, camera, 5)
-  }
-  tooltipPool.updateTooltips(tooltips);
+  updateLabels()
 }
 
 function onMouseDown(event) {
@@ -377,7 +394,8 @@ function onReceiveMessage(event) {
       jbeamData = message.data
       uri = message.uri
       selectedNodeIndices = null
-      currentPartName = null
+      currentPartName = message.currentPartName
+      currentSectionName = message.currentSectionName
       updateNodeViz(!message.updatedOnly)
       break;
     case 'cursorChanged':

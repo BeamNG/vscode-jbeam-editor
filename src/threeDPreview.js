@@ -330,7 +330,7 @@ function show3DSceneCommand() {
     //let metaRaw = sjsonParser.getMetaForCurAnyData(dataBundle.tableInterpretedData, position.line, position.character, document.uri, 'raw', 1)
 
     // find the part the cursor is in
-    let [partNameFound, sectionNameFound] = getPartAndSectionName(data, range)
+    let [partNameFound, sectionNameFound] = getPartAndSectionName(tableInterpretedData, range)
 
     webPanel.webview.postMessage({
       command: 'cursorChanged',

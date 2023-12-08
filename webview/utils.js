@@ -408,6 +408,7 @@ class Tooltip {
     this.fontSize = 40
     this.fontStr = `bold ${this.fontSize}px "Roboto Mono", monospace`
     this.createTooltipMesh();
+    this.scale = 0.002
   }
 
   createTooltipMesh() {
@@ -422,19 +423,21 @@ class Tooltip {
         varying vec2 vUv;
         void main() {
           vUv = uv;
-          // Create a billboard matrix with translation from modelViewMatrix and reset rotation
+
+          float upwardTranslation = 0.01;
+
           mat4 billBoardMatrix = mat4(
               vec4(1.0, 0.0, 0.0, 0.0),
               vec4(0.0, 1.0, 0.0, 0.0),
               vec4(0.0, 0.0, 1.0, 0.0),
-              modelViewMatrix[3]
+              vec4(modelViewMatrix[3].x, modelViewMatrix[3].y + upwardTranslation, modelViewMatrix[3].z, 1.0)
           );
 
           // Calculate scaled position
           float distance = length(billBoardMatrix[3].xyz - cameraPosition);
 
           // Adjust these values as needed for your scene
-          float minScale = 0.1;
+          float minScale = 0.2;
           float maxScale = 0.3; // Maximum scale limit
           float scale = clamp(distance * 0.05, minScale, maxScale);
 
@@ -453,8 +456,8 @@ class Tooltip {
         }
       `,
       transparent: true,
-      depthTest: false, // Ensures that the tooltip is always visible on top
-      side:THREE.DoubleSide,
+      depthTest: false,
+      side: THREE.DoubleSide,
     });
 
     const geometry = new THREE.PlaneGeometry(1, 1);
@@ -472,39 +475,46 @@ class Tooltip {
     const canvas = this.createTextCanvas(data)
     this.mesh.material.uniforms.map.value.image = canvas;
     this.mesh.material.uniforms.map.value.needsUpdate = true;
-    const scale = 0.01; // Adjust this scale factor as needed
+
 
     this.mesh.geometry.dispose(); // Dispose old geometry
-    const sizeX = canvas.width * scale
-    const sizeY = canvas.height * scale
-    this.mesh.geometry = new THREE.PlaneGeometry(sizeX, sizeY);
-    this.mesh.geometry.translate(sizeX * 0.5, sizeY * 0.5, 0)
+    this.sizeX = canvas.width * this.scale
+    this.sizeY = canvas.height * this.scale
+    this.mesh.geometry = new THREE.PlaneGeometry(this.sizeX, this.sizeY);
+    this.mesh.geometry.translate(this.sizeX * 0.5, this.sizeY * 0.5, 0)
 
     this.mesh.position.copy(data.pos3d)
     this.mesh.visible = true;
   }
 
-  animate(time) {
-    tooltip.mesh.material.uniforms.cameraPos.value.copy(camera.position);
-  }
-
   createTextCanvas(data) {
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
+    const padding = 10; // Set the desired padding size
+    const borderWidth = 2; // Set the desired border width
 
-    context.font = this.fontStr
-    canvas.width = context.measureText(data.name).width;
-    canvas.height = this.fontSize
-    //console.log(canvas.width, canvas.height)
+    context.font = this.fontStr;
+    // Add padding to canvas width and height to accommodate the border and padding
+    canvas.width = context.measureText(data.name).width + (padding * 2) + (borderWidth * 2);
+    canvas.height = this.fontSize + (padding * 2) + (borderWidth * 2);
 
-    context.fillStyle = 'rgba(200, 200, 200, 100)';
-    context.fillRect(0, 0, canvas.width, canvas.height);
+    // Fill background with a semi-transparent grey
+    context.fillStyle = 'rgba(200, 200, 200, 1)'; // The alpha should be between 0 and 1
+    context.fillRect(borderWidth, borderWidth, canvas.width - (borderWidth * 2), canvas.height - (borderWidth * 2));
 
-    context.font = this.fontStr
+    // Draw the text with the padding offset
+    context.font = this.fontStr;
     context.fillStyle = 'black';
-    context.fillText(data.name, 0, this.fontSize - 2)
+    context.fillText(data.name, padding + borderWidth, this.fontSize + padding - 2);
+
+    // Draw the black border
+    context.strokeStyle = 'black';
+    context.lineWidth = borderWidth;
+    context.strokeRect(borderWidth / 2, borderWidth / 2, canvas.width - borderWidth, canvas.height - borderWidth);
+
     return canvas;
   }
+
 }
 
 class TooltipPool {
@@ -549,4 +559,5 @@ class TooltipPool {
       }
     });
   }
+
 }
