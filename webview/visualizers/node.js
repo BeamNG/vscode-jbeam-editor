@@ -337,7 +337,9 @@ function resetNodeFocus() {
 function onMouseMove(event) {
   // Check if the window was out of focus and reapply text editor highlighting
   if (wasWindowOutOfFocus) {
-    highlightNodeinTextEditor();
+
+    // do not highlight the things again, as the user might have scrolled somewhere else
+    //highlightNodeinTextEditor();
     wasWindowOutOfFocus = false;
   }
 

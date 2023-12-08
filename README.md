@@ -146,7 +146,11 @@ If all worked, it should show up like this now:
 
 ## Release Notes
 
-### 0.3
+### 0.3.0
+* Bugfixes:
+  * fixed node selection scrolling the viewport when leaving and re-entering the 3D view
+
+### 0.3.0
 * Bugfixes:
   * improved groundplane size for large models
   * improved stability
