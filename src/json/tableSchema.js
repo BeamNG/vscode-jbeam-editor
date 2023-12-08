@@ -125,7 +125,7 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, diagnostics
       const rowSize = Object.keys(rowValue).filter(key => key !== '__meta').length
       if (rowSize == headerSize + 1) {
         if(typeof rowValue[headerSize] !== 'object') {
-          diagnostics.push(['error', `Inline option (argument ${headerSize + 1}) need to be a dict, not a ${typeof rowValue[headerSize]}: ${rowValue[headerSize]}`, rowValue.__meta.range])  
+          diagnostics.push(['error', `Inline option (argument ${headerSize + 1}) need to be a dict, not a ${typeof rowValue[headerSize]}: ${rowValue[headerSize]}`, rowValue.__meta.range])
         }
       } else if (rowSize > headerSize + 1) {
         let msg = 1`Invalid table header, must be as long as all table cells (plus one additional options column):\n`;
@@ -175,23 +175,26 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, diagnostics
       }
       if(rowValue.hasOwnProperty('__meta')) {
         newRow.__meta = rowValue.__meta
-        newRow.__meta.objStructured = newRow
+        if(newRow.__meta.obj) {
+          // we might omit obj because we need to be able to convert the data into json, so no cyclic dependencies
+          newRow.__meta.objStructured = newRow
+        }
       }
 
       if (newRow.hasOwnProperty('id') && newRow.id !== null) {
         newID = newRow.id
         //newRow.name = newRow.id // the original is to exchange with id
         //delete newRow.id
-        
+
         // changed behavior for the editor below
         // in BeamNG, only name exists, id is deleted
         newRow.id = newRow.id
         newRow.name = newRow.id
-        
+
         newRow.__meta.isNamed = true
       }
 
-      
+
       newList[newID] = newRow;
       newListSize++;
     }
@@ -276,7 +279,7 @@ function processAllParts(parsedData) {
     if (!parsedData.hasOwnProperty(partName)) continue;
     let part = parsedData[partName];
     let result = processPart(part, diagnostics);
-      
+
     if (result !== true) {
       diagnostics.push(['error', `Unable to process part '${partName}'`, part.__meta])
     }
