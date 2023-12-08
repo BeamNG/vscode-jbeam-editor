@@ -119,6 +119,7 @@ function getMetaForCurAnyData(data, line, position, documentUri, breadcrumbCateg
       if (!data.__meta.breadcrumbs) {
         data.__meta.breadcrumbs = {}
         data.__meta.breadcrumbsPlainText = {}
+        data.__meta.breadcrumbsMarkdown = {}
       }
       if (!data.__meta.breadcrumbs[breadcrumbCategory]) {
         data.__meta.breadcrumbs[breadcrumbCategory] = []
@@ -130,6 +131,20 @@ function getMetaForCurAnyData(data, line, position, documentUri, breadcrumbCateg
         .filter(item => !(item.value.__meta && item.value.__meta.isNamed))
         .map(item => item.key)
         .join(' > ');
+
+      data.__meta.breadcrumbsMarkdown[breadcrumbCategory] = data.__meta.breadcrumbs[breadcrumbCategory]
+        .slice(ignoreBreadHeadCounter)
+        .filter(item => !(item.value.__meta && item.value.__meta.isNamed))
+        .map(item => {
+          const commandId = 'jbeam-editor.gotoLine';
+          let args = {
+            range: item.value.__meta.range,
+            uri: documentUri
+          };
+          let encodedArgs = encodeURIComponent(JSON.stringify(args));
+          return `[${item.key}](command:${commandId}?${encodedArgs} "Goto")`;
+        }).join(' > ');
+
       result.push(data.__meta);
 
       // Iterate over the properties of the object to go deeper into the tree

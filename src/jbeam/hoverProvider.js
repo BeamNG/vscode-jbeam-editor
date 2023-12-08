@@ -135,6 +135,9 @@ class JBeamHoverProvider {
             contents.appendMarkdown(doc)
           } else {
             // try to find the key of the thing hovered
+
+            // TODO
+            /*
             let keyOfEntry
             if(foundObjCleanStructured) {
               keyOfEntry = utilsExt.getKeyByValueStringComparison(foundObjCleanStructured, shortWord)
@@ -159,6 +162,7 @@ class JBeamHoverProvider {
                 contents.appendMarkdown(doc)
               }
             }
+            */
           }
         }
       }
@@ -169,12 +173,12 @@ class JBeamHoverProvider {
           if(!wasBlockMerged && foundObjCleanStructured) {
             const text = JSON.stringify(foundObjCleanStructured, null, 2)
             if(text.length < 32768) {
-              contents.appendMarkdown(`<span style="margin:5px;width:150px;"><b>Data</b><br/>$(type-hierarchy-sub)${metaStructured[0].breadcrumbMarkdown}<br/>`)
+              contents.appendMarkdown(`<span style="margin:5px;width:150px;"><b>Data</b><br/>$(type-hierarchy-sub)${metaStructured[0].breadcrumbsMarkdown.structured}<br/>`)
               contents.appendCodeblock(JSON.stringify(foundObjCleanStructured, null, 2), 'json')
               contents.appendMarkdown('</span><br/>')
             }
           } else {
-            contents.appendMarkdown(`<span style="margin:5px;width:150px;"><b>Data</b><br/>$(type-hierarchy-sub)${metaStructured[0].breadcrumbMarkdown}</span><br/>`)
+            contents.appendMarkdown(`<span style="margin:5px;width:150px;"><b>Data</b><br/>$(type-hierarchy-sub)${metaStructured[0].breadcrumbsMarkdown.structured}</span><br/>`)
           }
         }
       }
