@@ -188,7 +188,8 @@ const helperFunctions = {
   getPreviousMeta,
 }
 
-function decodeWithMeta(s, origin) {
+// cyclicDependencies enables .obj, .parent, etc in __meta
+function decodeWithMeta(s, origin, cyclicDependencies = true) {
   let lineNumber = 0
   let columnNumber = 0
   let errors = []
@@ -348,7 +349,10 @@ function decodeWithMeta(s, origin) {
 
   function parseArray(parentMeta, depth) {
     const arr = {}
-    let meta = {type: 'array', range: [lineNumber, columnNumber, 0, 0], parent: parentMeta, depth: depth}
+    let meta = {type: 'array', range: [lineNumber, columnNumber, 0, 0], depth: depth}
+    if(cyclicDependencies) {
+      meta.parent = parentMeta
+    }
     addMetadata(meta)
     i++; // skip '['
     columnNumber++;
@@ -357,7 +361,10 @@ function decodeWithMeta(s, origin) {
     let idx = 0
     while (s[i] !== ']' && !abortExecution) {
 
-      let valueMeta = {type: 'value', range: [lineNumber, columnNumber, 0, 0], parent: meta, depth: depth}
+      let valueMeta = {type: 'value', range: [lineNumber, columnNumber, 0, 0], depth: depth}
+      if(cyclicDependencies) {
+        valueMeta.parent = meta
+      }
       addMetadata(valueMeta)
 
       const val = parseValue(meta, depth + 1)
@@ -377,14 +384,19 @@ function decodeWithMeta(s, origin) {
     columnNumber++;
     meta.range[2] = lineNumber
     meta.range[3] = columnNumber
-    meta.obj = arr
+    if(cyclicDependencies) {
+      meta.obj = arr
+    }
     arr.__meta = meta
     return arr;
   }
 
   function parseObject(parentMeta, depth) {
     const obj = {};
-    let meta = {type: 'object', range: [lineNumber, columnNumber, 0, 0], parent: parentMeta, depth: depth}
+    let meta = {type: 'object', range: [lineNumber, columnNumber, 0, 0], depth: depth}
+    if(cyclicDependencies) {
+      meta.parent = parentMeta
+    }
     addMetadata(meta)
 
     i++; // skip '{'
@@ -397,7 +409,10 @@ function decodeWithMeta(s, origin) {
         return
       }
 
-      let keyMeta = {type: 'key', range: [lineNumber, columnNumber, 0, 0], parent: meta, depth: depth}
+      let keyMeta = {type: 'key', range: [lineNumber, columnNumber, 0, 0], depth: depth}
+      if(cyclicDependencies) {
+        keyMeta.parent = meta
+      }
       const key = readString()
       keyMeta.range[2] = lineNumber
       keyMeta.range[3] = columnNumber
@@ -406,7 +421,11 @@ function decodeWithMeta(s, origin) {
 
       skipWhiteSpace(depth)
 
-      let metaSep = {type: 'objSeparator', range: [lineNumber, columnNumber, 0, 0], parent: meta, key: keyMeta, depth: depth}
+      let metaSep = {type: 'objSeparator', range: [lineNumber, columnNumber, 0, 0], depth: depth}
+      if(cyclicDependencies) {
+        metaSep.parent = meta
+        metaSep.key = keyMeta
+      }
       addMetadata(metaSep)
 
       if (s[i] !== ':' && s[i] !== '=') {
@@ -419,7 +438,11 @@ function decodeWithMeta(s, origin) {
       metaSep.range[2] = lineNumber
       metaSep.range[3] = columnNumber
 
-      let valueMeta = {type: 'value', range: [lineNumber, columnNumber, 0, 0], parentMeta: meta, depth: depth, key: keyMeta}
+      let valueMeta = {type: 'value', range: [lineNumber, columnNumber, 0, 0], depth: depth}
+      if(cyclicDependencies) {
+        valueMeta.parent = meta
+        valueMeta.key = keyMeta
+      }
       const val = parseValue(meta, depth + 1)
       obj[key] = val
       valueMeta.range[2] = lineNumber
@@ -438,7 +461,9 @@ function decodeWithMeta(s, origin) {
     columnNumber++;
     meta.range[2] = lineNumber
     meta.range[3] = columnNumber
-    meta.obj = obj
+    if(cyclicDependencies) {
+      meta.obj = obj
+    }
     obj.__meta = meta
     return obj;
   }
