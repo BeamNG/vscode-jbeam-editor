@@ -242,7 +242,7 @@ function show3DSceneCommand() {
 
     for (let partName in data) {
       const part = data[partName]
-      if(!part.__meta.range) continue
+      if(!part.__meta) continue
       if (range[0] >= part.__meta.range[0] && range[0] <= part.__meta.range[2]) {
         partNameFound = partName
         for (let sectionName in part) {
