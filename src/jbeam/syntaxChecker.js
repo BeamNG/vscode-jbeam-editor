@@ -8,18 +8,29 @@ const utilsExt = require('../utilsExt');
 
 const jbeamDiagnostics = vscode.languages.createDiagnosticCollection('jbeam');
 
-function validateTextDocument(textDocument) {
-  if (textDocument.languageId !== 'jbeam') {
+function validateTextDocument(document) {
+  if (document.languageId !== 'jbeam') {
     return;
   }
 
   const diagnosticsList = []
-  const text = textDocument.getText();
-  
+  const contentTextUtf8 = document.getText()
+
   // generic json things
-  let parsedData
+  let dataBundle
   try {
-    parsedData = sjsonParser.decodeSJSON(text);  // TODO: FIXME
+    dataBundle = sjsonParser.decodeWithMeta(contentTextUtf8, document.uri.fsPath)
+    if(dataBundle) {
+      for (const e of dataBundle.errors) {
+        // e.message, e.range
+        const diagnostic = new vscode.Diagnostic(
+          new vscode.Range(new vscode.Position(e.range[0], e.range[1]), new vscode.Position(e.range[2], e.range[3])),
+          e.message,
+          vscode.DiagnosticSeverity.Error
+        );
+        diagnosticsList.push(diagnostic);
+      }
+    }
   } catch (e) {
     const pos = new vscode.Position(
       e.range ? e.range[0] : e.line ? e.line : 0,
@@ -35,19 +46,19 @@ function validateTextDocument(textDocument) {
   }
 
   // jbeam specific things
-  if(parsedData) {
+  if(dataBundle && diagnosticsList.length === 0) {
     try {
-      let [tableInterpretedData, diagnosticsTable] = tableSchema.processAllParts(parsedData)
-      for (const w of diagnosticsTable) {
+      let [tableInterpretedData, diagnostics] = tableSchema.processAllParts(dataBundle.data)
+      for (const w of diagnostics) {
         // w[0] = type: error/warning
         // w[1] = message
         // w[2] = range = [linefrom, positionfrom, lineto, positionto]
         const diagnostic = new vscode.Diagnostic(
-          new vscode.Range(new vscode.Position(w[2][0]-1, w[2][1]-1), new vscode.Position(w[2][2]-1, w[2][3])),
+          new vscode.Range(new vscode.Position(w[2][0], w[2][1]), new vscode.Position(w[2][2], w[2][3])),
           w[1],
           w[0] == 'warning' ? vscode.DiagnosticSeverity.Warning : vscode.DiagnosticSeverity.Error
         );
-        diagnosticsList.push(diagnostic);      
+        diagnosticsList.push(diagnostic);
       }
     } catch (e) {
       const pos = new vscode.Position(
@@ -60,12 +71,12 @@ function validateTextDocument(textDocument) {
         vscode.DiagnosticSeverity.Error
       );
       diagnosticsList.push(diagnostic);
-      throw e
+      //throw e
     }
   }
 
   // Update the diagnostics collection for the file
-  jbeamDiagnostics.set(textDocument.uri, diagnosticsList);
+  jbeamDiagnostics.set(document.uri, diagnosticsList);
 }
 
 function subscribeToDocumentChanges(context, diagnostics) {
@@ -73,7 +84,7 @@ function subscribeToDocumentChanges(context, diagnostics) {
   if (vscode.window.activeTextEditor) {
     validateTextDocument(vscode.window.activeTextEditor.document);
   }
-  
+
   // Check the document when it's saved
   context.subscriptions.push(
     vscode.workspace.onDidSaveTextDocument(validateTextDocument)
