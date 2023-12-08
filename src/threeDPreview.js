@@ -15,7 +15,7 @@ let allWebPanels = []
 
 const highlightDecorationType = vscode.window.createTextEditorDecorationType({
   backgroundColor: 'rgba(255, 255, 0, 0.3)', // yellow background for highlighting
-}); 
+});
 const fadeDecorationType = vscode.window.createTextEditorDecorationType({
   color: 'rgba(200, 200, 200, 0.5)',
 })
@@ -134,7 +134,7 @@ function show3DSceneCommand() {
   )
   webPanel.webview.html = getWebviewContent(webPanel);
   // Handle the webview being disposed (closed by the user)
-  webPanel.onDidDispose(() => { 
+  webPanel.onDidDispose(() => {
     allWebPanels = allWebPanels.filter(panel => panel !== webPanel);
     webPanel = null
   }, null, extensionContext.subscriptions)
@@ -155,7 +155,7 @@ function show3DSceneCommand() {
 
     if (targetEditor) {
       targetEditor.setDecorations(highlightDecorationType, []);
-      targetEditor.setDecorations(fadeDecorationType, []);    
+      targetEditor.setDecorations(fadeDecorationType, []);
     }
   }
 
@@ -226,34 +226,35 @@ function show3DSceneCommand() {
     extensionContext.subscriptions
   );
 
-  function parseAndPostData(doc, updatedOnly = false) {
+  // we can only load additional files if those files are part of the workspace
+  // otherwise the security sandbox will not allow this
+  function isMeshLoadingAllowed(document) {
+    const workspaceFolders = vscode.workspace.workspaceFolders
+    if (workspaceFolders && workspaceFolders.some(folder => { return document.uri.fsPath.startsWith(folder.uri.fsPath) })) {
+      return true
+    }
+    return false
+  }
+
+  function parseAndPostData(document, updatedOnly = false) {
     if(!webPanel) return
 
-    let meshLoadingEnabled = false
-    const workspaceFolders = vscode.workspace.workspaceFolders;
-    if (!workspaceFolders) {
-      meshLoadingEnabled = false
-    } else {
-      if(workspaceFolders.some(folder => { return doc.uri.fsPath.startsWith(folder.uri.fsPath) })) {
-        meshLoadingEnabled = true
-      }
-    }
-
+    let meshLoadingEnabled = isMeshLoadingAllowed(document)
     if(!meshLoadingEnabled) {
-      vscode.window.showErrorMessage('In order to load 3D Meshes, the open file must be part of a workspace.');
+      vscode.window.showErrorMessage('3D Mesh loading disabled: please open the root folder as workspace');
     }
 
-    const text = doc.getText()
-    const uri = doc.uri.toString()
+    const contentTextUtf8 = document.getText()
+    const uri = document.uri.toString()
     try {
-      let parsedData = sjsonParser.decodeSJSON(text);
-      // TODO: FIXME
-      if(!parsedData) {
+      let dataBundle = sjsonParser.decodeWithMeta(contentTextUtf8, document.uri.fsPath, false)
+      if(!dataBundle) {
         console.error("Could not parse SJSON!")
         return
       }
-      let [tableInterpretedData, diagnosticsTable] = tableSchema.processAllParts(parsedData)
-      docCache[uri] = tableInterpretedData
+      let [tableInterpretedData, diagnosticsTable] = tableSchema.processAllParts(dataBundle.data)
+      dataBundle.tableInterpretedData = tableInterpretedData
+      docCache[uri] = dataBundle
 
       webPanel.webview.postMessage({
         command: 'jbeamData',
@@ -285,41 +286,44 @@ function show3DSceneCommand() {
   });
   vscode.window.onDidChangeTextEditorSelection(event => {
     if (event.textEditor.document.languageId !== 'jbeam') return;
-    if (vscode.window.activeTextEditor && event.textEditor === vscode.window.activeTextEditor) {
-      const uri = event.textEditor.document.uri.toString()
-      const range = [event.selections[0].start.line, event.selections[0].start.character, event.selections[0].end.line, event.selections[0].end.character]
+    if(!webPanel || !webPanel.visible) return
+    if (!vscode.window.activeTextEditor || event.textEditor !== vscode.window.activeTextEditor) return
 
-      // find the part the cursor is in
-      let partNameFound = null
-      let sectionNameFound = null
-      if(docCache[uri]) {
-        const data = docCache[uri]
-        for (let partName in data) {
-          const part = data[partName]
-          if(!part.__range) continue
-          if (range[0] >= part.__range[0] && range[0] <= part.__range[2]) {
-            partNameFound = partName
-            for (let sectionName in part) {
-              const section = part[sectionName]
-              if(!section.__range) continue
-              if (range[0] >= section.__range[0] && range[0] <= section.__range[2]) {
-                sectionNameFound = sectionName
-                break
-              }
-            }
+    const uri = event.textEditor.document.uri.toString()
+    if(!docCache[uri]) return
+    const tableInterpretedData = docCache[uri].tableInterpretedData
+
+    const range = [event.selections[0].start.line, event.selections[0].start.character, event.selections[0].end.line, event.selections[0].end.character]
+
+    // TODO: use sjsonParser.getMetaForCurAnyData maybe?
+    //let metaRaw = sjsonParser.getMetaForCurAnyData(dataBundle.tableInterpretedData, position.line, position.character, document.uri, 'raw', 1)
+
+    // find the part the cursor is in
+    let partNameFound = null
+    let sectionNameFound = null
+
+    for (let partName in tableInterpretedData) {
+      const part = tableInterpretedData[partName]
+      if(!part.__meta.range) continue
+      if (range[0] >= part.__meta.range[0] && range[0] <= part.__meta.range[2]) {
+        partNameFound = partName
+        for (let sectionName in part) {
+          const section = part[sectionName]
+          if(!section.__meta.range) continue
+          if (range[0] >= section.__meta.range[0] && range[0] <= section.__meta.range[2]) {
+            sectionNameFound = sectionName
             break
           }
         }
-      }
-      if (webPanel && webPanel.visible) {
-        webPanel.webview.postMessage({
-          command: 'cursorChanged',
-          currentPartName: partNameFound,
-          currentSectionName: sectionNameFound,
-          range: range
-        });
+        break
       }
     }
+    webPanel.webview.postMessage({
+      command: 'cursorChanged',
+      currentPartName: partNameFound,
+      currentSectionName: sectionNameFound,
+      range: range
+    });
   })
 
   // Listen for document closures
