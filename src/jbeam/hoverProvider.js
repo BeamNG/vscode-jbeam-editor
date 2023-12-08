@@ -1,3 +1,4 @@
+// this file provides hover tooltips
 const vscode = require('vscode');
 const sjsonParser = require('../json/sjsonParser');
 const tableSchema = require('../json/tableSchema');

@@ -1,3 +1,6 @@
+// this file parses the json and table schema and injects warnings and errors into the problem list in vscode
+// it does not do any processing of the parsed data
+
 const vscode = require('vscode');
 const path = require('path')
 
