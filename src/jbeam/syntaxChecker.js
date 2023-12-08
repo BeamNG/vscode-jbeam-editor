@@ -22,17 +22,9 @@ function validateTextDocument(document) {
   // generic json things
   let dataBundle
   try {
-    dataBundle = sjsonParser.decodeWithMeta(contentTextUtf8, document.uri.fsPath)
+    let dataBundle = sjsonParser.decodeWithMetaWithDiagnostics(contentTextUtf8, document.uri.fsPath)
     if(dataBundle) {
-      for (const e of dataBundle.errors) {
-        // e.message, e.range
-        const diagnostic = new vscode.Diagnostic(
-          new vscode.Range(new vscode.Position(e.range[0], e.range[1]), new vscode.Position(e.range[2], e.range[3])),
-          e.message,
-          vscode.DiagnosticSeverity.Error
-        );
-        diagnosticsList.push(diagnostic);
-      }
+        diagnosticsList.push(...dataBundle.diagnosticsList)
     }
   } catch (e) {
     const pos = new vscode.Position(
