@@ -34,6 +34,7 @@ function highlightNodeinTextEditor() {
 function updateLabels() {
   if(currentSectionName !== 'nodes') {
     if(tooltipPool) {
+      // hide all
       tooltipPool.updateTooltips([])
     }
     return
@@ -45,6 +46,7 @@ function updateLabels() {
     const node = pointsCache[i]
     tooltips.push({ pos3d: node.pos3d, name: `${node.name}`}) //  - ${node.nodeWeight}
   }
+  if(tooltips.length === 0) return
 
   if(!tooltipPool) {
     tooltipPool = new TooltipPool(scene, camera, 5)

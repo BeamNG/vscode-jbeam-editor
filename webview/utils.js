@@ -412,7 +412,7 @@ class Tooltip {
   }
 
   createTooltipMesh() {
-    const texture = new THREE.Texture(this.createTextCanvas(''));
+    const texture = new THREE.Texture(this.createTextCanvas());
     texture.needsUpdate = true;
 
     const material = new THREE.ShaderMaterial({
@@ -433,14 +433,8 @@ class Tooltip {
               vec4(modelViewMatrix[3].x, modelViewMatrix[3].y + upwardTranslation, modelViewMatrix[3].z, 1.0)
           );
 
-          // Calculate scaled position
           float distance = length(billBoardMatrix[3].xyz - cameraPosition);
-
-          // Adjust these values as needed for your scene
-          float minScale = 0.2;
-          float maxScale = 0.3; // Maximum scale limit
-          float scale = clamp(distance * 0.05, minScale, maxScale);
-
+          float scale = 0.2; // distance * 0.05;
           vec4 scaledPosition = vec4(position * scale, 1.0);
 
           // Calculate final position
@@ -469,13 +463,15 @@ class Tooltip {
 
   updateTooltip(data) {
     if (!data) {
-      this.mesh.visible = false;
-      return;
+      this.mesh.visible = false
+      return
     }
-    const canvas = this.createTextCanvas(data)
-    this.mesh.material.uniforms.map.value.image = canvas;
-    this.mesh.material.uniforms.map.value.needsUpdate = true;
 
+    const canvas = this.createTextCanvas(data);
+    const texture = new THREE.Texture(canvas);
+    texture.needsUpdate = true
+    this.mesh.material.uniforms.map.value.dispose(); // Dispose the old texture
+    this.mesh.material.uniforms.map.value = texture; // Assign the new texture
 
     this.mesh.geometry.dispose(); // Dispose old geometry
     this.sizeX = canvas.width * this.scale
@@ -493,25 +489,26 @@ class Tooltip {
     const padding = 10; // Set the desired padding size
     const borderWidth = 2; // Set the desired border width
 
-    context.font = this.fontStr;
-    // Add padding to canvas width and height to accommodate the border and padding
-    canvas.width = context.measureText(data.name).width + (padding * 2) + (borderWidth * 2);
-    canvas.height = this.fontSize + (padding * 2) + (borderWidth * 2);
+    if(data) {
+      context.font = this.fontStr;
+      // Add padding to canvas width and height to accommodate the border and padding
+      canvas.width = context.measureText(data.name).width + (padding * 2) + (borderWidth * 2);
+      canvas.height = this.fontSize + (padding * 2) + (borderWidth * 2);
 
-    // Fill background with a semi-transparent grey
-    context.fillStyle = 'rgba(200, 200, 200, 1)'; // The alpha should be between 0 and 1
-    context.fillRect(borderWidth, borderWidth, canvas.width - (borderWidth * 2), canvas.height - (borderWidth * 2));
+      // Fill background with a semi-transparent grey
+      context.fillStyle = 'rgba(200, 200, 200, 1)'; // The alpha should be between 0 and 1
+      context.fillRect(borderWidth, borderWidth, canvas.width - (borderWidth * 2), canvas.height - (borderWidth * 2));
 
-    // Draw the text with the padding offset
-    context.font = this.fontStr;
-    context.fillStyle = 'black';
-    context.fillText(data.name, padding + borderWidth, this.fontSize + padding - 2);
+      // Draw the text with the padding offset
+      context.font = this.fontStr;
+      context.fillStyle = 'black';
+      context.fillText(data.name, padding + borderWidth, this.fontSize + padding - 2);
 
-    // Draw the black border
-    context.strokeStyle = 'black';
-    context.lineWidth = borderWidth;
-    context.strokeRect(borderWidth / 2, borderWidth / 2, canvas.width - borderWidth, canvas.height - borderWidth);
-
+      // Draw the black border
+      context.strokeStyle = 'black';
+      context.lineWidth = borderWidth;
+      context.strokeRect(borderWidth / 2, borderWidth / 2, canvas.width - borderWidth, canvas.height - borderWidth);
+    }
     return canvas;
   }
 
@@ -534,7 +531,6 @@ class TooltipPool {
 
   addTooltipToPool() {
     const tooltip = new Tooltip(this.scene, this.camera);
-    tooltip.mesh.visible = false;
     this.tooltips.push(tooltip);
   }
 
@@ -549,15 +545,10 @@ class TooltipPool {
     }
 
     // Reset all tooltips
-    this.tooltips.forEach(tooltip => tooltip.mesh.visible = false);
-
-    // Update required tooltips
-    dataList.forEach((data, index) => {
-      if (index < this.poolSize) {
-        const tooltip = this.tooltips[index];
-        tooltip.updateTooltip(data);
-      }
-    });
+    for (let i = 0; i < this.poolSize; i++) {
+      const data = (i < dataList.length) ? dataList[i] : null
+      this.tooltips[i].updateTooltip(data)
+    }
   }
 
 }
