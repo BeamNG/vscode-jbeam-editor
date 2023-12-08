@@ -20,7 +20,7 @@ function highlightNodeinTextEditor() {
 
   if(selectedNodeIndices.length === 1) {
     const node = pointsCache[selectedNodeIndices[0]]
-    if(node && node.hasOwnProperty('__range')) {
+    if(node && node.hasOwnProperty('__meta')) {
       ctx.vscode.postMessage({
         command: 'selectLine',
         range: node.__meta.range,

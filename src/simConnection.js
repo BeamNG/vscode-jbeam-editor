@@ -64,7 +64,7 @@ function openFileInWorkspace(filePath, gotoRange = null) {
     if(gotoRange) {
       const start = new vscode.Position(gotoRange[0], gotoRange[1]);
       //const end = new vscode.Position(gotoRange[2], gotoRange[3]);
-      gotoRange = new vscode.Range(start, start) // end);  
+      gotoRange = new vscode.Range(start, start) // end);
     }
     if(!path.relative(rootPath, filePath)) {
       console.error(`unable to open file ${filePath} - not part of the workspace!`)
@@ -94,7 +94,7 @@ function onData(msg) {
       sendData({cmd:'getPlayerVehicleInfo'})
     }
     return
-  
+
   } else if(msg.cmd == 'playerVehicleInfo') {
     simPlayerVehicleInfo = msg.data
     console.log('Got player info: ', simPlayerVehicleInfo, syncing)
@@ -102,11 +102,11 @@ function onData(msg) {
       const namespace = `/vehicles/${simPlayerVehicleInfo.jbeam}`
       if(archivar.partData[namespace]) {
         let mainPart = archivar.partData[namespace][simPlayerVehicleInfo.jbeam]
-        if(mainPart.__source) {
-          openFileInWorkspace(mainPart.__source, mainPart.__range)
+        if(mainPart.__meta.source) {
+          openFileInWorkspace(mainPart.__meta.source, mainPart.__meta.range)
         }
       }
-      
+
       extensionContext.globalState.update('syncing', false);
     }
     return
@@ -116,7 +116,7 @@ function onData(msg) {
 
 function _onRawData(data) {
   buffer += data
-  
+
   let nullCharIndex;
   while ((nullCharIndex = buffer.indexOf('\0')) !== -1) {
     const message = buffer.substring(0, nullCharIndex);
@@ -133,12 +133,12 @@ function _onRawData(data) {
 }
 
 function sendPing() {
-  sendData({cmd:'ping'}) 
+  sendData({cmd:'ping'})
 }
 
 
 function selectNodes(nodes) {
-  sendData({cmd:'selectNodes', nodes: nodes}) 
+  sendData({cmd:'selectNodes', nodes: nodes})
 }
 
 function connectToServer() {
