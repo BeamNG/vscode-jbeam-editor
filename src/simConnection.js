@@ -102,7 +102,7 @@ function onData(msg) {
       const namespace = `/vehicles/${simPlayerVehicleInfo.jbeam}`
       if(archivar.partData[namespace]) {
         let mainPart = archivar.partData[namespace][simPlayerVehicleInfo.jbeam]
-        if(mainPart.__meta.source) {
+        if(mainPart.__meta && mainPart.__meta.source) {
           openFileInWorkspace(mainPart.__meta.source, mainPart.__meta.range)
         }
       }
@@ -126,7 +126,7 @@ function _onRawData(data) {
       const parsedMessage = JSON.parse(message);
       onData(parsedMessage)
     } catch (e) {
-      console.error('Unable to decode JSON: ', message);
+      console.error('eexception while parsing JSON from simconnection: ', parsedMessage, e.message);
       throw e
     }
   }
