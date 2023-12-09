@@ -102,8 +102,8 @@ function onData(msg) {
       const namespace = `/vehicles/${simPlayerVehicleInfo.jbeam}`
       if(archivar.partData[namespace]) {
         let mainPart = archivar.partData[namespace][simPlayerVehicleInfo.jbeam]
-        if(mainPart.__meta && mainPart.__meta.source) {
-          openFileInWorkspace(mainPart.__meta.source, mainPart.__meta.range)
+        if(mainPart.__meta && mainPart.__meta.origin) {
+          openFileInWorkspace(mainPart.__meta.origin, mainPart.__meta.range)
         }
       }
 
