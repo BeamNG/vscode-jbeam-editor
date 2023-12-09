@@ -47,16 +47,35 @@ const beamngCommandPipe = '\\\\.\\pipe\\BEAMNGCOMMANDLISTENER'
 const commandschemeWakeupMessage = 'beamng:v1/startToolchainServer'
 
 let client
-let buffer = ''
+let buffer = Buffer.alloc(0); // Ensure buffer is initialized as a Buffer
 let siminfo
 let simPlayerVehicleInfo
 let extensionContext
 let statusBarItem
 
 function sendData(data) {
-  if(!client) return
-  client.write(JSON.stringify(data) + '\0')
+  if (!client) return;
+
+  const jsonData = JSON.stringify(data);
+  const messageLength = Buffer.byteLength(jsonData, 'utf8') + 1; // +1 for the null character
+  const messageIdentifier = 'BN01';
+
+  // Create a buffer for the identifier, message length, JSON data, and the null character
+  const buffer = Buffer.alloc(8 + messageLength);
+
+  // Write the identifier and message length to the buffer
+  buffer.write(messageIdentifier, 0, 'ascii');
+  buffer.writeUInt32LE(messageLength, 4); // Write length in little-endian format
+  // Write the JSON data to the buffer
+  buffer.write(jsonData, 8, 'utf8');
+
+  // Add the null character at the end
+  buffer.write('\0', 8 + messageLength - 1);
+
+  // Send the buffer data
+  client.write(buffer);
 }
+
 
 function openFileInWorkspace(filePath, gotoRange = null) {
   let rootPath = utilsExt.getRootpath()
@@ -115,19 +134,35 @@ function onData(msg) {
 }
 
 function _onRawData(data) {
-  buffer += data
+  // Convert data to Buffer if it's not already one
+  const dataBuffer = Buffer.isBuffer(data) ? data : Buffer.from(data);
 
-  let nullCharIndex;
-  while ((nullCharIndex = buffer.indexOf('\0')) !== -1) {
-    const message = buffer.substring(0, nullCharIndex);
-    buffer = buffer.substring(nullCharIndex + 1); // Remove processed message from buffer
+  // Append new data to the existing buffer
+  buffer = Buffer.concat([buffer, dataBuffer]);
+
+  // Process each complete message in the buffer
+  while (buffer.length >= 8) { // Ensure there's enough data for identifier and length
+    const messageIdentifier = buffer.toString('ascii', 0, 4);
+    if (messageIdentifier !== 'BN01') {
+      console.error('Invalid message identifier:', messageIdentifier);
+      throw new Error('Invalid message identifier');
+    }
+
+    const messageLength = buffer.readUInt32LE(4); // Correctly read length from Buffer
+
+    // Check if the entire message (including null character) has been received
+    if (buffer.length < 8 + messageLength) break;
+
+    // Extract the JSON message (excluding the null character)
+    const message = buffer.toString('utf8', 8, 8 + messageLength - 1);
+    buffer = buffer.slice(8 + messageLength); // Update buffer to remove processed message
 
     try {
       const parsedMessage = JSON.parse(message);
-      onData(parsedMessage)
+      onData(parsedMessage);
     } catch (e) {
-      console.error('eexception while parsing JSON from simconnection: ', parsedMessage, e.message);
-      throw e
+      console.error('Exception while parsing JSON from simconnection: ', message, e.message);
+      throw e;
     }
   }
 }
