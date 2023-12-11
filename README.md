@@ -146,6 +146,14 @@ If all worked, it should show up like this now:
 
 ## Release Notes
 
+### 0.3.2
+* Bugfixes:
+  * fixed tooltip textures not updating correctly
+  * improved label scaling
+  * improved error handling on sim sync
+  * fixed CTRL + SHIFT + P : "Sync with simulation"
+  * improved simconnection protocol to have message identifiers and lengths
+
 ### 0.3.1
 * Bugfixes:
   * fixed node selection scrolling the viewport when leaving and re-entering the 3D view
