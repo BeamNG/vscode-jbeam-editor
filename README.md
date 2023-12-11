@@ -4,6 +4,8 @@ This is a lightweight visualizer and tool for working with the physics definitio
 
 ![](assets/meshMultiselect.gif)
 
+[Install via the Visual Studio Code marketplace here](https://marketplace.visualstudio.com/items?itemName=beamng.jbeam-editor)
+
 
 # ⚠️ Experimental ⚠️
 
