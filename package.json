@@ -98,7 +98,8 @@
       {
         "id": "beamng-log",
         "aliases": ["BeamNG Log", "beamng-log"],
-        "extensions": ["beamng.log", "beamng.1.log", "beamng.2.log", "beamng.3.log"],
+        "extensions": ["beamng*.log", "beamng.1.log", "beamng.2.log", "beamng.3.log"],
+        "filenamePatterns": ["beamng*.log"],
         "configuration": "./syntaxes/beamng-log-language-configuration.json"
       },
       {
