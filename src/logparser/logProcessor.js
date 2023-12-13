@@ -22,14 +22,12 @@ function processLogDocument(document) {
       const args = line.split('|', 4)
       if(args.length != 4) continue
 
-      let severity
-      if(args[1] == 'D') continue // shortcut, most common case
-      else if(args[1] == 'E') severity = vscode.DiagnosticSeverity.Error
-      else if(args[1] == 'W') severity = vscode.DiagnosticSeverity.Warning
-      else if(args[1] == 'I' && pareInfo) severity = vscode.DiagnosticSeverity.Information
+      let severity = vscode.DiagnosticSeverity.Hint
+      if(args[1] === 'D') continue // shortcut, most common case
+      else if(args[1] === 'E') severity = vscode.DiagnosticSeverity.Error
+      else if(args[1] === 'W') severity = vscode.DiagnosticSeverity.Warning
+      else if(args[1] === 'I' && pareInfo) severity = vscode.DiagnosticSeverity.Information
 
-      // ignore debug things
-      if(!severity) continue
 
       const message = (args[2] ? args[2] : "") + ": " + (args[3] && args[3].length > 1) ? args[3].substring(1) : 'No message provided';
 
