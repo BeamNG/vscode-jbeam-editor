@@ -45,7 +45,7 @@ function processJbeamFile(filename) {
   if(contentTextUtf8) {
     let dataBundle
     try {
-      dataBundle = sjsonParser.decodeWithMeta(contentTextUtf8, filename)
+      dataBundle = sjsonParser.decodeWithMeta(contentTextUtf8, filename, false) // false to be able to json encode
       if(dataBundle.errors.length > 0) {
         for(let e of dataBundle.errors) {
           const pos = new vscode.Position(
@@ -75,18 +75,40 @@ function processJbeamFile(filename) {
       if(!jbeamFileData[namespace]) {
         jbeamFileData[namespace] = {}
       }
+
+      let [tableInterpretedData, diagnosticsTable] = tableSchema.processAllParts(dataBundle.data)
+      for (const w of diagnosticsTable) {
+        // w[0] = type: error/warning
+        // w[1] = message
+        // w[2] = range = [linefrom, positionfrom, lineto, positionto]
+        const diagnostic = new vscode.Diagnostic(
+          new vscode.Range(new vscode.Position(w[2][0], w[2][1]), new vscode.Position(w[2][2], w[2][3])),
+          w[1],
+          w[0] == 'warning' ? vscode.DiagnosticSeverity.Warning : vscode.DiagnosticSeverity.Error
+        );
+        diagnosticsList.push(diagnostic);
+      }
+
+      dataBundle.tableInterpretedData = tableInterpretedData
+
       jbeamFileData[namespace][filename] = dataBundle
       //console.log(`${filename} [${namespace}] contains ${Object.keys(dataBundle.data).length} parts ...`);
 
 
       let partNames = Object.keys(dataBundle.data).filter(key => key !== '__meta')
       for(let partName of partNames) {
-        const part = dataBundle.data[partName]
-        part.__meta.origin = filename
+        const partRaw = dataBundle.data[partName]
+        if(partRaw) {
+          partRaw.__meta.origin = filename
+        }
+        const partInterpreted = dataBundle.tableInterpretedData[partName]
+        if(partInterpreted) {
+          partInterpreted.__meta.origin = filename
+        }
         if(!partData[namespace]) {
           partData[namespace] = {}
         }
-        partData[namespace][partName] = part
+        partData[namespace][partName] = { 'raw': partRaw, 'interpreted': partInterpreted}
         partCounter++
       }
     } else {
@@ -191,8 +213,26 @@ function activate(context) {
 function deactivate() {
 }
 
+function findNodeByNameInAllParts(nodeName) {
+  for(let namespace in partData) {
+    for(let partName in partData[namespace]) {
+      let part = partData[namespace][partName].interpreted
+      //console.log(`${namespace} : ${partName}`)
+      if(part.nodes && part.nodes[nodeName]) {
+        let node = part.nodes[nodeName]
+        node.__meta.partOrigin = partName
+        node.__meta.partNamespace = namespace
+        node.__meta.origin = part.__meta.origin
+        return node
+      }
+    }
+  }
+  return null
+}
+
 module.exports = {
   activate,
   deactivate,
   partData,
+  findNodeByNameInAllParts,
 }

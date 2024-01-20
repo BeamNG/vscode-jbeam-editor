@@ -24,6 +24,7 @@ function highlightNodeinTextEditor() {
       ctx.vscode.postMessage({
         command: 'selectLine',
         range: node.__meta.range,
+        origin: node.__meta.origin,
         uri: uri,
       });
       //console.log(">postMessage>", node.__meta.range)
@@ -174,6 +175,36 @@ function updateNodeViz(moveCamera) {
           nodeCounter++
           node.pos3d = new THREE.Vector3(x, y, z)
           pointsCache.push(node)
+        }
+      }
+      if('virtualNodes' in part) {
+        for (let nodeId in part.virtualNodes) {
+          let node = part.virtualNodes[nodeId]
+          // node.pos contains [x, y, z]
+          if(node.hasOwnProperty('pos')) {
+            const x = node.pos[0]
+            vertexPositions.push(x)
+            sum.x += x
+            if(x < nodesMin.x) nodesMin.x = x
+            else if(x > nodesMax.x) nodesMax.x = x
+
+            const y = node.pos[1]
+            vertexPositions.push(y)
+            sum.y += y
+            if(y < nodesMin.y) nodesMin.y = y
+            else if(y > nodesMax.y) nodesMax.y = y
+
+            const z = node.pos[2]
+            vertexPositions.push(z)
+            sum.z += z
+            if(z < nodesMin.z) nodesMin.z = z
+            else if(z > nodesMax.z) nodesMax.z = z
+
+            nodeCounter++
+            node.pos3d = new THREE.Vector3(x, y, z)
+            node.virtual = true
+            pointsCache.push(node)
+          }
         }
       }
 

@@ -51,6 +51,25 @@ function checkQuotesWithoutNewlineInLine(text, position) {
   return noNewLineBeforeQuote(firstHalfReversed) && noNewLineBeforeQuote(secondHalf);
 }
 
+function openFileInWorkspace(filePath, gotoRange = null) {
+  let rootPath = getRootpath()
+  if (rootPath) {
+    if(gotoRange) {
+      const start = new vscode.Position(gotoRange[0], gotoRange[1]);
+      //const end = new vscode.Position(gotoRange[2], gotoRange[3]);
+      gotoRange = new vscode.Range(start, start) // end);
+    }
+    if(!path.relative(rootPath, filePath)) {
+      console.error(`unable to open file ${filePath} - not part of the workspace!`)
+      return
+    }
+
+    const fileUri = vscode.Uri.file(filePath)
+    vscode.window.showTextDocument(fileUri, {selection: gotoRange});
+  }
+}
+
+
 module.exports = {
   convertUri,
   getNamespaceFromFilename,
@@ -58,4 +77,5 @@ module.exports = {
   getRootpath,
   deepCloneAndRemoveKeys,
   checkQuotesWithoutNewlineInLine,
+  openFileInWorkspace,
 }

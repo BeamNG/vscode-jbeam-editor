@@ -19,7 +19,7 @@ function getPartnamesForNamespaces(namespaces, slotName, callback) {
     }
 
     for(let partName in archivar.partData[namespace]) {
-      const part = archivar.partData[namespace][partName]
+      const part = archivar.partData[namespace][partName].raw
       if(part.slotType !== slotName) continue
       let relPath
       if(rootpath) {
@@ -57,9 +57,9 @@ function debugHighlight(document, range, type) {
 
   if(!range) {
     editor.setDecorations(highlights[type], []);
-    return  
+    return
   }
-  
+
   const start = new vscode.Position(range[0], range[1]);
   const end = new vscode.Position(range[2], range[3]);
   const rangeToHighlight = new vscode.Range(start, end);
@@ -79,7 +79,7 @@ class PartConfigCompletionProvider {
     if(range) {
       word = document.getText(range)
     }
-    
+
     let isInQuotes = utilsExt.checkQuotesWithoutNewlineInLine(text, position)
 
     let dataBundle = sjsonParser.decodeWithMeta(text)
@@ -150,7 +150,7 @@ function subscribeToDocumentChanges(context, diagnostics) {
   if (vscode.window.activeTextEditor) {
     validateTextDocument(vscode.window.activeTextEditor.document);
   }
-  
+
   // Check the document when it's saved
   context.subscriptions.push(
     vscode.workspace.onDidSaveTextDocument(validateTextDocument)

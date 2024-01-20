@@ -18,13 +18,26 @@ function updateBeamViz() {
       for (let beamId in part.beams) {
         let beam = part.beams[beamId];
         //console.log(">beam>", beam, part.nodes[beam['id1:']])
-        if (part.nodes && beam['id1:'] in part.nodes && beam['id2:'] in part.nodes) {
-          let node1 = part.nodes[beam['id1:']]
-          beam.node1 = node1
-          let node2 = part.nodes[beam['id2:']]
-          beam.node2 = node2
-
+        if (part.nodes) {
+          let node1
+          let beamVirtual = false
+          if(part.nodes && beam['id1:'] in part.nodes) {
+            node1 = part.nodes[beam['id1:']]
+          } else if(part.virtualNodes && beam['id1:'] in part.virtualNodes) {
+            node1 = part.virtualNodes[beam['id1:']]
+            beamVirtual = true
+          }
+          let node2
+          if(part.nodes && beam['id2:'] in part.nodes) {
+            node2 = part.nodes[beam['id2:']]
+          } else if(part.virtualNodes && beam['id2:'] in part.virtualNodes) {
+            node2 = part.virtualNodes[beam['id2:']]
+            beamVirtual = true
+          }
           if (node1 && node2) {
+            beam.node1 = node1
+            beam.node2 = node2
+            beam.virtual = beamVirtual
             beam.nodePos1 = new THREE.Vector3(node1.pos[0], node1.pos[1], node1.pos[2])
             beam.nodePos2 = new THREE.Vector3(node2.pos[0], node2.pos[1], node2.pos[2])
             beamCache.push(beam)
@@ -35,6 +48,8 @@ function updateBeamViz() {
             vertexPositions.push(node2.pos[0])
             vertexPositions.push(node2.pos[1])
             vertexPositions.push(node2.pos[2])
+          } else {
+            console.log(`beam discarded: ${beam}`)
           }
         }
       }
@@ -44,9 +59,17 @@ function updateBeamViz() {
   // Fill arrays with data for each node
   let vertexAlphas = []
   let vertexColors = []
-  for (let i = 0; i < beamNodesCounter; i++) {
+  for (let i = 0; i < beamCache.length; i++) {
+    const beam = beamCache[i]
     vertexAlphas.push(0.5)
-    vertexColors.push(0, 1, 0)
+    vertexAlphas.push(0.5)
+    if(beam.virtual) {
+      vertexColors.push(0, 1, 1)
+      vertexColors.push(0, 1, 1)
+    } else {
+      vertexColors.push(0, 1, 0)
+      vertexColors.push(0, 1, 0)
+    }
   }
 
   let lineGeometry
@@ -125,9 +148,15 @@ function onMouseMove(event) {
     alphasAttribute.setX(i*2  , 1.0 - (normalizedDistance * 0.6))
     alphasAttribute.setX(i*2+1, 1.0 - (normalizedDistance * 0.6))
 
-    let color = getColorFromDistance(distance, maxDistance, 0x88dd88, 0x00ff00)
-    colorsAttribute.setXYZ(i*2  , color.r, color.g, color.b)
-    colorsAttribute.setXYZ(i*2+1, color.r, color.g, color.b)
+    if(beamCache[i].virtual) {
+      let color = getColorFromDistance(distance, maxDistance, 0x88dddd, 0x00ffff)
+      colorsAttribute.setXYZ(i*2  , color.r, color.g, color.b)
+      colorsAttribute.setXYZ(i*2+1, color.r, color.g, color.b)
+    } else {
+      let color = getColorFromDistance(distance, maxDistance, 0x88dd88, 0x00ff00)
+      colorsAttribute.setXYZ(i*2  , color.r, color.g, color.b)
+      colorsAttribute.setXYZ(i*2+1, color.r, color.g, color.b)
+    }
   }
   alphasAttribute.needsUpdate = true
   colorsAttribute.needsUpdate = true
@@ -165,8 +194,13 @@ function focusBeams(beamsArrToFocus, triggerEditor = true) {
     }
     alphasAttribute.setX(i*2, 0.1)
     alphasAttribute.setX(i*2 + 1, 0.1)
-    colorsAttribute.setXYZ(i*2, 0, 1, 0);
-    colorsAttribute.setXYZ(i*2 + 1, 0, 1, 0);
+    if(beam.virtual) {
+      colorsAttribute.setXYZ(i*2, 0, 1, 1);
+      colorsAttribute.setXYZ(i*2 + 1, 0, 1, 1);
+    } else {
+      colorsAttribute.setXYZ(i*2, 0, 1, 0);
+      colorsAttribute.setXYZ(i*2 + 1, 0, 1, 0);
+    }
   }
   alphasAttribute.needsUpdate = true;
   colorsAttribute.needsUpdate = true;
@@ -204,6 +238,8 @@ function onCursorChangeEditor(message) {
     }
   }
 
+  console.log(message.range, beamsFound, beamCache)
+
   focusBeams(beamsFound, false)
 }
 
@@ -215,6 +251,7 @@ function onReceiveMessage(event) {
       jbeamData = message.data
       selectedBeamIndices = null
       currentPartName = null
+      //console.log("GOT DATA: ", jbeamData)
       updateBeamViz()
       break;
     case 'cursorChanged':

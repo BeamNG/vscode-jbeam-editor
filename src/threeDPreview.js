@@ -5,6 +5,7 @@ const sjsonParser = require('./json/sjsonParser');
 const tableSchema = require('./json/tableSchema');
 const utilsExt = require('./utilsExt');
 const simConnection = require('./simConnection');
+const archivar = require('./archivar');
 
 let meshCache = {}
 let extensionContext // context from activate
@@ -188,7 +189,11 @@ function show3DSceneCommand() {
       //console.log('ext.onDidReceiveMessage', message)
       switch (message.command) {
         case 'selectLine':
-          onGoToLineAndDecorate(message);
+          if(message.origin) {
+            utilsExt.openFileInWorkspace(message.origin, message.range)
+          } else {
+            onGoToLineAndDecorate(message)
+          }
           break;
         case 'resetSelection':
           onResetSelection(message);
@@ -247,16 +252,56 @@ function show3DSceneCommand() {
         partNameFound = partName
         for (let sectionName in part) {
           const section = part[sectionName]
-          if(!section.__meta.range) continue
-          if (range[0] >= section.__meta.range[0] && range[0] <= section.__meta.range[2]) {
-            sectionNameFound = sectionName
-            break
+          if(section.__meta.range) {
+            if (range[0] >= section.__meta.range[0] && range[0] <= section.__meta.range[2]) {
+              sectionNameFound = sectionName
+              break
+            }
           }
         }
         break
       }
     }
     return [partNameFound, sectionNameFound]
+  }
+
+  function improveJbeamData(dataBundle) {
+
+    // ok, lets try to find any node references throughout the file that are in other files so we can make sense of them
+    for(let partName in dataBundle.tableInterpretedData) {
+      let part = dataBundle.tableInterpretedData[partName]
+      for(let sectionName in part) {
+        for(let itemKey in part[sectionName]) {
+          let item = part[sectionName][itemKey]
+          for(let itemKey in item) {
+            let itemkeyParts = itemKey.split(':')
+            if(itemkeyParts.length > 1) {
+              if(itemkeyParts[0] !== '[group]' && itemkeyParts[1] === '' || itemkeyParts[1] === 'nodes') {
+                // found a node link, lets see if its present in this part
+                const nodeName = item[itemKey]
+                if(typeof nodeName === 'string') {
+                  if(part.nodes && part.nodes[nodeName]) {
+                    // node found in part
+                  } else {
+                    // node not found in part
+                    let foundNode = archivar.findNodeByNameInAllParts(nodeName)
+                    if(foundNode) {
+                      console.log(`${item} = ${foundNode}`)
+                      if(part.virtualNodes === undefined) {
+                        part.virtualNodes = {}
+                      }
+                      part.virtualNodes[nodeName] = foundNode
+                    }
+                  }
+                } else {
+                  //console.log(`unsupported node type: ${item}`)
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   }
 
   function parseAndPostData(editor, updatedOnly = false) {
@@ -284,6 +329,8 @@ function show3DSceneCommand() {
 
       const range = [selection.start.line, selection.start.character, selection.end.line, selection.end.character]
       let [partNameFound, sectionNameFound] = getPartAndSectionName(tableInterpretedData, range)
+
+      improveJbeamData(dataBundle)
 
       webPanel.webview.postMessage({
         command: 'jbeamData',
