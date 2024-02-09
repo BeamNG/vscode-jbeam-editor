@@ -29,6 +29,7 @@
   An object containing the following properties:
   - `data`: The parsed SJSON data.
   - `errors`: An array of parsing errors, if any.
+  - `warnings`: An array of parsing warnings, if any.
   - `metaData`: An array of metadata entries associated with the parsed data.
   - `lineData`: A cache of metadata entries indexed by line number for quick access.
 
@@ -193,6 +194,7 @@ function decodeWithMeta(s, origin, cyclicDependencies = true) {
   let lineNumber = 0
   let columnNumber = 0
   let errors = []
+  let warnings = []
   let abortExecution = false
   let metaData = []
 
@@ -211,9 +213,13 @@ function decodeWithMeta(s, origin, cyclicDependencies = true) {
 
   let i = 0;
 
-  function jsonError(msg) {
-    errors.push({message: msg, range:[lineNumber, columnNumber, lineNumber, columnNumber]})
+  function jsonError(msg, startLineNumber=lineNumber, startColumnNumber=columnNumber, endLineNumber=lineNumber, endColumnNumber=columnNumber) {
+    errors.push({message: msg, range:[startLineNumber, startColumnNumber, endLineNumber, endColumnNumber]})
     abortExecution = true
+  }
+
+  function jsonWarning(msg, startLineNumber=lineNumber, startColumnNumber=columnNumber, endLineNumber=lineNumber, endColumnNumber=columnNumber) {
+    warnings.push({message: msg, range:[startLineNumber, startColumnNumber, endLineNumber, endColumnNumber]})
   }
 
   function addMetadata(data) {
@@ -413,7 +419,11 @@ function decodeWithMeta(s, origin, cyclicDependencies = true) {
       if(cyclicDependencies) {
         keyMeta.parent = meta
       }
+      const startLineNumber = lineNumber, startColumnNumber = columnNumber
       const key = readString()
+      if (key in obj) {
+        jsonWarning('Duplicate key', startLineNumber, startColumnNumber)
+      }
       keyMeta.range[2] = lineNumber
       keyMeta.range[3] = columnNumber
       keyMeta.value = key
@@ -491,6 +501,7 @@ function decodeWithMeta(s, origin, cyclicDependencies = true) {
     // data
     data: values,
     errors: errors,
+    warnings: warnings,
     metaData: metaData,
     lineData: lineData,
 
@@ -515,21 +526,45 @@ function decodeWithMetaWithDiagnostics(contentTextUtf8, filename) {
     );
     diagnosticsList.push(diagnostic);
   }
-
-  if(dataBundle && dataBundle.errors && dataBundle.errors.length > 0) {
-    for(let e of dataBundle.errors) {
-      const pos = new vscode.Position(
-        e.range ? e.range[0] : e.line ? e.line : 0,
-        e.range ? e.range[1] : e.column ? e.column : 0
-      )
-      const diagnostic = new vscode.Diagnostic(
-        new vscode.Range(pos, pos),
-        `Json error: ${e.message}`,
-        vscode.DiagnosticSeverity.Error
-      );
-      diagnosticsList.push(diagnostic);
+  if (dataBundle) {
+    if(dataBundle.errors && dataBundle.errors.length > 0) {
+      for(let e of dataBundle.errors) {
+        const startPos = new vscode.Position(
+          e.range ? e.range[0] : e.line ? e.line : 0,
+          e.range ? e.range[1] : e.column ? e.column : 0
+        )
+        const endPos = new vscode.Position(
+          e.range ? e.range[2] : e.line ? e.line : 0,
+          e.range ? e.range[3] : e.column ? e.column : 0
+        )
+        const diagnostic = new vscode.Diagnostic(
+          new vscode.Range(startPos, endPos),
+          `Json error: ${e.message}`,
+          vscode.DiagnosticSeverity.Error
+        );
+        diagnosticsList.push(diagnostic);
+      }
+    }
+    if(dataBundle.warnings && dataBundle.warnings.length > 0) {
+      for(let w of dataBundle.warnings) {
+        const startPos = new vscode.Position(
+          w.range ? w.range[0] : w.line ? w.line : 0,
+          w.range ? w.range[1] : w.column ? w.column : 0
+        )
+        const endPos = new vscode.Position(
+          w.range ? w.range[2] : w.line ? w.line : 0,
+          w.range ? w.range[3] : w.column ? w.column : 0
+        )
+        const diagnostic = new vscode.Diagnostic(
+          new vscode.Range(startPos, endPos),
+          `Json warning: ${w.message}`,
+          vscode.DiagnosticSeverity.Warning
+        );
+        diagnosticsList.push(diagnostic);
+      }
     }
   }
+  
   dataBundle.diagnosticsList = diagnosticsList
   return dataBundle
 }
