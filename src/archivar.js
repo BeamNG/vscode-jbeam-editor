@@ -81,8 +81,12 @@ function processJbeamFile(filename) {
         // w[0] = type: error/warning
         // w[1] = message
         // w[2] = range = [linefrom, positionfrom, lineto, positionto]
+        let linefrom = 0, positionfrom = 0, lineto = 0, positionto = 0
+        if (w[2]) {
+          linefrom = w[2][0], positionfrom = w[2][1], lineto = w[2][2], positionto = w[2][3]
+        }
         const diagnostic = new vscode.Diagnostic(
-          new vscode.Range(new vscode.Position(w[2][0], w[2][1]), new vscode.Position(w[2][2], w[2][3])),
+          new vscode.Range(new vscode.Position(linefrom, positionfrom), new vscode.Position(lineto, positionto)),
           w[1],
           w[0] == 'warning' ? vscode.DiagnosticSeverity.Warning : vscode.DiagnosticSeverity.Error
         );

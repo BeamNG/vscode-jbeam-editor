@@ -86,8 +86,8 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, diagnostics
     // empty section
     return 0
   }
-  if (typeof header !== "object" || header.__meta.type !== 'array') {
-    diagnostics.push(['error', 'Invalid table header', header.__meta.range])
+  if (typeof header !== "object") {
+    diagnostics.push(['error', 'Invalid table header', header.__meta?.range])
     return -1
   }
 
@@ -112,7 +112,7 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, diagnostics
   for (const rowKey of keys) {
     let rowValue = jbeamTable[rowKey];
     if (typeof rowValue !== "object") {
-      diagnostics.push(['error', 'Invalid table row', rowValue.__meta.range])
+      diagnostics.push(['error', 'Invalid table row', rowValue.__meta?.range])
       return -1
     }
     if (rowValue.__meta.type !== 'array') {
@@ -128,7 +128,7 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, diagnostics
           diagnostics.push(['error', `Inline option (argument ${headerSize + 1}) need to be a dict, not a ${typeof rowValue[headerSize]}: ${rowValue[headerSize]}`, rowValue.__meta.range])
         }
       } else if (rowSize > headerSize + 1) {
-        let msg = 1`Invalid table header, must be as long as all table cells (plus one additional options column):\n`;
+        let msg = `Invalid table header, must be as long as all table cells (plus one additional options column):\n`;
         msg += `Table header: ${JSON.stringify(header)}\n`
         msg += `Mismatched row: ${JSON.stringify(rowValue)}`
         diagnostics.push(['error', msg, rowValue.__meta.range])
