@@ -159,13 +159,14 @@ function removeJbeamFileData(filename) {
   if (!jbeamFileData || !jbeamFileData[namespace] || !jbeamFileData[namespace][filename]) {
     return
   }
-  for(let partName in jbeamFileData[namespace][filename]) {
+  for(let partName in jbeamFileData[namespace][filename].data) {
     if(partData[namespace][partName]) {
       delete(partData[namespace][partName])
       partCounter--
     }
   }
   delete(jbeamFileData[namespace][filename])
+  jbeamFileCounter--
   //console.log(`Deleted ${deletedParts} parts from file ${filename}`)
 }
 
