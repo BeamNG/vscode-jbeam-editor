@@ -46,20 +46,43 @@ function processJbeamFile(filename) {
     let dataBundle
     try {
       dataBundle = sjsonParser.decodeWithMeta(contentTextUtf8, filename, false) // false to be able to json encode
-      if(dataBundle.errors.length > 0) {
-        for(let e of dataBundle.errors) {
-          const pos = new vscode.Position(
-            e.range ? e.range[0] : e.line ? e.line : 0,
-            e.range ? e.range[1] : e.column ? e.column : 0
-          )
-          const diagnostic = new vscode.Diagnostic(
-            new vscode.Range(pos, pos),
-            `Error parsing json file ${filename}`,
-            vscode.DiagnosticSeverity.Error
-          );
-          diagnosticsList.push(diagnostic);
+      if (dataBundle) {
+        if(dataBundle.errors && dataBundle.errors.length > 0) {
+          for(let e of dataBundle.errors) {
+            const startPos = new vscode.Position(
+              e.range ? e.range[0] : e.line ? e.line : 0,
+              e.range ? e.range[1] : e.column ? e.column : 0
+            )
+            const endPos = new vscode.Position(
+              e.range ? e.range[2] : e.line ? e.line : 0,
+              e.range ? e.range[3] : e.column ? e.column : 0
+            )
+            const diagnostic = new vscode.Diagnostic(
+              new vscode.Range(startPos, endPos),
+              `Json error: ${e.message}`,
+              vscode.DiagnosticSeverity.Error
+            );
+            diagnosticsList.push(diagnostic);
+          }
         }
-
+        if(dataBundle.warnings && dataBundle.warnings.length > 0) {
+          for(let w of dataBundle.warnings) {
+            const startPos = new vscode.Position(
+              w.range ? w.range[0] : w.line ? w.line : 0,
+              w.range ? w.range[1] : w.column ? w.column : 0
+            )
+            const endPos = new vscode.Position(
+              w.range ? w.range[2] : w.line ? w.line : 0,
+              w.range ? w.range[3] : w.column ? w.column : 0
+            )
+            const diagnostic = new vscode.Diagnostic(
+              new vscode.Range(startPos, endPos),
+              `Json warning: ${w.message}`,
+              vscode.DiagnosticSeverity.Warning
+            );
+            diagnosticsList.push(diagnostic);
+          }
+        }
         //console.error(`Error parsing json file ${filename} - ${JSON.stringify(dataBundle.errors, null, 2)}`)
       }
     } catch (e) {
@@ -81,8 +104,12 @@ function processJbeamFile(filename) {
         // w[0] = type: error/warning
         // w[1] = message
         // w[2] = range = [linefrom, positionfrom, lineto, positionto]
+        let linefrom = 0, positionfrom = 0, lineto = 0, positionto = 0
+        if (w[2]) {
+          linefrom = w[2][0], positionfrom = w[2][1], lineto = w[2][2], positionto = w[2][3]
+        }
         const diagnostic = new vscode.Diagnostic(
-          new vscode.Range(new vscode.Position(w[2][0], w[2][1]), new vscode.Position(w[2][2], w[2][3])),
+          new vscode.Range(new vscode.Position(linefrom, positionfrom), new vscode.Position(lineto, positionto)),
           w[1],
           w[0] == 'warning' ? vscode.DiagnosticSeverity.Warning : vscode.DiagnosticSeverity.Error
         );
@@ -132,13 +159,14 @@ function removeJbeamFileData(filename) {
   if (!jbeamFileData || !jbeamFileData[namespace] || !jbeamFileData[namespace][filename]) {
     return
   }
-  for(let partName in jbeamFileData[namespace][filename]) {
+  for(let partName in jbeamFileData[namespace][filename].data) {
     if(partData[namespace][partName]) {
       delete(partData[namespace][partName])
       partCounter--
     }
   }
   delete(jbeamFileData[namespace][filename])
+  jbeamFileCounter--
   //console.log(`Deleted ${deletedParts} parts from file ${filename}`)
 }
 
