@@ -102,7 +102,7 @@ class JBeamHoverProvider {
 
       let metaRaw = sjsonParser.getMetaForCurAnyData(dataBundle.data, position.line, position.character, document.uri, 'raw', 1)
       if(!metaRaw || metaRaw.length == 0) {
-        console.log('unable to get data below cursor: ', document.uri.fsPath, text, position)
+        console.log('unable to get data below cursor: ', document.uri.fsPath, word, position)
         return
       }
 

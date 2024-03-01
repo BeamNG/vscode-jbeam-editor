@@ -23,7 +23,7 @@
 */
 const vscode = require('vscode');
 const threeDPreview = require('./threeDPreview');
-//const jbeamSyntaxChecker = require('./jbeam/syntaxChecker');
+const jbeamSyntaxChecker = require('./jbeam/syntaxChecker');
 const jbeamSymbolProviderExt = require('./jbeam/symbolProvider');
 const jbeamHoverProvider = require('./jbeam/hoverProvider');
 const logProcessor = require('./logparser/logProcessor');
@@ -47,7 +47,7 @@ function activate(context) {
 
     if (event.affectsConfiguration('jbeam-editor')) {
       threeDPreview.deactivate()
-      //jbeamSyntaxChecker.deactivate()
+      jbeamSyntaxChecker.deactivate()
       jbeamSymbolProviderExt.deactivate()
       jbeamHoverProvider.deactivate()
       archivar.deactivate()
@@ -56,7 +56,7 @@ function activate(context) {
 
       archivar.activate(context)
       threeDPreview.activate(context)
-      //jbeamSyntaxChecker.activate(context)
+      jbeamSyntaxChecker.activate(context)
       jbeamSymbolProviderExt.activate(context)
       jbeamHoverProvider.activate(context)
     }
@@ -76,7 +76,7 @@ function activate(context) {
   archivar.activate(context)
   simConnection.activate(context)
   threeDPreview.activate(context)
-  //jbeamSyntaxChecker.activate(context)
+  jbeamSyntaxChecker.activate(context)
   jbeamSymbolProviderExt.activate(context)
   jbeamHoverProvider.activate(context)
   logProcessor.activate(context)
@@ -88,7 +88,7 @@ function deactivate() {
   archivar.deactivate()
   simConnection.deactivate()
   threeDPreview.deactivate()
-  //jbeamSyntaxChecker.deactivate()
+  jbeamSyntaxChecker.deactivate()
   jbeamSymbolProviderExt.deactivate()
   jbeamHoverProvider.deactivate()
   dataView.deactivate()

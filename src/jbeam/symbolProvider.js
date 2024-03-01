@@ -20,7 +20,7 @@ class JBeamSymbolProvider {
     let [tableInterpretedData, diagnostics] = tableSchema.processAllParts(dataBundle.data)
 
     for (const [partName, part] of Object.entries(tableInterpretedData)) {
-      if(partName === '__meta' || part.__meta === undefined) continue
+      if(partName === '__meta' || part?.__meta === undefined) continue
       const range = new vscode.Range(
         new vscode.Position(part.__meta.range[0], part.__meta.range[1]),
         new vscode.Position(part.__meta.range[2], part.__meta.range[3])
