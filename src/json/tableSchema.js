@@ -87,7 +87,7 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, diagnostics
     return 0
   }
   if (typeof header !== "object") {
-    diagnostics.push(['error', 'Invalid table header', header.__meta?.range])
+    diagnostics.push(['error', 'Invalid table header', header?.__meta?.range])
     return -1
   }
 
@@ -112,7 +112,7 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, diagnostics
   for (const rowKey of keys) {
     let rowValue = jbeamTable[rowKey];
     if (typeof rowValue !== "object") {
-      diagnostics.push(['error', 'Invalid table row', rowValue.__meta?.range])
+      diagnostics.push(['error', 'Invalid table row', rowValue?.__meta?.range])
       return -1
     }
     if (rowValue.__meta.type !== 'array') {
@@ -204,6 +204,9 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, diagnostics
 }
 
 function processPart(part, diagnostics) {
+  if (!part || typeof part !== 'object') {
+    return false
+  }
   part.maxIDs = {};
   part.validTables = {};
   part.beams = part.beams || {};
@@ -274,18 +277,22 @@ function processPart(part, diagnostics) {
 function processAllParts(parsedData) {
   let tableInterpretedData = {}
   let diagnostics = [] // contains parsing errors and warnings
-  const keys = Object.keys(parsedData).filter(key => key !== '__meta')
-  for (let partName of keys) {
-    if (!parsedData.hasOwnProperty(partName)) continue;
-    let part = parsedData[partName];
-    let result = processPart(part, diagnostics);
 
-    if (result !== true) {
-      diagnostics.push(['error', `Unable to process part '${partName}'`, part.__meta])
-    }
-    tableInterpretedData[partName] = part
+  if (!parsedData || typeof parsedData !== 'object') {
+    diagnostics.push(['error', `Unable to process parts'`, parsedData?.__meta])
   }
-  tableInterpretedData.__meta = parsedData.__meta
+  else {
+    const keys = Object.keys(parsedData).filter(key => key !== '__meta')
+    for (let partName of keys) {
+      if (!parsedData.hasOwnProperty(partName)) continue;
+      let part = parsedData[partName];
+      if (processPart(part, diagnostics) !== true) {
+        diagnostics.push(['error', `Unable to process part '${partName}'`, part?.__meta])
+      }
+      tableInterpretedData[partName] = part
+    }
+    tableInterpretedData.__meta = parsedData.__meta
+  }
   return [tableInterpretedData, diagnostics]
 }
 

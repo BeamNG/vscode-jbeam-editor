@@ -252,7 +252,7 @@ function show3DSceneCommand() {
         partNameFound = partName
         for (let sectionName in part) {
           const section = part[sectionName]
-          if(section.__meta.range) {
+          if(typeof section === "object" && section.__meta?.range) {
             if (range[0] >= section.__meta.range[0] && range[0] <= section.__meta.range[2]) {
               sectionNameFound = sectionName
               break

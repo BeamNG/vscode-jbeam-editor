@@ -509,11 +509,11 @@ function decodeWithMeta(s, origin, cyclicDependencies = true) {
   }
 }
 
-function decodeWithMetaWithDiagnostics(contentTextUtf8, filename) {
+function decodeWithMetaWithDiagnostics(contentTextUtf8, filename, cyclicDependencies = true) {
   let dataBundle
   let diagnosticsList = []
   try {
-    dataBundle = decodeWithMeta(contentTextUtf8, filename);
+    dataBundle = decodeWithMeta(contentTextUtf8, filename, cyclicDependencies);
   } catch (e) {
     const pos = new vscode.Position(
       e.range ? e.range[0] : e.line ? e.line : 0,
@@ -564,7 +564,7 @@ function decodeWithMetaWithDiagnostics(contentTextUtf8, filename) {
       }
     }
   }
-  
+
   dataBundle.diagnosticsList = diagnosticsList
   return dataBundle
 }
