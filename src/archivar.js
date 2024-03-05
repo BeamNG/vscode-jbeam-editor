@@ -144,7 +144,7 @@ const debounceTime = 50 // milliseconds
 function onFileChangedDebounced(filename) {
   //console.log('onFileChanged', changeType, filename)
   // Don't perform diagnostics on the open file, as syntaxChecker performs the diagnosis, to avoid duplicate error messages
-  let doDiagnostics = filename != vscode.window.activeTextEditor.document.fileName
+  let doDiagnostics = filename != vscode.window.activeTextEditor?.document.fileName
   if(path.extname(filename) == '.jbeam') {
     removeJbeamFileData(filename)
     processJbeamFile(filename, doDiagnostics)
@@ -180,7 +180,7 @@ function loadJbeamFiles() {
   }
 
   const vehiclesPath = vscode.Uri.file(path.join(rootPath, '/vehicles/')).fsPath
-  let openFileName = vscode.window.activeTextEditor.document.fileName
+  let openFileName = vscode.window.activeTextEditor?.document.fileName
   jbeamFileCounter = 0
   partCounter = 0
 
