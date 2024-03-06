@@ -286,7 +286,7 @@ function show3DSceneCommand() {
                     // node not found in part
                     let foundNode = archivar.findNodeByNameInAllParts(nodeName)
                     if(foundNode) {
-                      console.log(`${item} = ${foundNode}`)
+                      //console.log(`${item} = ${foundNode}`)
                       if(part.virtualNodes === undefined) {
                         part.virtualNodes = {}
                       }
