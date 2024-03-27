@@ -78,11 +78,6 @@ function subscribeToDocumentChanges(context, diagnostics) {
     validateTextDocument(vscode.window.activeTextEditor.document);
   }
 
-  // Check the document when it's saved
-  context.subscriptions.push(
-    vscode.workspace.onDidSaveTextDocument(validateTextDocument)
-  );
-
   // Check the document when it's changed
   context.subscriptions.push(
     vscode.workspace.onDidChangeTextDocument(event => {

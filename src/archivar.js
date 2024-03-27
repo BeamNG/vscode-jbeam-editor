@@ -45,9 +45,14 @@ function processJbeamFile(filename, doDiagnostics=true) {
   if(contentTextUtf8) {
     let dataBundle
     try {
-      dataBundle = sjsonParser.decodeWithMetaWithDiagnostics(contentTextUtf8, filename, false)
-      if(dataBundle) {
+      if (doDiagnostics) {
+        dataBundle = sjsonParser.decodeWithMetaWithDiagnostics(contentTextUtf8, filename, false)
+        if(dataBundle) {
           diagnosticsList.push(...dataBundle.diagnosticsList)
+        }
+      }
+      else {
+        dataBundle = sjsonParser.decodeWithMeta(contentTextUtf8, filename, false)
       }
     } catch (e) {
       if (doDiagnostics) {
