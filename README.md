@@ -148,6 +148,14 @@ If all worked, it should show up like this now:
 
 ## Release Notes
 
+### 0.3.3
+* Bugfixes:
+  * fixed syntax checker not working in some cases
+  * fixed displaying duplicate diagnostics
+  * fixed JBeam file/part counter
+* Features:
+  * added ability to detect duplicate dictionary keys
+
 ### 0.3.2
 * Bugfixes:
   * fixed tooltip textures not updating correctly
