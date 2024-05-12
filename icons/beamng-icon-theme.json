@@ -1,17 +1,17 @@
 {
     "iconDefinitions": {
-      "jbeamFileIcon": { "iconPath": "./jbeam.png" },
+      //"jbeamFileIcon": { "iconPath": "./jbeam.png" },
       "imageFileIcon": { "iconPath": "./image.png" },
-      "partconfigFileIcon": { "iconPath": "./config.png" },
+      //"partconfigFileIcon": { "iconPath": "./config.png" },
       "jsonFileIcon": { "iconPath": "./json.png" },
       "meshFileIcon": { "iconPath": "./mesh.png" }
     },
     "fileExtensions": {
-      "jbeam": "jbeamFileIcon",
+      //"jbeam": "jbeamFileIcon",
       "png": "imageFileIcon",
       "jpg": "imageFileIcon",
       "dds": "imageFileIcon",
-      "pc": "partconfigFileIcon",
+      //"pc": "partconfigFileIcon",
       "json": "jsonFileIcon",
       "dae": "meshFileIcon",
     }
