@@ -84,7 +84,11 @@ function focusNodes(nodesArrToFocus, triggerEditor = true) {
     }
     alphasAttribute.setX(i, 0.4)
     sizesAttribute.setX(i, 0.03)
-    colorsAttribute.setXYZ(i, 1, 0.65, 0);
+    if(node.virtual) {
+      colorsAttribute.setXYZ(i, 0, 0, 1);
+    } else {
+      colorsAttribute.setXYZ(i, 1, 0.65, 0);
+    }
   }
   alphasAttribute.needsUpdate = true;
   colorsAttribute.needsUpdate = true;
@@ -235,9 +239,14 @@ function updateNodeViz(moveCamera) {
   let vertexColors = []
   let vertexSizes = []
   // Fill arrays with data for each node
-  for (let i = 0; i < nodeCounter; i++) {
+  for (let i = 0; i < pointsCache.length; i++) {
+    const node = pointsCache[i]
     vertexAlphas.push(1)
-    vertexColors.push(1, 0.65, 0)
+    if(node.virtual) {
+      vertexColors.push(1, 1, 0)
+    } else {
+      vertexColors.push(1, 0.65, 0)
+    }
     vertexSizes.push(0.05)
   }
 
@@ -357,10 +366,15 @@ function resetNodeFocus() {
   const sizesAttribute = pointsObject.geometry.getAttribute('size');
 
   for (let i = 0; i < pointsCache.length; i++) {
+    let node = pointsCache[i]
     if(selectedNodeIndices && selectedNodeIndices.includes(i)) continue
     alphasAttribute.setX(i, 0.3)
     sizesAttribute.setX(i, 0.03)
-    colorsAttribute.setXYZ(i, 1, 0.65, 0);
+    if(node.virtual) {
+      colorsAttribute.setXYZ(i, 0, 0, 1);
+    } else {
+      colorsAttribute.setXYZ(i, 1, 0.65, 0);
+    }
   }
   alphasAttribute.needsUpdate = true;
   colorsAttribute.needsUpdate = true;
@@ -410,7 +424,7 @@ function onMouseMove(event) {
     sizesAttribute.setX(i, Math.max(minSize, Math.min(size, maxSize))); // Clamp size between minSize and maxSize
 
     // Adjust color based on distance
-    const color = getColorFromDistance(distance, maxDistance, 0xFFA500, 0xddA500);
+    const color = point.virtual ? getColorFromDistance(distance, maxDistance, 0x0000dd, 0x0000FF) : getColorFromDistance(distance, maxDistance, 0xddA500, 0xFFA500);
     colorsAttribute.setXYZ(i, color.r, color.g, color.b);
   });
 
