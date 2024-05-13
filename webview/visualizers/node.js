@@ -45,7 +45,11 @@ function updateLabels() {
   for (let i = 0; i < pointsCache.length; i++) {
     if(selectedNodeIndices && !selectedNodeIndices.includes(i)) continue
     const node = pointsCache[i]
-    tooltips.push({ pos3d: node.pos3d, name: `${node.name}`}) //  - ${node.nodeWeight}
+    let text = node.name
+    if (node.virtual) {
+      text += '(v)'
+    }
+    tooltips.push({ pos3d: node.pos3d, name: text}) //  - ${node.nodeWeight}
   }
   if(tooltips.length === 0) return
 
