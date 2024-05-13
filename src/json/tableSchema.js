@@ -49,7 +49,7 @@
 
 const utilsExt = require('../utilsExt');
 
-let ignoreSections = {maxIDs: true, options: true};
+let ignoreSections = {maxIDs: true, options: true, slotType: true};
 
 const specialVals = {
   FLT_MAX: Infinity,
