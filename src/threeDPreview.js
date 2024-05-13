@@ -265,7 +265,7 @@ function show3DSceneCommand() {
     return [partNameFound, sectionNameFound]
   }
 
-  function improveJbeamData(dataBundle) {
+  function improveJbeamData(namespace, dataBundle) {
 
     // ok, lets try to find any node references throughout the file that are in other files so we can make sense of them
     for(let partName in dataBundle.tableInterpretedData) {
@@ -284,7 +284,7 @@ function show3DSceneCommand() {
                     // node found in part
                   } else {
                     // node not found in part
-                    let foundNode = archivar.findNodeByNameInAllParts(nodeName)
+                    let foundNode = archivar.findNodeByNameInAllParts(namespace, nodeName)
                     if(foundNode) {
                       //console.log(`${item} = ${foundNode}`)
                       if(part.virtualNodes === undefined) {
@@ -318,7 +318,10 @@ function show3DSceneCommand() {
     const contentTextUtf8 = document.getText()
     const uri = document.uri.toString()
     try {
-      let dataBundle = sjsonParser.decodeWithMeta(contentTextUtf8, document.uri.fsPath, false)
+      let rootPath = utilsExt.getRootpath()
+      let filename = document.uri.fsPath
+      const namespace = utilsExt.getNamespaceFromFilename(rootPath, filename)
+      let dataBundle = sjsonParser.decodeWithMeta(contentTextUtf8, filename, false)
       if(!dataBundle) {
         console.error("Could not parse SJSON!")
         return
@@ -330,7 +333,7 @@ function show3DSceneCommand() {
       const range = [selection.start.line, selection.start.character, selection.end.line, selection.end.character]
       let [partNameFound, sectionNameFound] = getPartAndSectionName(tableInterpretedData, range)
 
-      improveJbeamData(dataBundle)
+      improveJbeamData(namespace, dataBundle)
 
       webPanel.webview.postMessage({
         command: 'jbeamData',

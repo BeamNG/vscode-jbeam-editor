@@ -217,8 +217,8 @@ function activate(context) {
 function deactivate() {
 }
 
-function findNodeByNameInAllParts(nodeName) {
-  for(let namespace in partData) {
+function findNodeByNameInAllParts(namespace, nodeName) {
+  if (namespace in partData) {
     for(let partName in partData[namespace]) {
       let part = partData[namespace][partName].interpreted
       //console.log(`${namespace} : ${partName}`)
