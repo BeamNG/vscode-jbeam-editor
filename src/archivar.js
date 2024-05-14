@@ -181,7 +181,6 @@ function loadJbeamFiles() {
   findFilesPromises.push(vscode.workspace.findFiles(new vscode.RelativePattern(vehiclesPath, '**/*.jbeam'), null).then(files => {
     statusBar.text = `Parsing ${files.length} jbeam files ...`
     for(let file of files) {
-      jbeamFileCounter++
       processJbeamFile(file.fsPath)
     }
   }));
@@ -205,16 +204,19 @@ function deactivate() {
 }
 
 function findNodeByNameInAllParts(namespace, nodeName) {
-  if (namespace in partData) {
-    for(let partName in partData[namespace]) {
-      let part = partData[namespace][partName].interpreted
-      //console.log(`${namespace} : ${partName}`)
-      if(part.nodes && part.nodes[nodeName]) {
-        let node = part.nodes[nodeName]
-        node.__meta.partOrigin = partName
-        node.__meta.partNamespace = namespace
-        node.__meta.origin = part.__meta.origin
-        return node
+  let namespaces = [namespace, '/vehicles/common']
+  for (let n of namespaces) {
+    if (n in partData) {
+      for(let partName in partData[n]) {
+        let part = partData[n][partName].interpreted
+        //console.log(`${n} : ${partName}`)
+        if(part.nodes && part.nodes[nodeName]) {
+          let node = part.nodes[nodeName]
+          node.__meta.partOrigin = partName
+          node.__meta.partNamespace = n
+          node.__meta.origin = part.__meta.origin
+          return node
+        }
       }
     }
   }
