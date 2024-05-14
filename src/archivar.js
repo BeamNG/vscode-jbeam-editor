@@ -204,7 +204,9 @@ function deactivate() {
 }
 
 function findNodeByNameInAllParts(namespace, nodeName) {
-  let namespaces = [namespace, '/vehicles/common']
+  // TODO: find node in "vehicles/common" folder
+  // but need the ability to select the part to get the node from if couldn't find node initially in "vehicles/namespace" folder
+  let namespaces = [namespace] //[namespace, '/vehicles/common']
   for (let n of namespaces) {
     if (n in partData) {
       for(let partName in partData[n]) {
