@@ -148,6 +148,17 @@ If all worked, it should show up like this now:
 
 ## Release Notes
 
+### 0.3.4
+* Bugfixes:
+  * fixed bug with duplicate diagnoses, when the archivar processes all jbeam files, and then you open a jbeam file, and you modify it
+  * fixed showing nodes in 3D view from a different vehicle
+  * ignore processing "slotType" with "processTableWithSchemaDestructive"
+  * in 3D scene view, virtual nodes colored blue and have "(v)" appended to the node name
+  * fixed JBeam files parsed counter
+  * fixed parsing jbeam/sjson files that don't have an outer object
+  * more parsing bugs fixed
+  * fixed/updated jbeam/part config file icons thanks to [Sopze92](https://github.com/Sopze92)
+
 ### 0.3.3
 * Bugfixes:
   * fixed syntax checker not working in some cases
