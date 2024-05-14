@@ -247,7 +247,7 @@ function updateNodeViz(moveCamera) {
     const node = pointsCache[i]
     vertexAlphas.push(1)
     if(node.virtual) {
-      vertexColors.push(1, 1, 0)
+      vertexColors.push(0, 0, 1)
     } else {
       vertexColors.push(1, 0.65, 0)
     }
