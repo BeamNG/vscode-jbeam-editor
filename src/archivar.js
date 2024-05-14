@@ -12,6 +12,7 @@ const vscode = require('vscode');
 
 const sjsonParser = require('./json/sjsonParser');
 const tableSchema = require('./json/tableSchema');
+const syntaxChecker = require('./jbeam/syntaxChecker');
 const path = require('path')
 const fs = require('fs');
 const utilsExt = require('./utilsExt');
@@ -36,7 +37,7 @@ function fileExists(filePath) {
   }
 }
 
-function processJbeamFile(filename, doDiagnostics=true) {
+function processJbeamFile(filename) {
   if(!fileExists(filename)) return
   const namespace = utilsExt.getNamespaceFromFilename(rootPath, filename)
   let diagnosticsList = []
@@ -45,25 +46,18 @@ function processJbeamFile(filename, doDiagnostics=true) {
   if(contentTextUtf8) {
     let dataBundle
     try {
-      if (doDiagnostics) {
-        dataBundle = sjsonParser.decodeWithMetaWithDiagnostics(contentTextUtf8, filename, false)
-        if(dataBundle) {
-          diagnosticsList.push(...dataBundle.diagnosticsList)
-        }
-      }
-      else {
-        dataBundle = sjsonParser.decodeWithMeta(contentTextUtf8, filename, false)
+      dataBundle = sjsonParser.decodeWithMetaWithDiagnostics(contentTextUtf8, filename, false)
+      if(dataBundle) {
+        diagnosticsList.push(...dataBundle.diagnosticsList)
       }
     } catch (e) {
-      if (doDiagnostics) {
-        const pos = new vscode.Position(0, 0)
-        const diagnostic = new vscode.Diagnostic(
-          new vscode.Range(pos, pos),
-          `Error parsing json file ${filename}. Exception: ${e.message}`,
-          vscode.DiagnosticSeverity.Error
-        );
-        diagnosticsList.push(diagnostic);
-      }
+      const pos = new vscode.Position(0, 0)
+      const diagnostic = new vscode.Diagnostic(
+        new vscode.Range(pos, pos),
+        `Error parsing json file ${filename}. Exception: ${e.message}`,
+        vscode.DiagnosticSeverity.Error
+      );
+      diagnosticsList.push(diagnostic);
     }
     if(dataBundle && diagnosticsList.length === 0) {
       if(!jbeamFileData[namespace]) {
@@ -71,22 +65,20 @@ function processJbeamFile(filename, doDiagnostics=true) {
       }
 
       let [tableInterpretedData, diagnosticsTable] = tableSchema.processAllParts(dataBundle.data)
-      if (doDiagnostics) {
-        for (const w of diagnosticsTable) {
-          // w[0] = type: error/warning
-          // w[1] = message
-          // w[2] = range = [linefrom, positionfrom, lineto, positionto]
-          let linefrom = 0, positionfrom = 0, lineto = 0, positionto = 0
-          if (w[2]) {
-            linefrom = w[2][0], positionfrom = w[2][1], lineto = w[2][2], positionto = w[2][3]
-          }
-          const diagnostic = new vscode.Diagnostic(
-            new vscode.Range(new vscode.Position(linefrom, positionfrom), new vscode.Position(lineto, positionto)),
-            w[1],
-            w[0] == 'warning' ? vscode.DiagnosticSeverity.Warning : vscode.DiagnosticSeverity.Error
-          );
-          diagnosticsList.push(diagnostic);
+      for (const w of diagnosticsTable) {
+        // w[0] = type: error/warning
+        // w[1] = message
+        // w[2] = range = [linefrom, positionfrom, lineto, positionto]
+        let linefrom = 0, positionfrom = 0, lineto = 0, positionto = 0
+        if (w[2]) {
+          linefrom = w[2][0], positionfrom = w[2][1], lineto = w[2][2], positionto = w[2][3]
         }
+        const diagnostic = new vscode.Diagnostic(
+          new vscode.Range(new vscode.Position(linefrom, positionfrom), new vscode.Position(lineto, positionto)),
+          w[1],
+          w[0] == 'warning' ? vscode.DiagnosticSeverity.Warning : vscode.DiagnosticSeverity.Error
+        );
+        diagnosticsList.push(diagnostic);
       }
 
       dataBundle.tableInterpretedData = tableInterpretedData
@@ -113,17 +105,15 @@ function processJbeamFile(filename, doDiagnostics=true) {
       }
     }
   } else {
-    if (doDiagnostics) {
-      const pos = new vscode.Position(0, 0)
-      const diagnostic = new vscode.Diagnostic(
-        new vscode.Range(pos, pos),
-        `Error parsing json file ${filename}`,
-        vscode.DiagnosticSeverity.Error
-      );
-      diagnosticsList.push(diagnostic);
-    }
+    const pos = new vscode.Position(0, 0)
+    const diagnostic = new vscode.Diagnostic(
+      new vscode.Range(pos, pos),
+      `Error parsing json file ${filename}`,
+      vscode.DiagnosticSeverity.Error
+    );
+    diagnosticsList.push(diagnostic);
   }
-  archivarDiagnostics.set(vscode.Uri.file(filename), diagnosticsList);
+  syntaxChecker.jbeamDiagnostics.set(vscode.Uri.file(filename), diagnosticsList);
   return true
 }
 
@@ -148,11 +138,9 @@ const debounceTime = 50 // milliseconds
 
 function onFileChangedDebounced(filename) {
   //console.log('onFileChanged', changeType, filename)
-  // Don't perform diagnostics on the open file, as syntaxChecker performs the diagnosis, to avoid duplicate error messages
-  let doDiagnostics = filename != vscode.window.activeTextEditor?.document.fileName
   if(path.extname(filename) == '.jbeam') {
     removeJbeamFileData(filename)
-    processJbeamFile(filename, doDiagnostics)
+    processJbeamFile(filename)
     //console.log(`Part count diff after updating file: ${partCounter}: ${filename}`)
     statusBar.text = `$(project) ${jbeamFileCounter} JBeam files $(repo) ${partCounter} parts`
   }
@@ -185,7 +173,6 @@ function loadJbeamFiles() {
   }
 
   const vehiclesPath = vscode.Uri.file(path.join(rootPath, '/vehicles/')).fsPath
-  let openFileName = vscode.window.activeTextEditor?.document.fileName
   jbeamFileCounter = 0
   partCounter = 0
 
@@ -195,7 +182,7 @@ function loadJbeamFiles() {
     statusBar.text = `Parsing ${files.length} jbeam files ...`
     for(let file of files) {
       jbeamFileCounter++
-      processJbeamFile(file.fsPath, file.fsPath != openFileName)
+      processJbeamFile(file.fsPath)
     }
   }));
   Promise.all(findFilesPromises).then(allFilesArrays => {
