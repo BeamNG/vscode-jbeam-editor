@@ -90,11 +90,11 @@ function processJbeamFile(filename) {
       let partNames = Object.keys(dataBundle.data).filter(key => key !== '__meta')
       for(let partName of partNames) {
         const partRaw = dataBundle.data[partName]
-        if(partRaw) {
+        if(typeof partRaw?.__meta === "object") {
           partRaw.__meta.origin = filename
         }
         const partInterpreted = dataBundle.tableInterpretedData[partName]
-        if(partInterpreted) {
+        if(typeof partInterpreted?.__meta === "object") {
           partInterpreted.__meta.origin = filename
         }
         if(!partData[namespace]) {
