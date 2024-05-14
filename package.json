@@ -93,7 +93,11 @@
         "extensions": [
           ".jbeam"
         ],
-        "configuration": "./syntaxes/jbeam-language-configuration.json"
+        "configuration": "./syntaxes/jbeam-language-configuration.json",
+        "icon": {
+          "light": "./icons/jbeam.png",
+          "dark": "./icons/jbeam-dark.png"
+        }
       },
       {
         "id": "beamng-log",
@@ -106,7 +110,11 @@
         "id": "partconfig",
         "aliases": ["BeamNG Partconfig"],
         "extensions": [ ".pc" ],
-        "configuration": "./syntaxes/jbeam-language-configuration.json"
+        "configuration": "./syntaxes/jbeam-language-configuration.json",
+        "icon": {
+          "light": "./icons/partconfig.png",
+          "dark": "./icons/partconfig-dark.png"
+        }
       }
     ],
     "documentSymbolProvider": true,
