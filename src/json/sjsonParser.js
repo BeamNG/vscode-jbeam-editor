@@ -397,7 +397,7 @@ function decodeWithMeta(s, origin, cyclicDependencies = true) {
     return arr;
   }
 
-  function parseObject(parentMeta, depth) {
+  function parseObject(parentMeta, depth, isOuterMostObject = false) {
     const obj = {};
     let meta = {type: 'object', range: [lineNumber, columnNumber, 0, 0], depth: depth}
     if(cyclicDependencies) {
@@ -405,11 +405,13 @@ function decodeWithMeta(s, origin, cyclicDependencies = true) {
     }
     addMetadata(meta)
 
-    i++; // skip '{'
+    if (!isOuterMostObject) {
+      i++; // skip '{'
+    }
     columnNumber++;
     depth++
     skipWhiteSpace(depth)
-    while (s[i] !== '}' && !abortExecution) {
+    while ((isOuterMostObject && i < s.length) || (!isOuterMostObject && s[i] !== '}' && !abortExecution)) {
       if (s[i] !== '"') {
         jsonError('Expected key')
         return
@@ -478,7 +480,8 @@ function decodeWithMeta(s, origin, cyclicDependencies = true) {
     return obj;
   }
 
-  const values = parseValue(null, 0)
+  skipWhiteSpace(0)
+  const values = (s[i] == '{' || s[i] == '[') ? parseValue(null, 0) : parseObject(null, 0, true)
 
   // create line cache
   let lineData = []
