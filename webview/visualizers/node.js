@@ -324,7 +324,7 @@ function updateNodeViz(moveCamera) {
   updateLabels()
 }
 
-function onMouseDown(event) {
+function onMouseDoubleClick(event) {
   const rect = renderer.domElement.getBoundingClientRect();
   const mouse2D = new THREE.Vector2(
     event.clientX - rect.left,
@@ -470,14 +470,14 @@ function onMouseOut(event) {
 
 export function init() {
   window.addEventListener('message', onReceiveMessage);
-  window.addEventListener('mousedown', onMouseDown, false);
+  window.addEventListener('dblclick', onMouseDoubleClick, false);
   window.addEventListener('mousemove', onMouseMove, false);
   window.addEventListener('mouseout', onMouseOut, false);
 }
 
 export function dispose() {
   window.removeEventListener('message', onReceiveMessage);
-  window.removeEventListener('mousedown', onMouseDown);
+  window.removeEventListener('dblclick', onMouseDoubleClick);
   window.removeEventListener('mousemove', onMouseMove);
   window.removeEventListener('mouseout', onMouseOut)
   if(pointsObject) {
