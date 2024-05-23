@@ -189,7 +189,9 @@ export function init() {
   window.addEventListener('resize', onResize)
 
   // let VSCode know that we are good to receive data :)
-  ctx.vscode.postMessage({command: 'sceneReady'})
+  if(ctx.vscode) {
+    ctx.vscode.postMessage({command: 'sceneReady'})
+  }
 }
 
 function onConfigChanged() {
