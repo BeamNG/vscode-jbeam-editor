@@ -12,6 +12,7 @@ let views = [
 const settings = {
   perspective: true,
   view: 'Iso',
+  centerViewOnSelectedNodes: false,
   meshStats: ''
 }
 
@@ -23,7 +24,7 @@ export async function init() {
     expanded: false,
   })
 
-  pane.addBinding( settings, 'perspective').on('change', function(ev) {
+  pane.addBinding( settings, 'perspective', {label: 'Perspective'}).on('change', function(ev) {
     if (ev.value) {
       camera = cameraPersp;
       cameraPersp.position.copy(orthoCamera.position);
@@ -50,6 +51,10 @@ export async function init() {
       settings.view = view.name; // Update the settings with the new view name
     }
   });
+
+  pane.addBinding( settings, 'centerViewOnSelectedNodes', {label: 'Focus Selected Nodes'}).on('change', function(ev) {
+    centerViewOnSelectedNodes = ev.value
+  })
 
   pane.addButton({
     title: 'Ping Simulation',

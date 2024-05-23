@@ -110,7 +110,7 @@ function focusNodes(nodesArrToFocus, triggerEditor = true) {
 
   if(selectedNodeIndices.length == 0) selectedNodeIndices = null
 
-  if(ncount > 0) {
+  if(centerViewOnSelectedNodes && ncount > 0) {
     let nodesCenterPos = new THREE.Vector3(sumX / ncount, sumY / ncount, sumZ / ncount)
     moveCameraCenter(nodesCenterPos)
   }
