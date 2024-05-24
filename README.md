@@ -148,6 +148,11 @@ If all worked, it should show up like this now:
 
 ## Release Notes
 
+### 0.3.6
+* Bugfixes:
+  * tweaked node sizing
+  * tweaked node label sizing in orthographic mode
+
 ### 0.3.5
 * Bugfixes:
   * fixed plugin not working under Linux
