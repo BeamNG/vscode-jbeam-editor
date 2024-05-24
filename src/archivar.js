@@ -15,6 +15,7 @@ const tableSchema = require('./json/tableSchema');
 const syntaxChecker = require('./jbeam/syntaxChecker');
 const path = require('path')
 const fs = require('fs');
+const os = require('os');
 const utilsExt = require('./utilsExt');
 
 let jbeamFileData = {} // the root that holds all data
@@ -193,7 +194,9 @@ function loadJbeamFiles() {
   })
 
   // now watch for changes
-  fs.watch(rootPath, {recursive: true}, onFileChanged)
+  const isLinux = os.platform() === 'linux';
+  const watchOptions = isLinux ? {} : { recursive: true };
+  fs.watch(rootPath, watchOptions, onFileChanged)
 }
 
 function activate(context) {
