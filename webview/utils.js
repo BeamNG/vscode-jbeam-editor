@@ -434,8 +434,14 @@ class Tooltip {
               vec4(modelViewMatrix[3].x, modelViewMatrix[3].y + upwardTranslation, modelViewMatrix[3].z, 1.0)
           );
 
-          float distance = length(billBoardMatrix[3].xyz - cameraPosition);
-          float scale = distance * 0.15;
+          float scale;
+          if (isOrthographic) {
+            scale = 0.4 / (sqrt(projectionMatrix[0].x * projectionMatrix[1].y));
+          }
+          else {
+            float distance = length(billBoardMatrix[3].xyz - cameraPosition);
+            scale = distance * 0.15;
+          }
           vec4 scaledPosition = vec4(position * scale, 1.0);
 
           // Calculate final position
