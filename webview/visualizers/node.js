@@ -1,3 +1,6 @@
+const nodeNormalSize = 0.05
+const nodeSelectedSize = 0.1
+
 let jbeamData = null
 let currentPartName = null
 let uri = null
@@ -78,7 +81,7 @@ function focusNodes(nodesArrToFocus, triggerEditor = true) {
     const node = pointsCache[i]
     if(selectedNodeIndices.includes(i)) {
       alphasAttribute.setX(i, 1)
-      sizesAttribute.setX(i, 0.11)
+      sizesAttribute.setX(i, nodeSelectedSize)
       colorsAttribute.setXYZ(i, 1, 0, 1)
       sumX += node.pos[0]
       sumY += node.pos[1]
@@ -87,7 +90,7 @@ function focusNodes(nodesArrToFocus, triggerEditor = true) {
       continue
     }
     alphasAttribute.setX(i, 0.4)
-    sizesAttribute.setX(i, 0.03)
+    sizesAttribute.setX(i, nodeNormalSize)
     if(node.virtual) {
       colorsAttribute.setXYZ(i, 0, 0, 1);
     } else {
@@ -251,7 +254,7 @@ function updateNodeViz(moveCamera) {
     } else {
       vertexColors.push(1, 0.65, 0)
     }
-    vertexSizes.push(0.05)
+    vertexSizes.push(nodeNormalSize)
   }
 
   let nodesGeometry
@@ -289,7 +292,7 @@ function updateNodeViz(moveCamera) {
           vColor = color;
           vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
           if (isOrthographic) {
-            gl_PointSize = size * scale; // Fixed size for orthographic
+            gl_PointSize = size * scale * 0.5; // Fixed size for orthographic
           } else {
             gl_PointSize = size * (scale / -mvPosition.z); // Perspective size adjustment
           }
@@ -373,7 +376,7 @@ function resetNodeFocus() {
     let node = pointsCache[i]
     if(selectedNodeIndices && selectedNodeIndices.includes(i)) continue
     alphasAttribute.setX(i, 0.3)
-    sizesAttribute.setX(i, 0.03)
+    sizesAttribute.setX(i, nodeNormalSize)
     if(node.virtual) {
       colorsAttribute.setXYZ(i, 0, 0, 1);
     } else {
@@ -408,8 +411,8 @@ function onMouseMove(event) {
   // Define interaction parameters
   const alphaDecay = 0.01;
   const maxDistance = 1;
-  const minSize = 0.05; // Minimum size for nodes
-  const maxSize = 0.2;  // Maximum size for nodes
+  //const minSize = 0.05; // Minimum size for nodes
+  //const maxSize = 0.2;  // Maximum size for nodes
 
   // Get attributes for batch updates
   const alphasAttribute = pointsObject.geometry.getAttribute('alpha');
@@ -424,8 +427,8 @@ function onMouseMove(event) {
 
     // Calculate alpha and size based on distance
     alphasAttribute.setX(i, 1.0 - (normalizedDistance * alphaDecay));
-    let size = (1.0 - (normalizedDistance * 0.7)) * 0.05;
-    sizesAttribute.setX(i, Math.max(minSize, Math.min(size, maxSize))); // Clamp size between minSize and maxSize
+    //let size = (1.0 - (normalizedDistance * 0.7)) * 0.05;
+    //sizesAttribute.setX(i, Math.max(minSize, Math.min(size, maxSize))); // Clamp size between minSize and maxSize
 
     // Adjust color based on distance
     const color = point.virtual ? getColorFromDistance(distance, maxDistance, 0x0000dd, 0x0000FF) : getColorFromDistance(distance, maxDistance, 0xddA500, 0xFFA500);
@@ -435,7 +438,7 @@ function onMouseMove(event) {
   // Flag attributes as needing an update
   alphasAttribute.needsUpdate = true;
   colorsAttribute.needsUpdate = true;
-  sizesAttribute.needsUpdate = true;
+  //sizesAttribute.needsUpdate = true;
 }
 
 
