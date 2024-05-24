@@ -148,6 +148,13 @@ If all worked, it should show up like this now:
 
 ## Release Notes
 
+### 0.3.5
+* Bugfixes:
+  * fixed plugin not working under Linux
+* Features:
+  * now mouse double click in order to select nodes
+  * added ability toggle focusing on selected nodes (off by default)
+
 ### 0.3.4
 * Bugfixes:
   * fixed bug with duplicate diagnoses, when the archivar processes all jbeam files, and then you open a jbeam file, and you modify it
