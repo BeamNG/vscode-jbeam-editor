@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta 
-  http-equiv="Content-Security-Policy" 
+  <meta
+  http-equiv="Content-Security-Policy"
   content="
     default-src 'self' vscode-resource: 'unsafe-eval' 'unsafe-inline' https://*.vscode-cdn.net data:;
   ">
@@ -27,9 +27,10 @@ import * as colladaLoader from '<!-- LocalResource:libs/ColladaLoader.js -->';
 import * as visualizersMain from '<!-- LocalResource:visualizers/main.js -->';
 import * as visualizersNode from '<!-- LocalResource:visualizers/node.js -->';
 import * as visualizersBeam from '<!-- LocalResource:visualizers/beam.js -->';
+import * as visualizersTriangle from '<!-- LocalResource:visualizers/triangle.js -->';
+import * as visualizersTorsionbar from '<!-- LocalResource:visualizers/torsionbar.js -->';
 import * as visualizersMesh from '<!-- LocalResource:visualizers/mesh.js -->';
 import * as visualizersGroundplane from '<!-- LocalResource:visualizers/groundplane.js -->';
-import * as visualizersTriangle from '<!-- LocalResource:visualizers/triangle.js -->';
 
 // we need to import everything in the main index file here as we need to use a special URL that is created by vscode
 // imports in other files will not work
@@ -42,8 +43,9 @@ ctx.colladaLoader = colladaLoader
 ctx.visualizersMain = visualizersMain
 ctx.visualizersNode = visualizersNode
 ctx.visualizersBeam = visualizersBeam
-ctx.visualizersMesh = visualizersMesh
 ctx.visualizersTriangle = visualizersTriangle
+ctx.visualizersTorsionbar = visualizersTorsionbar
+ctx.visualizersMesh = visualizersMesh
 ctx.visualizersGroundplane = visualizersGroundplane
 
 </script>

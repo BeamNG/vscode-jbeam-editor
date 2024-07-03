@@ -18,9 +18,10 @@ import * as main from './main.js';
 import * as visualizersMain from './visualizers/main.js';
 import * as visualizersNode from './visualizers/node.js';
 import * as visualizersBeam from './visualizers/beam.js';
+import * as visualizersTriangle from './visualizers/triangle.js';
+import * as visualizersTorsionbar from '<!-- LocalResource:visualizers/torsionbar.js -->';
 import * as visualizersMesh from './visualizers/mesh.js';
 import * as visualizersGroundplane from './visualizers/groundplane.js';
-import * as visualizersTriangle from './visualizers/triangle.js';
 import * as colladaLoader from './libs/ColladaLoader.js';
 import * as tweakPane from './libs/tweakpane.min.js';
 
@@ -37,8 +38,9 @@ ctx.colladaLoader = colladaLoader
 ctx.visualizersMain = visualizersMain
 ctx.visualizersNode = visualizersNode
 ctx.visualizersBeam = visualizersBeam
-ctx.visualizersMesh = visualizersMesh
 ctx.visualizersTriangle = visualizersTriangle
+ctx.visualizersTorsionbar = visualizersTorsionbar
+ctx.visualizersMesh = visualizersMesh
 ctx.visualizersGroundplane = visualizersGroundplane
 
 main.init()
