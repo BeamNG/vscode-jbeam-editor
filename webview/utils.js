@@ -313,7 +313,7 @@ function updateProjectionPlane(scene, items, _env = {}) {
   groundPlaneTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
   if(groundPlaneMaterial) groundPlaneMaterial.dispose()
-  groundPlaneMaterial = new THREE.MeshBasicMaterial({ map: groundPlaneTexture, transparent: true, side: THREE.DoubleSide });
+  groundPlaneMaterial = new THREE.MeshBasicMaterial({ map: groundPlaneTexture, transparent: true, depthWrite: false, side: THREE.DoubleSide });
 
   if(groundPlaneMesh) {
     scene.remove(groundPlaneMesh)
