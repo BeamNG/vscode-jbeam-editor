@@ -440,8 +440,9 @@ class Tooltip {
             scale = 0.4 / (sqrt(projectionMatrix[0].x * projectionMatrix[1].y));
           }
           else {
-            float distance = length(billBoardMatrix[3].xyz - cameraPosition);
-            scale = distance * 0.15;
+            //float distance = length(billBoardMatrix[3].xyz - cameraPosition);
+            //scale = distance * 0.15;
+            scale = 0.75;
           }
           vec4 scaledPosition = vec4(position * scale, 1.0);
 
