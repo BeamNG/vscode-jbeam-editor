@@ -228,7 +228,7 @@ function focusTorbars(torbarsArrToFocus, triggerEditor = true) {
       sumX += torbar.node4.pos[0]
       sumY += torbar.node4.pos[1]
       sumZ += torbar.node4.pos[2]
-      torbarCounter += 4 // because of 2 nodes
+      torbarCounter += 4 // because of 4 nodes
       continue
     }
     alphasAttribute.setX(i*6 + 0, 0.1)
@@ -254,8 +254,8 @@ function focusTorbars(torbarsArrToFocus, triggerEditor = true) {
   //}
 
   if(torbarCounter > 0) {
-    let beamCenterPos = new THREE.Vector3(sumX / torbarCounter, sumY / torbarCounter, sumZ / torbarCounter)
-    moveCameraCenter(beamCenterPos)
+    let torbarCenterPos = new THREE.Vector3(sumX / torbarCounter, sumY / torbarCounter, sumZ / torbarCounter)
+    moveCameraCenter(torbarCenterPos)
   }
 }
 
@@ -318,5 +318,5 @@ export function dispose() {
 }
 
 export function onConfigChanged() {
-  //console.log('beam.onConfigChanged', ctx.config)
+  //console.log('torbar.onConfigChanged', ctx.config)
 }
