@@ -152,10 +152,11 @@ If all worked, it should show up like this now:
 * Bugfixes:
   * fixed jbeam being hidden under z=0 plane
   * fixed node label resizing in perspective mode when rotating camera
+  * no longer rendering "virtual" jbeam objects as it can be confusing
 * Features:
-  * Added torsion bar visualization
-  * Added a setting "Show Node IDs" to show node ids regardless of where your cursor is in the jbeam file
-  * "Focus Selected JBeam" enabled by default and works with other JBeam objects
+  * added torsion bar visualization
+  * added a setting "Show Node IDs" to show node ids regardless of where your cursor is in the jbeam file
+  * "focus Selected JBeam" enabled by default and works with other JBeam objects
 
 ### 0.3.6
 * Bugfixes:
