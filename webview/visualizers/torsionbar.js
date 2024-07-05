@@ -1,3 +1,7 @@
+const normalMinColor = new THREE.Color(0.13, 0.87, 0.87)
+const normalMaxColor = new THREE.Color(0, 1, 1)
+const selectedColor = new THREE.Color(1, 0, 1)
+
 let jbeamData = null
 let currentPartName = null
 let torbarCache // contains the high level object info
@@ -20,40 +24,26 @@ function updateTorbarViz() {
         //console.log(">torbar>", torbar, part.nodes[torbar['id1:']])
         if (part.nodes) {
           let node1
-          let torbarVirtual = false
           if(part.nodes && torbar['id1:'] in part.nodes) {
             node1 = part.nodes[torbar['id1:']]
-          } else if(part.virtualNodes && torbar['id1:'] in part.virtualNodes) {
-            node1 = part.virtualNodes[torbar['id1:']]
-            torbarVirtual = true
           }
           let node2
           if(part.nodes && torbar['id2:'] in part.nodes) {
             node2 = part.nodes[torbar['id2:']]
-          } else if(part.virtualNodes && torbar['id2:'] in part.virtualNodes) {
-            node2 = part.virtualNodes[torbar['id2:']]
-            torbarVirtual = true
           }
           let node3
           if(part.nodes && torbar['id3:'] in part.nodes) {
             node3 = part.nodes[torbar['id3:']]
-          } else if(part.virtualNodes && torbar['id3:'] in part.virtualNodes) {
-            node3 = part.virtualNodes[torbar['id3:']]
-            torbarVirtual = true
           }
           let node4
           if(part.nodes && torbar['id4:'] in part.nodes) {
             node4 = part.nodes[torbar['id4:']]
-          } else if(part.virtualNodes && torbar['id4:'] in part.virtualNodes) {
-            node4 = part.virtualNodes[torbar['id4:']]
-            torbarVirtual = true
           }
           if (node1 && node2 && node3 && node4) {
             torbar.node1 = node1
             torbar.node2 = node2
             torbar.node3 = node3
             torbar.node4 = node4
-            torbar.virtual = torbarVirtual
             torbar.nodePos1 = new THREE.Vector3(node1.pos[0], node1.pos[1], node1.pos[2])
             torbar.nodePos2 = new THREE.Vector3(node2.pos[0], node2.pos[1], node2.pos[2])
             torbar.nodePos3 = new THREE.Vector3(node3.pos[0], node3.pos[1], node3.pos[2])
@@ -97,21 +87,12 @@ function updateTorbarViz() {
     vertexAlphas.push(0.5)
     vertexAlphas.push(0.5)
     vertexAlphas.push(0.5)
-    if(torbar.virtual) {
-      vertexColors.push(1, 1, 1)
-      vertexColors.push(1, 1, 1)
-      vertexColors.push(1, 1, 1)
-      vertexColors.push(1, 1, 1)
-      vertexColors.push(1, 1, 1)
-      vertexColors.push(1, 1, 1)
-    } else {
-      vertexColors.push(1, 0, 0)
-      vertexColors.push(1, 0, 0)
-      vertexColors.push(1, 0, 0)
-      vertexColors.push(1, 0, 0)
-      vertexColors.push(1, 0, 0)
-      vertexColors.push(1, 0, 0)
-    }
+    vertexColors.push(normalMaxColor.r, normalMaxColor.g, normalMaxColor.b)
+    vertexColors.push(normalMaxColor.r, normalMaxColor.g, normalMaxColor.b)
+    vertexColors.push(normalMaxColor.r, normalMaxColor.g, normalMaxColor.b)
+    vertexColors.push(normalMaxColor.r, normalMaxColor.g, normalMaxColor.b)
+    vertexColors.push(normalMaxColor.r, normalMaxColor.g, normalMaxColor.b)
+    vertexColors.push(normalMaxColor.r, normalMaxColor.g, normalMaxColor.b)
   }
 
   let lineGeometry
@@ -187,18 +168,20 @@ function onMouseMove(event) {
     normalizedDistance = THREE.MathUtils.clamp(normalizedDistance, 0, 1) // Ensure it's between 0 and 1
 
     // Set alpha based on distance (closer points are less transparent)
-    alphasAttribute.setX(i*2  , 1.0 - (normalizedDistance * 0.6))
-    alphasAttribute.setX(i*2+1, 1.0 - (normalizedDistance * 0.6))
+    alphasAttribute.setX(i*6+0, 1.0 - (normalizedDistance * 0.6))
+    alphasAttribute.setX(i*6+1, 1.0 - (normalizedDistance * 0.6))
+    alphasAttribute.setX(i*6+2, 1.0 - (normalizedDistance * 0.6))
+    alphasAttribute.setX(i*6+3, 1.0 - (normalizedDistance * 0.6))
+    alphasAttribute.setX(i*6+4, 1.0 - (normalizedDistance * 0.6))
+    alphasAttribute.setX(i*6+5, 1.0 - (normalizedDistance * 0.6))
 
-    if(torbarCache[i].virtual) {
-      let color = getColorFromDistance(distance, maxDistance, 0x88dddd, 0x00ffff)
-      colorsAttribute.setXYZ(i*2  , color.r, color.g, color.b)
-      colorsAttribute.setXYZ(i*2+1, color.r, color.g, color.b)
-    } else {
-      let color = getColorFromDistance(distance, maxDistance, 0x88dd88, 0x00ff00)
-      colorsAttribute.setXYZ(i*2  , color.r, color.g, color.b)
-      colorsAttribute.setXYZ(i*2+1, color.r, color.g, color.b)
-    }
+    let color = getColorFromDistance(distance, maxDistance, normalMinColor, normalMaxColor)
+    colorsAttribute.setXYZ(i*6+0, color.r, color.g, color.b)
+    colorsAttribute.setXYZ(i*6+1, color.r, color.g, color.b)
+    colorsAttribute.setXYZ(i*6+2, color.r, color.g, color.b)
+    colorsAttribute.setXYZ(i*6+3, color.r, color.g, color.b)
+    colorsAttribute.setXYZ(i*6+4, color.r, color.g, color.b)
+    colorsAttribute.setXYZ(i*6+5, color.r, color.g, color.b)
   }
   alphasAttribute.needsUpdate = true
   colorsAttribute.needsUpdate = true
@@ -221,14 +204,18 @@ function focusTorbars(torbarsArrToFocus, triggerEditor = true) {
   for (let i = 0; i < torbarCache.length; i++) {
     const torbar = torbarCache[i]
     if(selectedTorbarIndices.includes(i)) {
-      alphasAttribute.setX(i*2, 1)
-      alphasAttribute.setX(i*2 + 1, 1)
-      alphasAttribute.setX(i*2 + 2, 1)
-      alphasAttribute.setX(i*2 + 3, 1)
-      colorsAttribute.setXYZ(i*2, 1, 0, 1)
-      colorsAttribute.setXYZ(i*2 + 1, 1, 0, 1)
-      colorsAttribute.setXYZ(i*2 + 2, 1, 0, 1)
-      colorsAttribute.setXYZ(i*2 + 3, 1, 0, 1)
+      alphasAttribute.setX(i*6 + 0, 1)
+      alphasAttribute.setX(i*6 + 1, 1)
+      alphasAttribute.setX(i*6 + 2, 1)
+      alphasAttribute.setX(i*6 + 3, 1)
+      alphasAttribute.setX(i*6 + 4, 1)
+      alphasAttribute.setX(i*6 + 5, 1)
+      colorsAttribute.setXYZ(i*6 + 0, selectedColor.r, selectedColor.g, selectedColor.b)
+      colorsAttribute.setXYZ(i*6 + 1, selectedColor.r, selectedColor.g, selectedColor.b)
+      colorsAttribute.setXYZ(i*6 + 2, selectedColor.r, selectedColor.g, selectedColor.b)
+      colorsAttribute.setXYZ(i*6 + 3, selectedColor.r, selectedColor.g, selectedColor.b)
+      colorsAttribute.setXYZ(i*6 + 4, selectedColor.r, selectedColor.g, selectedColor.b)
+      colorsAttribute.setXYZ(i*6 + 5, selectedColor.r, selectedColor.g, selectedColor.b)
       sumX += torbar.node1.pos[0]
       sumY += torbar.node1.pos[1]
       sumZ += torbar.node1.pos[2]
@@ -244,21 +231,18 @@ function focusTorbars(torbarsArrToFocus, triggerEditor = true) {
       torbarCounter += 4 // because of 2 nodes
       continue
     }
-    alphasAttribute.setX(i*2, 0.1)
-    alphasAttribute.setX(i*2 + 1, 0.1)
-    alphasAttribute.setX(i*2 + 2, 0.1)
-    alphasAttribute.setX(i*2 + 3, 0.1)
-    if(torbar.virtual) {
-      colorsAttribute.setXYZ(i*2, 0, 1, 1);
-      colorsAttribute.setXYZ(i*2 + 1, 0, 1, 1);
-      colorsAttribute.setXYZ(i*2 + 2, 0, 1, 1);
-      colorsAttribute.setXYZ(i*2 + 3, 0, 1, 1);
-    } else {
-      colorsAttribute.setXYZ(i*2, 0, 1, 0);
-      colorsAttribute.setXYZ(i*2 + 1, 0, 1, 0);
-      colorsAttribute.setXYZ(i*2 + 2, 0, 1, 0);
-      colorsAttribute.setXYZ(i*2 + 3, 0, 1, 0);
-    }
+    alphasAttribute.setX(i*6 + 0, 0.1)
+    alphasAttribute.setX(i*6 + 1, 0.1)
+    alphasAttribute.setX(i*6 + 2, 0.1)
+    alphasAttribute.setX(i*6 + 3, 0.1)
+    alphasAttribute.setX(i*6 + 4, 0.1)
+    alphasAttribute.setX(i*6 + 5, 0.1)
+    colorsAttribute.setXYZ(i*6 + 0, normalMaxColor.r, normalMaxColor.g, normalMaxColor.b);
+    colorsAttribute.setXYZ(i*6 + 1, normalMaxColor.r, normalMaxColor.g, normalMaxColor.b);
+    colorsAttribute.setXYZ(i*6 + 2, normalMaxColor.r, normalMaxColor.g, normalMaxColor.b);
+    colorsAttribute.setXYZ(i*6 + 3, normalMaxColor.r, normalMaxColor.g, normalMaxColor.b);
+    colorsAttribute.setXYZ(i*6 + 4, normalMaxColor.r, normalMaxColor.g, normalMaxColor.b);
+    colorsAttribute.setXYZ(i*6 + 5, normalMaxColor.r, normalMaxColor.g, normalMaxColor.b);
   }
   alphasAttribute.needsUpdate = true;
   colorsAttribute.needsUpdate = true;

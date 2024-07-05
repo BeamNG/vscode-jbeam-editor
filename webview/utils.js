@@ -394,11 +394,11 @@ function updateVertexBuffer(geometry, attributeName, items, itemSize) {
   }
 }
 
-function getColorFromDistance(distance, maxDistance, colorHexA, colorHexB) {
+function getColorFromDistance(distance, maxDistance, colorA, colorB) {
   let clampedDistance = Math.min(distance, maxDistance);
   let normalizedDistance = clampedDistance / maxDistance;
-  let color = new THREE.Color(colorHexB);
-  color.lerp(new THREE.Color(colorHexA), normalizedDistance);
+  let color = new THREE.Color(colorB);
+  color.lerp(colorA, normalizedDistance);
   return color;
 }
 

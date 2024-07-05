@@ -1,5 +1,9 @@
-const nodeNormalSize = 0.05
-const nodeSelectedSize = 0.1
+const normalSize = 0.05
+const selectedSize = 0.1
+
+const normalMinColor = new THREE.Color(0.75, 0.49, 0)
+const normalMaxColor = new THREE.Color(1, 0.65, 0)
+const selectedColor = new THREE.Color(1, 0, 1)
 
 let jbeamData = null
 let currentPartName = null
@@ -49,9 +53,6 @@ function updateLabels() {
     if(selectedNodeIndices && !selectedNodeIndices.includes(i)) continue
     const node = pointsCache[i]
     let text = node.name
-    if (node.virtual) {
-      text += '(v)'
-    }
     tooltips.push({ pos3d: node.pos3d, name: text}) //  - ${node.nodeWeight}
   }
   if(tooltips.length === 0) return
@@ -81,8 +82,8 @@ function focusNodes(nodesArrToFocus, triggerEditor = true) {
     const node = pointsCache[i]
     if(selectedNodeIndices.includes(i)) {
       alphasAttribute.setX(i, 1)
-      sizesAttribute.setX(i, nodeSelectedSize)
-      colorsAttribute.setXYZ(i, 1, 0, 1)
+      sizesAttribute.setX(i, selectedSize)
+      colorsAttribute.setXYZ(i, selectedColor.r, selectedColor.g, selectedColor.b)
       sumX += node.pos[0]
       sumY += node.pos[1]
       sumZ += node.pos[2]
@@ -90,12 +91,8 @@ function focusNodes(nodesArrToFocus, triggerEditor = true) {
       continue
     }
     alphasAttribute.setX(i, 0.4)
-    sizesAttribute.setX(i, nodeNormalSize)
-    if(node.virtual) {
-      colorsAttribute.setXYZ(i, 0, 0, 1);
-    } else {
-      colorsAttribute.setXYZ(i, 1, 0.65, 0);
-    }
+    sizesAttribute.setX(i, normalSize)
+    colorsAttribute.setXYZ(i, normalMaxColor.r, normalMaxColor.g, normalMaxColor.b);
   }
   alphasAttribute.needsUpdate = true;
   colorsAttribute.needsUpdate = true;
@@ -188,36 +185,6 @@ function updateNodeViz(moveCamera) {
           pointsCache.push(node)
         }
       }
-      if('virtualNodes' in part) {
-        for (let nodeId in part.virtualNodes) {
-          let node = part.virtualNodes[nodeId]
-          // node.pos contains [x, y, z]
-          if(node.hasOwnProperty('pos')) {
-            const x = node.pos[0]
-            vertexPositions.push(x)
-            sum.x += x
-            if(x < nodesMin.x) nodesMin.x = x
-            else if(x > nodesMax.x) nodesMax.x = x
-
-            const y = node.pos[1]
-            vertexPositions.push(y)
-            sum.y += y
-            if(y < nodesMin.y) nodesMin.y = y
-            else if(y > nodesMax.y) nodesMax.y = y
-
-            const z = node.pos[2]
-            vertexPositions.push(z)
-            sum.z += z
-            if(z < nodesMin.z) nodesMin.z = z
-            else if(z > nodesMax.z) nodesMax.z = z
-
-            nodeCounter++
-            node.pos3d = new THREE.Vector3(x, y, z)
-            node.virtual = true
-            pointsCache.push(node)
-          }
-        }
-      }
 
       if(nodeCounter > 0) {
         nodesCenter = new THREE.Vector3(sum.x / nodeCounter, sum.y / nodeCounter, sum.z / nodeCounter)
@@ -249,12 +216,8 @@ function updateNodeViz(moveCamera) {
   for (let i = 0; i < pointsCache.length; i++) {
     const node = pointsCache[i]
     vertexAlphas.push(1)
-    if(node.virtual) {
-      vertexColors.push(0, 0, 1)
-    } else {
-      vertexColors.push(1, 0.65, 0)
-    }
-    vertexSizes.push(nodeNormalSize)
+    vertexColors.push(1, 0.65, 0)
+    vertexSizes.push(normalSize)
   }
 
   let nodesGeometry
@@ -376,12 +339,8 @@ function resetNodeFocus() {
     let node = pointsCache[i]
     if(selectedNodeIndices && selectedNodeIndices.includes(i)) continue
     alphasAttribute.setX(i, 0.3)
-    sizesAttribute.setX(i, nodeNormalSize)
-    if(node.virtual) {
-      colorsAttribute.setXYZ(i, 0, 0, 1);
-    } else {
-      colorsAttribute.setXYZ(i, 1, 0.65, 0);
-    }
+    sizesAttribute.setX(i, normalSize)
+    colorsAttribute.setXYZ(i, normalMaxColor.r, normalMaxColor.g, normalMaxColor.b);
   }
   alphasAttribute.needsUpdate = true;
   colorsAttribute.needsUpdate = true;
@@ -431,7 +390,7 @@ function onMouseMove(event) {
     //sizesAttribute.setX(i, Math.max(minSize, Math.min(size, maxSize))); // Clamp size between minSize and maxSize
 
     // Adjust color based on distance
-    const color = point.virtual ? getColorFromDistance(distance, maxDistance, 0x0000dd, 0x0000FF) : getColorFromDistance(distance, maxDistance, 0xddA500, 0xFFA500);
+    const color = getColorFromDistance(distance, maxDistance, normalMinColor, normalMaxColor);
     colorsAttribute.setXYZ(i, color.r, color.g, color.b);
   });
 
