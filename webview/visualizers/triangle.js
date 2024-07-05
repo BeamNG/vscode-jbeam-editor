@@ -193,7 +193,7 @@ function focusTris(trisArrToFocus) {
 
   if(selectedTriIndices == []) selectedTriIndices = null
 
-  if(tcount > 0) {
+  if(centerViewOnSelectedJBeam && tcount > 0) {
     let trisCenterPos = new THREE.Vector3(sumX / tcount, sumY / tcount, sumZ / tcount)
     moveCameraCenter(trisCenterPos)
   }

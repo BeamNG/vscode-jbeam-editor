@@ -253,7 +253,7 @@ function focusTorbars(torbarsArrToFocus, triggerEditor = true) {
   //  highlightNodeinTextEditor()
   //}
 
-  if(torbarCounter > 0) {
+  if(centerViewOnSelectedJBeam && torbarCounter > 0) {
     let torbarCenterPos = new THREE.Vector3(sumX / torbarCounter, sumY / torbarCounter, sumZ / torbarCounter)
     moveCameraCenter(torbarCenterPos)
   }

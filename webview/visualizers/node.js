@@ -39,23 +39,25 @@ function highlightNodeinTextEditor() {
   }
 }
 
-function updateLabels() {
-  if(currentSectionName !== 'nodes') {
-    if(tooltipPool) {
-      // hide all
-      tooltipPool.updateTooltips([])
-    }
-    return
-  }
+export function updateLabels() {
+  // if(!showNodeIDs && currentSectionName !== 'nodes') {
+  //   if(tooltipPool) {
+  //     // hide all
+  //     tooltipPool.updateTooltips([])
+  //   }
+  //   return
+  // }
 
   const tooltips = []
   for (let i = 0; i < pointsCache.length; i++) {
-    if(selectedNodeIndices && !selectedNodeIndices.includes(i)) continue
-    const node = pointsCache[i]
-    let text = node.name
-    tooltips.push({ pos3d: node.pos3d, name: text}) //  - ${node.nodeWeight}
+    let selected = selectedNodeIndices && selectedNodeIndices.includes(i)
+    if (showNodeIDs || selected) {
+      const node = pointsCache[i]
+      let text = node.name
+      tooltips.push({ pos3d: node.pos3d, name: text, size: selected ? 1.75 : 1.0}) //  - ${node.nodeWeight}
+    }
   }
-  if(tooltips.length === 0) return
+  //if(tooltips.length === 0) return
 
   if(!tooltipPool) {
     tooltipPool = new TooltipPool(scene, camera, 5)
@@ -110,7 +112,7 @@ function focusNodes(nodesArrToFocus, triggerEditor = true) {
 
   if(selectedNodeIndices.length == 0) selectedNodeIndices = null
 
-  if(centerViewOnSelectedNodes && ncount > 0) {
+  if(centerViewOnSelectedJBeam && ncount > 0) {
     let nodesCenterPos = new THREE.Vector3(sumX / ncount, sumY / ncount, sumZ / ncount)
     moveCameraCenter(nodesCenterPos)
   }

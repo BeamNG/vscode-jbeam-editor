@@ -12,7 +12,8 @@ let views = [
 const settings = {
   perspective: true,
   view: 'Iso',
-  centerViewOnSelectedNodes: false,
+  showNodeIDs: true,
+  centerViewOnSelectedJBeam: true,
   meshStats: ''
 }
 
@@ -52,8 +53,12 @@ export async function init() {
     }
   });
 
-  pane.addBinding( settings, 'centerViewOnSelectedNodes', {label: 'Focus Selected Nodes'}).on('change', function(ev) {
-    centerViewOnSelectedNodes = ev.value
+  pane.addBinding( settings, 'showNodeIDs', {label: 'Show Node IDs'}).on('change', function(ev) {
+    showNodeIDs = ev.value
+    ctx.visualizersNode.updateLabels()
+  })
+  pane.addBinding( settings, 'centerViewOnSelectedJBeam', {label: 'Focus Selected JBeam'}).on('change', function(ev) {
+    centerViewOnSelectedJBeam = ev.value
   })
 
   pane.addButton({

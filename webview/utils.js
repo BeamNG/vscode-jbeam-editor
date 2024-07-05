@@ -15,7 +15,8 @@ let daeLoadingCounter = 0
 let daeLoadingCounterFull = 0
 let loadedMeshes = []
 let meshLoadingEnabled = false
-let centerViewOnSelectedNodes = false
+let centerViewOnSelectedJBeam = true
+let showNodeIDs = true
 
 const raycaster = new THREE.Raycaster()
 const mouse = new THREE.Vector2()
@@ -481,8 +482,8 @@ class Tooltip {
     this.mesh.material.uniforms.map.value = texture; // Assign the new texture
 
     this.mesh.geometry.dispose(); // Dispose old geometry
-    this.sizeX = canvas.width * this.scale
-    this.sizeY = canvas.height * this.scale
+    this.sizeX = canvas.width * this.scale * data.size
+    this.sizeY = canvas.height * this.scale * data.size
     this.mesh.geometry = new THREE.PlaneGeometry(this.sizeX, this.sizeY);
     this.mesh.geometry.translate(this.sizeX * 0.5, this.sizeY * 0.5, 0)
 
