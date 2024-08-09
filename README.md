@@ -149,6 +149,11 @@ If all worked, it should show up like this now:
 
 ## Release Notes
 
+### 0.3.8
+* Features:
+  * added duplicate beam detection for current file
+  * added degenerate triangle detection
+
 ### 0.3.7
 * Bugfixes:
   * fixed jbeam being hidden under z=0 plane
