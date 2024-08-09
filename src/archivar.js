@@ -42,7 +42,6 @@ function processJbeamFile(filename) {
   if(!fileExists(filename)) return
   const namespace = utilsExt.getNamespaceFromFilename(rootPath, filename)
   let diagnosticsList = []
-  jbeamFileCounter++
   const contentTextUtf8 = fs.readFileSync(filename, 'utf8');
   if(contentTextUtf8) {
     let dataBundle
@@ -85,6 +84,7 @@ function processJbeamFile(filename) {
       dataBundle.tableInterpretedData = tableInterpretedData
 
       jbeamFileData[namespace][filename] = dataBundle
+      jbeamFileCounter++
       //console.log(`${filename} [${namespace}] contains ${Object.keys(dataBundle.data).length} parts ...`);
 
 
