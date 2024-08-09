@@ -253,7 +253,9 @@ function decodeWithMeta(s, origin, cyclicDependencies = true) {
           addMetadata(commentMeta)
           let comment = ''
           while (i < s.length && s[i] !== '\n' && !abortExecution) {
-            comment += s[i]
+            if(s[i] !== '\r') {
+              comment += s[i]
+            }
             i++;
             columnNumber++;
           }
@@ -269,7 +271,9 @@ function decodeWithMeta(s, origin, cyclicDependencies = true) {
           addMetadata(commentMeta)
           let comment = ''
           while (i < s.length && !(s[i] === '*' && s[i + 1] === '/') && !abortExecution) {
-            comment += s[i]
+            if(s[i] !== '\r') {
+              comment += s[i]
+            }
             if (s[i] === '\n') {
               lineNumber++; // Increment line number inside multi-line comment
               columnNumber = 0
