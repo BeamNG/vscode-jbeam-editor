@@ -149,6 +149,12 @@ If all worked, it should show up like this now:
 
 ## Release Notes
 
+### 0.3.9
+* Bugfixes:
+  * Fixed JBeam file/parts counter
+  * Fixed JBeam diagnostics clearing on closing file
+  * Tweaked diagnostic message for duplicate beams and degenerate triangles a bit
+
 ### 0.3.8
 * Bugfixes:
   * Fixed bug where "tableSchema" processing didn't happen due to even just JSON warnings existing, which isn't a problem to process.
