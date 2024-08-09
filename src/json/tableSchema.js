@@ -286,10 +286,10 @@ function processPart(part, diagnostics) {
         if (beamIdentifier in seenBeams) {
           const seenBeam = seenBeams[beamIdentifier]
           if (!seenBeam[0]) {
-            diagnostics.push(['warning', `Duplicate beam with nodes: ${seenBeam[1]}, ${seenBeam[2]}`, seenBeam[3]])
+            diagnostics.push(['warning', `Duplicate beam: ${seenBeam[1]}, ${seenBeam[2]}`, seenBeam[3]])
             seenBeam[0] = true
           }
-          diagnostics.push(['warning', `Duplicate beam with nodes: ${sortedId1}, ${sortedId2}`, beam.__meta.range])
+          diagnostics.push(['warning', `Duplicate beam: ${sortedId1}, ${sortedId2}`, beam.__meta.range])
         } else {
           seenBeams[beamIdentifier] = [false, sortedId1, sortedId2, beam.__meta.range]
         }
@@ -309,7 +309,7 @@ function processPart(part, diagnostics) {
 
           // Check if any two nodes are the same, indicating a degenerate triangle
           if (sortedNodes[0] === sortedNodes[1] || sortedNodes[1] === sortedNodes[2]) {
-            diagnostics.push(['error', `Degenerate triangle with nodes: ${id1}, ${id2}, ${id3}`, triangle.__meta.range])
+            diagnostics.push(['error', `Degenerate triangle: ${id1}, ${id2}, ${id3}`, triangle.__meta.range])
           }
         }
       }
