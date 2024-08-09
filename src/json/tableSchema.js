@@ -207,7 +207,7 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, diagnostics
   return newList;
 }
 
-function processPart(part, seenBeams, diagnostics) {
+function processPart(part, diagnostics) {
   if (!part || typeof part !== 'object') {
     return false
   }
@@ -276,16 +276,22 @@ function processPart(part, seenBeams, diagnostics) {
   }
   // check duplicate beams
   if (part?.beams) {
+    const seenBeams = {}
     for (const beamKey in part.beams) {
       if (beamKey !== '__meta') {
         const beam = part.beams[beamKey]
         const [sortedId1, sortedId2] = [beam['id1:'], beam['id2:']].sort();
         const beamIdentifier = `${sortedId1}_${sortedId2}`;
 
-        if (seenBeams.has(beamIdentifier)) {
-          diagnostics.push(['warning', `Duplicate beam with ids: ${sortedId1}, ${sortedId2}`, beam.__meta.range])
+        if (beamIdentifier in seenBeams) {
+          const seenBeam = seenBeams[beamIdentifier]
+          if (!seenBeam[0]) {
+            diagnostics.push(['warning', `Duplicate beam with nodes: ${seenBeam[1]}, ${seenBeam[2]}`, seenBeam[3]])
+            seenBeam[0] = true
+          }
+          diagnostics.push(['warning', `Duplicate beam with nodes: ${sortedId1}, ${sortedId2}`, beam.__meta.range])
         } else {
-          seenBeams.add(beamIdentifier);
+          seenBeams[beamIdentifier] = [false, sortedId1, sortedId2, beam.__meta.range]
         }
       }
     }
@@ -316,7 +322,6 @@ function processPart(part, seenBeams, diagnostics) {
 function processAllParts(parsedData) {
   let tableInterpretedData = {}
   let diagnostics = [] // contains parsing errors and warnings
-  const seenBeams = new Set();
 
   if (!parsedData || typeof parsedData !== 'object') {
     diagnostics.push(['error', `Unable to process parts'`, parsedData?.__meta?.range])
@@ -326,7 +331,7 @@ function processAllParts(parsedData) {
     for (let partName of keys) {
       if (!parsedData.hasOwnProperty(partName)) continue;
       let part = parsedData[partName];
-      if (processPart(part, seenBeams, diagnostics) !== true) {
+      if (processPart(part, diagnostics) !== true) {
         diagnostics.push(['error', `Unable to process part '${partName}'`, part?.__meta?.range])
       }
       tableInterpretedData[partName] = part
