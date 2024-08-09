@@ -86,11 +86,6 @@ function subscribeToDocumentChanges(context, diagnostics) {
       validateTextDocument(event.document);
     })
   );
-
-  // Clear diagnostics for closed documents
-  context.subscriptions.push(
-    vscode.workspace.onDidCloseTextDocument(doc => jbeamDiagnostics.delete(doc.uri))
-  );
 }
 
 let completionDisposable
