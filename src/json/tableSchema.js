@@ -207,7 +207,7 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, diagnostics
   return newList;
 }
 
-function processPart(part, diagnostics) {
+function processPart(part, seenBeams, diagnostics) {
   if (!part || typeof part !== 'object') {
     return false
   }
@@ -269,7 +269,42 @@ function processPart(part, diagnostics) {
         try {
           node.pos = [node.posX, node.posZ, -node.posY] // FLIP!
         } catch (e) {
-          diagnostics.push(['error', e.message, node.__meta])
+          diagnostics.push(['error', e.message, node.__meta.range])
+        }
+      }
+    }
+  }
+  // check duplicate beams
+  if (part?.beams) {
+    for (const beamKey in part.beams) {
+      if (beamKey !== '__meta') {
+        const beam = part.beams[beamKey]
+        const [sortedId1, sortedId2] = [beam['id1:'], beam['id2:']].sort();
+        const beamIdentifier = `${sortedId1}_${sortedId2}`;
+
+        if (seenBeams.has(beamIdentifier)) {
+          diagnostics.push(['warning', `Duplicate beam with ids: ${sortedId1}, ${sortedId2}`, beam.__meta.range])
+        } else {
+          seenBeams.add(beamIdentifier);
+        }
+      }
+    }
+  }
+  // Check for degenerate triangles
+  if (part?.triangles) {
+    for (const triangleName in part.triangles) {
+      if (triangleName !== '__meta') {
+        const triangle = part.triangles[triangleName];
+        if (typeof triangle === 'object' && triangle['id1:'] && triangle['id2:'] && triangle['id3:']) {
+          const id1 = triangle['id1:'];
+          const id2 = triangle['id2:'];
+          const id3 = triangle['id3:'];
+          const sortedNodes = [id1, id2, id3].sort();
+
+          // Check if any two nodes are the same, indicating a degenerate triangle
+          if (sortedNodes[0] === sortedNodes[1] || sortedNodes[1] === sortedNodes[2]) {
+            diagnostics.push(['error', `Degenerate triangle with nodes: ${id1}, ${id2}, ${id3}`, triangle.__meta.range])
+          }
         }
       }
     }
@@ -281,17 +316,18 @@ function processPart(part, diagnostics) {
 function processAllParts(parsedData) {
   let tableInterpretedData = {}
   let diagnostics = [] // contains parsing errors and warnings
+  const seenBeams = new Set();
 
   if (!parsedData || typeof parsedData !== 'object') {
-    diagnostics.push(['error', `Unable to process parts'`, parsedData?.__meta])
+    diagnostics.push(['error', `Unable to process parts'`, parsedData?.__meta?.range])
   }
   else {
     const keys = Object.keys(parsedData).filter(key => key !== '__meta')
     for (let partName of keys) {
       if (!parsedData.hasOwnProperty(partName)) continue;
       let part = parsedData[partName];
-      if (processPart(part, diagnostics) !== true) {
-        diagnostics.push(['error', `Unable to process part '${partName}'`, part?.__meta])
+      if (processPart(part, seenBeams, diagnostics) !== true) {
+        diagnostics.push(['error', `Unable to process part '${partName}'`, part?.__meta?.range])
       }
       tableInterpretedData[partName] = part
     }

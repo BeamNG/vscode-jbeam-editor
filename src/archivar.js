@@ -60,7 +60,7 @@ function processJbeamFile(filename) {
       );
       diagnosticsList.push(diagnostic);
     }
-    if(dataBundle && diagnosticsList.length === 0) {
+    if(dataBundle && !dataBundle.errorsExist) {
       if(!jbeamFileData[namespace]) {
         jbeamFileData[namespace] = {}
       }

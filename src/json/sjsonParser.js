@@ -519,6 +519,7 @@ function decodeWithMeta(s, origin, cyclicDependencies = true) {
 function decodeWithMetaWithDiagnostics(contentTextUtf8, filename, cyclicDependencies = true) {
   let dataBundle
   let diagnosticsList = []
+  let errorsExist = false
   try {
     dataBundle = decodeWithMeta(contentTextUtf8, filename, cyclicDependencies);
   } catch (e) {
@@ -532,6 +533,7 @@ function decodeWithMetaWithDiagnostics(contentTextUtf8, filename, cyclicDependen
       vscode.DiagnosticSeverity.Error
     );
     diagnosticsList.push(diagnostic);
+    errorsExist = true
   }
   if (dataBundle) {
     if(dataBundle.errors && dataBundle.errors.length > 0) {
@@ -550,6 +552,7 @@ function decodeWithMetaWithDiagnostics(contentTextUtf8, filename, cyclicDependen
           vscode.DiagnosticSeverity.Error
         );
         diagnosticsList.push(diagnostic);
+        errorsExist = true
       }
     }
     if(dataBundle.warnings && dataBundle.warnings.length > 0) {
@@ -573,6 +576,7 @@ function decodeWithMetaWithDiagnostics(contentTextUtf8, filename, cyclicDependen
   }
 
   dataBundle.diagnosticsList = diagnosticsList
+  dataBundle.errorsExist = errorsExist
   return dataBundle
 }
 

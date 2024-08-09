@@ -40,7 +40,7 @@ function validateTextDocument(document) {
   // jbeam specific things
   let tableInterpretedData
   let diagnosticsTable
-  if(dataBundle && diagnosticsList.length === 0) {
+  if(dataBundle && !dataBundle.errorsExist) {
     try {
       [tableInterpretedData, diagnosticsTable] = tableSchema.processAllParts(dataBundle.data)
       for (const w of diagnosticsTable) {
@@ -70,64 +70,7 @@ function validateTextDocument(document) {
     }
   }
 
-  // now specific checks for the language itself. i.e. duplicate beams
-  if(tableInterpretedData) {
-    const seenBeams = new Set();
-
-    // check duplicate beams
-    for (const [partName, part] of Object.entries(tableInterpretedData)) {
-      if (part?.beams) {
-        for (const beamKey in part.beams) {
-          const beam = part.beams[beamKey]
-          const [sortedId1, sortedId2] = [beam['id1:'], beam['id2:']].sort();
-          const beamIdentifier = `${sortedId1}_${sortedId2}`;
-  
-          if (seenBeams.has(beamIdentifier)) {
-            const range = new vscode.Range(
-              new vscode.Position(beam?.__meta?.range[0], beam?.__meta?.range[1]),
-              new vscode.Position(beam?.__meta?.range[2], beam?.__meta?.range[3])
-            );
-            const diagnostic = new vscode.Diagnostic(
-              range,
-              `Duplicate beam found in part ${partName} with ids: ${sortedId1}, ${sortedId2}`,
-              vscode.DiagnosticSeverity.Error
-            );
-            diagnosticsList.push(diagnostic);
-          } else {
-            seenBeams.add(beamIdentifier);
-          }
-        }
-      }
-      // Check for degenerate triangles
-      if (part?.triangles) {
-        for (const triangleName in part.triangles) {
-          const triangle = part.triangles[triangleName];
-          if (typeof triangle === 'object' && triangle['id1:'] && triangle['id2:'] && triangle['id3:']) {
-            const id1 = triangle['id1:'];
-            const id2 = triangle['id2:'];
-            const id3 = triangle['id3:'];
-            const sortedNodes = [id1, id2, id3].sort();
-  
-            // Check if any two nodes are the same, indicating a degenerate triangle
-            if (sortedNodes[0] === sortedNodes[1] || sortedNodes[1] === sortedNodes[2]) {
-              const range = new vscode.Range(
-                new vscode.Position(triangle?.__meta?.range[0], triangle?.__meta?.range[1]),
-                new vscode.Position(triangle?.__meta?.range[2], triangle?.__meta?.range[3])
-              );
-              const diagnostic = new vscode.Diagnostic(
-                range,
-                `Degenerate triangle found in part ${partName} with nodes: ${id1}, ${id2}, ${id3}`,
-                vscode.DiagnosticSeverity.Error
-              );
-              diagnosticsList.push(diagnostic);
-            }
-          }
-        }
-      }
-    }
-  }
-
-    // Update the diagnostics collection for the file
+  // Update the diagnostics collection for the file
   jbeamDiagnostics.set(document.uri, diagnosticsList);
 }
 
