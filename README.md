@@ -150,6 +150,8 @@ If all worked, it should show up like this now:
 ## Release Notes
 
 ### 0.3.8
+* Bugfixes:
+  * Fixed bug where "tableSchema" processing didn't happen due to even just JSON warnings existing, which isn't a problem to process.
 * Features:
   * added duplicate beam detection for current file
   * added degenerate triangle detection
