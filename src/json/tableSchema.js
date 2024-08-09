@@ -128,9 +128,11 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, diagnostics
           diagnostics.push(['error', `Inline option (argument ${headerSize + 1}) need to be a dict, not a ${typeof rowValue[headerSize]}: ${rowValue[headerSize]}`, rowValue.__meta.range])
         }
       } else if (rowSize > headerSize + 1) {
+        let headerNoMeta = utilsExt.deepCloneAndRemoveKeys(header, ['__meta'])
+        let rowValueNoMeta = utilsExt.deepCloneAndRemoveKeys(rowValue, ['__meta'])
         let msg = `Invalid table header, must be as long as all table cells (plus one additional options column):\n`;
-        msg += `Table header: ${JSON.stringify(header)}\n`
-        msg += `Mismatched row: ${JSON.stringify(rowValue)}`
+        msg += `Table header: ${JSON.stringify(headerNoMeta)}\n`
+        msg += `Mismatched row: ${JSON.stringify(rowValueNoMeta)}`
         diagnostics.push(['error', msg, rowValue.__meta.range])
         return -1
       } else if (rowSize < headerSize) {
@@ -165,9 +167,11 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, diagnostics
       //for (let [rk, _] of Object.entries(rowValue)) {
       for (let rk in allKeys2) {
         if (header[rk] === null) {
+          let headerNoMeta = utilsExt.deepCloneAndRemoveKeys(header, ['__meta'])
+          let rowValueNoMeta = utilsExt.deepCloneAndRemoveKeys(rowValue, ['__meta'])
           let msg = `*** Unable to parse row, header for entry is missing: \n`
-          msg += `*** Header: ${JSON.stringify(header)} missing key: ${rk} -- is the section header too short?\n`
-          msg += `*** Row: ${JSON.stringify(rowValue)}`
+          msg += `*** Header: ${JSON.stringify(headerNoMeta)} missing key: ${rk} -- is the section header too short?\n`
+          msg += `*** Row: ${JSON.stringify(rowValueNoMeta)}`
           diagnostics.push(['error', msg, rowValue.__meta.range])
         } else {
           newRow[header[rk]] = replaceSpecialValues(rowValue[rk]);
