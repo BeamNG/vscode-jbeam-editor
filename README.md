@@ -149,6 +149,10 @@ If all worked, it should show up like this now:
 
 ## Release Notes
 
+### 0.3.91
+* Bugfixes:
+  * Duplicate beam detector now works like in game
+
 ### 0.3.9
 * Bugfixes:
   * Fixed JBeam file/parts counter
