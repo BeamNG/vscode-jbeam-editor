@@ -281,7 +281,12 @@ function processPart(part, diagnostics) {
       if (beamKey !== '__meta') {
         const beam = part.beams[beamKey]
         const [sortedId1, sortedId2] = [beam['id1:'], beam['id2:']].sort();
-        const beamIdentifier = `${sortedId1}_${sortedId2}`;
+
+        let beamType = '|NORMAL'
+        if (beam.beamType !== undefined) {
+          beamType = beam.beamType === '' ? '|NORMAL' : beam.beamType
+        }
+        const beamIdentifier = `${sortedId1}_${sortedId2}_${beamType}`;
 
         if (beamIdentifier in seenBeams) {
           const seenBeam = seenBeams[beamIdentifier]
