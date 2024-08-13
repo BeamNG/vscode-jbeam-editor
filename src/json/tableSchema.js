@@ -281,27 +281,26 @@ function processPart(part, diagnostics) {
       if (beamKey !== '__meta') {
         const beam = part.beams[beamKey]
 
-        // Ignore bounded beams
-        if (beam.beamType === '|BOUNDED') {
-          continue
-        }
-        const [sortedId1, sortedId2] = [beam['id1:'], beam['id2:']].sort();
+        // Ignore certain beams
+        if (beam.beamSpring !== 0 && (beam.deformGroup === undefined || beam.deformGroup === '') && beam.beamType !== '|BOUNDED' && beam.optional !== true) {
+          const [sortedId1, sortedId2] = [beam['id1:'], beam['id2:']].sort();
 
-        let beamType = '|NORMAL'
-        if (beam.beamType !== undefined) {
-          beamType = beam.beamType === '' ? '|NORMAL' : beam.beamType
-        }
-        const beamIdentifier = `${sortedId1}_${sortedId2}_${beamType}`;
-
-        if (beamIdentifier in seenBeams) {
-          const seenBeam = seenBeams[beamIdentifier]
-          if (!seenBeam[0]) {
-            diagnostics.push(['warning', `Duplicate beam: ${seenBeam[1]}, ${seenBeam[2]}`, seenBeam[3]])
-            seenBeam[0] = true
+          let bType = '|NORMAL'
+          if (beam.beamType !== undefined) {
+            bType = beam.beamType === '' ? '|NORMAL' : beam.beamType
           }
-          diagnostics.push(['warning', `Duplicate beam: ${sortedId1}, ${sortedId2}`, beam.__meta.range])
-        } else {
-          seenBeams[beamIdentifier] = [false, sortedId1, sortedId2, beam.__meta.range]
+          const beamIdentifier = `${sortedId1}_${sortedId2}_${bType}`;
+
+          if (beamIdentifier in seenBeams) {
+            const seenBeam = seenBeams[beamIdentifier]
+            if (!seenBeam[0]) {
+              diagnostics.push(['warning', `Duplicate beam: ${seenBeam[1]}, ${seenBeam[2]}`, seenBeam[3]])
+              seenBeam[0] = true
+            }
+            diagnostics.push(['warning', `Duplicate beam: ${sortedId1}, ${sortedId2}`, beam.__meta.range])
+          } else {
+            seenBeams[beamIdentifier] = [false, sortedId1, sortedId2, beam.__meta.range]
+          }
         }
       }
     }
