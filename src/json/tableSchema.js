@@ -280,6 +280,11 @@ function processPart(part, diagnostics) {
     for (const beamKey in part.beams) {
       if (beamKey !== '__meta') {
         const beam = part.beams[beamKey]
+
+        // Ignore bounded beams
+        if (beam.beamType === '|BOUNDED') {
+          continue
+        }
         const [sortedId1, sortedId2] = [beam['id1:'], beam['id2:']].sort();
 
         let beamType = '|NORMAL'
