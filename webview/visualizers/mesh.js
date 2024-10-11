@@ -43,7 +43,10 @@ function onReceiveData(message) {
   if(!wasLoaded) {
     meshLibraryFull = [] // clear the library on file change
   }
-  ctx.ui.onConfigChanged()
+
+  if(uiSettings.showMeshes) {
+    updateMeshViz()
+  }
 }
 
 function tryLoad3dMesh(meshName, onDone) {
@@ -287,12 +290,10 @@ function focusMeshes(meshesArrToFocus) {
 }
 
 export function updateMeshViz() {
-  console.log("updateMeshViz > uiSettings.showMeshes ", uiSettings.showMeshes, loadedMeshes)
   if(isInSection || uiSettings.showMeshes) {
     for (let i = 0; i < loadedMeshes.length; i++) {
       loadedMeshes[i].visible = true
     }
-    console.log("> meshLoadingEnabled", meshLoadingEnabled, wasLoaded, uiSettings.showMeshes)
     if(meshLoadingEnabled && (wasLoaded || uiSettings.showMeshes)) {
       startLoadingMeshes()
     }

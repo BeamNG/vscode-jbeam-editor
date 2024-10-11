@@ -555,7 +555,7 @@ class TooltipPool {
         this.addTooltipToPool();
       }
       this.poolSize = dataList.length;
-      console.log('increased pool size to ', this.poolSize)
+      //console.log('increased pool size to ', this.poolSize)
     }
 
     // Reset all tooltips

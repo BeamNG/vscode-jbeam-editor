@@ -280,7 +280,7 @@ function onCursorChangeEditor(message) {
     }
   }
 
-  console.log(message.range, torbarsFound, torbarCache)
+  //console.log(message.range, torbarsFound, torbarCache)
 
   focusTorbars(torbarsFound, false)
 }

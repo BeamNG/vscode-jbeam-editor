@@ -45,7 +45,7 @@ function updateBeamViz() {
             vertexPositions.push(node2.pos[1])
             vertexPositions.push(node2.pos[2])
           } else {
-            console.log(`beam discarded: ${beam}`)
+            //console.log(`beam discarded: ${beam}`)
           }
         }
       }
@@ -218,7 +218,7 @@ function onCursorChangeEditor(message) {
     }
   }
 
-  console.log(message.range, beamsFound, beamCache)
+  //console.log(message.range, beamsFound, beamCache)
 
   focusBeams(beamsFound, false)
 }
