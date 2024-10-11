@@ -12,7 +12,6 @@ let views = [
 const settings = {
   perspective: true,
   view: 'Iso',
-  showNodeIDs: true,
   centerViewOnSelectedJBeam: true,
   meshStats: ''
 }
@@ -86,6 +85,11 @@ function applySetting(settingKey) {
       centerViewOnSelectedJBeam = settings.centerViewOnSelectedJBeam;
       break;
 
+    case 'showMeshes':
+      showMeshes = settings.showMeshes;
+      ctx.visualizersMesh.updateMeshViz();
+      break;
+
     // Add additional settings logic here as needed
   }
 }
@@ -133,6 +137,7 @@ function initHTMLUI() {
   setupToolbarSetting('perspective', 'perspective-toggle');
   setupToolbarSetting('showNodeIDs', 'showNodeIDs-toggle');
   setupToolbarSetting('centerViewOnSelectedJBeam', 'centerView-toggle');
+  setupToolbarSetting('showMeshes', 'showMeshes-toggle');
 }
 
 // Function to handle settings change (e.g., from config change)
@@ -143,6 +148,7 @@ export async function onConfigChanged(newSettings) {
   setToolbarSetting('perspective', 'perspective-toggle', settings.perspective);
   setToolbarSetting('showNodeIDs', 'showNodeIDs-toggle', settings.showNodeIDs);
   setToolbarSetting('centerViewOnSelectedJBeam', 'centerView-toggle', settings.centerViewOnSelectedJBeam);
+  setToolbarSetting('showMeshes', 'showMeshes-toggle', settings.showMeshes);
 }
 
 export async function init() {

@@ -6,6 +6,7 @@ let uri = null
 let daeFindfilesDone = false
 let wasLoaded = false
 let defaultMeshOpacity = 1
+let meshesHighlighted = []
 
 // loadedMeshes is in utils
 
@@ -288,6 +289,24 @@ function focusMeshes(meshesArrToFocus) {
   if(selectedMeshIndices == []) selectedMeshIndices = null
 }
 
+export function updateMeshViz() {
+  if(isInSection || showMeshes) {
+    for (let i = 0; i < loadedMeshes.length; i++) {
+      loadedMeshes[i].visible = true
+    }
+    if(meshLoadingEnabled && (wasLoaded || (ctx?.config?.sceneView?.meshes?.loadByDefault ?? false))) {
+      startLoadingMeshes()
+    }
+  } else {
+    for (let i = 0; i < loadedMeshes.length; i++) {
+      scene.remove(loadedMeshes[i])
+    }
+    loadedMeshes = []
+    return
+  }
+  focusMeshes(meshesHighlighted, false)
+}
+
 function onCursorChangeEditor(message) {
   if(!loadedMeshes) return
 
@@ -295,24 +314,10 @@ function onCursorChangeEditor(message) {
     currentPartName = message.currentPartName
     currentSectionName = message.currentSectionName
     isInSection = (currentSectionName === 'flexbodies' || currentSectionName === 'props')
-    if(isInSection) {
-      for (let i = 0; i < loadedMeshes.length; i++) {
-        loadedMeshes[i].visible = true
-      }
-      if(meshLoadingEnabled && (wasLoaded || (ctx?.config?.sceneView?.meshes?.loadByDefault ?? false))) {
-        startLoadingMeshes()
-      }
-    } else {
-      for (let i = 0; i < loadedMeshes.length; i++) {
-        scene.remove(loadedMeshes[i])
-      }
-      loadedMeshes = []
-      return
-    }
   }
 
-
-  let meshesFound = []
+  // find which mesh should be highlighted
+  meshesHighlighted = []
   //console.log(">meshes.onCursorChangeEditor ", message.range)
   // Helper function to check if the cursor is within a given range
   const cursorInRange = (range) => {
@@ -322,12 +327,11 @@ function onCursorChangeEditor(message) {
 
   for (let i = 0; i < loadedMeshes.length; i++) {
     if (loadedMeshes[i].__meta && cursorInRange(loadedMeshes[i].__meta.range)) {
-      meshesFound.push(i)
+      meshesHighlighted.push(i)
     }
   }
-  focusMeshes(meshesFound, false)
+  updateMeshViz()
 }
-
 
 function onReceiveMessage(event) {
   //console.log(">>> meshVisuals.onReceiveMessage >>>", event)
