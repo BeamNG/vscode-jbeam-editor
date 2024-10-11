@@ -290,7 +290,7 @@ function focusMeshes(meshesArrToFocus) {
 }
 
 export function updateMeshViz() {
-  if(isInSection || showMeshes) {
+  if(isInSection || uiSettings.showMeshes) {
     for (let i = 0; i < loadedMeshes.length; i++) {
       loadedMeshes[i].visible = true
     }

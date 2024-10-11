@@ -191,7 +191,7 @@ function focusBeams(beamsArrToFocus, triggerEditor = true) {
   //  highlightNodeinTextEditor()
   //}
 
-  if(centerViewOnSelectedJBeam && beamCounter > 0) {
+  if(uiSettings.centerViewOnSelectedJBeam && beamCounter > 0) {
     let beamCenterPos = new THREE.Vector3(sumX / beamCounter, sumY / beamCounter, sumZ / beamCounter)
     moveCameraCenter(beamCenterPos)
   }

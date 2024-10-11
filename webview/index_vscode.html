@@ -15,28 +15,28 @@
 
 <div id="toolbar">
   <!-- Show Node IDs Toggle Icon -->
-  <div class="toolbar-item" id="showNodeIDs-toggle" style="cursor: pointer; margin-right: 3px;" title="Toggle Show Node IDs">
+  <div class="toolbar-item" id="toolbar-showNodeIDs-toggle" style="cursor: pointer; margin-right: 3px;" title="Toggle Show Node IDs">
     🆔
   </div>
 
   <!-- Perspective Toggle Icon -->
-  <div class="toolbar-item" id="perspective-toggle" style="cursor: pointer; margin-right: 3px;" title="Toggle Perspective">
+  <div class="toolbar-item" id="toolbar-perspective-toggle" style="cursor: pointer; margin-right: 3px;" title="Toggle Perspective">
     🔲
   </div>
 
-  <div class="toolbar-item" id="showMeshes-toggle" style="cursor: pointer; margin-right: 3px;" title="Toggle 3D Meshes">
+  <div class="toolbar-item" id="toolbar-showMeshes-toggle" style="cursor: pointer; margin-right: 3px;" title="Toggle 3D Meshes">
     🧊
   </div>
 
   <!-- Focus on JBeam Toggle Icon -->
-  <div class="toolbar-item" id="centerView-toggle" style="cursor: pointer;" title="Toggle Focus on JBeam">
+  <div class="toolbar-item" id="toolbar-centerViewOnSelectedJBeam-toggle" style="cursor: pointer;" title="Toggle Focus on JBeam">
     🎯
   </div>
 </div>
 
-<div id="status-bar" style="position: absolute; bottom: 0px; width: 100%; text-align: left; pointer-events: none;">
-  <div style="display: inline-block; background: rgba(0, 0, 0, 0.7); color: white; padding: 5px 5px;">
-    <span id="status-text">Welcome!</span>
+<div id="status-bar" style="display: none; position: absolute; bottom: 0px; width: 100%; text-align: left; pointer-events: none;">
+  <div id="status-container" style="display: inline-block; background: rgba(0, 0, 0, 0.7); color: white; padding: 5px 5px;">
+    <!-- Individual statuses will be inserted here -->
   </div>
 </div>
 

@@ -51,7 +51,7 @@ export function updateLabels() {
   const tooltips = []
   for (let i = 0; i < pointsCache.length; i++) {
     let selected = selectedNodeIndices && selectedNodeIndices.includes(i)
-    if (showNodeIDs || selected) {
+    if (uiSettings.showNodeIDs || selected) {
       const node = pointsCache[i]
       let text = node.name
       tooltips.push({ pos3d: node.pos3d, name: text, size: selected ? 1.75 : 1.0}) //  - ${node.nodeWeight}
@@ -112,7 +112,7 @@ function focusNodes(nodesArrToFocus, triggerEditor = true) {
 
   if(selectedNodeIndices.length == 0) selectedNodeIndices = null
 
-  if(centerViewOnSelectedJBeam && ncount > 0) {
+  if(uiSettings.centerViewOnSelectedJBeam && ncount > 0) {
     let nodesCenterPos = new THREE.Vector3(sumX / ncount, sumY / ncount, sumZ / ncount)
     moveCameraCenter(nodesCenterPos)
   }

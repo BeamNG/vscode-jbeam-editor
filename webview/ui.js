@@ -1,4 +1,4 @@
-let meshLoadingBtn
+
 let views = [
   {name: 'Top'   , onActivate() { animateCameraMovement(new THREE.Vector3(0, 10, 0)) }},
   {name: 'Bottom', onActivate() { animateCameraMovement(new THREE.Vector3(0,-10, 0)) }},
@@ -9,62 +9,10 @@ let views = [
   {name: 'Iso'   , onActivate() { animateCameraMovement(new THREE.Vector3(10,10,10)) }},
 ]
 
-const settings = {
-  perspective: true,
-  view: 'Iso',
-  centerViewOnSelectedJBeam: true,
-  meshStats: ''
-}
-
-// see https://cocopon.github.io/tweakpane/quick-tour/
-
-function initTweakPane() {
-
-  let pane = new ctx.tweakPane.Pane({
-    title:'Settings',
-    expanded: false,
-  })
-
-  pane.addBinding(settings, 'view', {
-    label: 'View',
-    options: views.reduce((result, view) => {
-      result[view.name] = view.name;
-      return result;
-    }, {}),
-  }).on('change', (ev) => {
-    // Find the view object based on the selected view name
-    const view = views.find(v => v.name === ev.value);
-    if (view) {
-      view.onActivate();
-      settings.view = view.name; // Update the settings with the new view name
-    }
-  });
-
-  const folder3d = pane.addFolder({
-    title: '3D Meshes',
-  });
-
-  if(!(ctx?.config?.sceneView?.meshes?.loadByDefault ?? false)) {
-    meshLoadingBtn = folder3d.addButton({
-      title: 'Load 3D Meshes',
-    }).on('click', () => {
-      ctx.visualizersMesh.startLoadingMeshes()
-    })
-  }
-
-  folder3d.addBinding(settings, 'meshStats', {
-    label:null,
-    multiline: true,
-    rows: 5,
-    readonly: true,
-  });
-}
-
-// Centralized function to apply the logic of each setting
 function applySetting(settingKey) {
   switch (settingKey) {
     case 'perspective':
-      if (settings.perspective) {
+      if (uiSettings.perspectiveRender) {
         camera = cameraPersp;
         cameraPersp.position.copy(orthoCamera.position);
         orbitControls.enableRotate = true;
@@ -77,28 +25,19 @@ function applySetting(settingKey) {
       break;
 
     case 'showNodeIDs':
-      showNodeIDs = settings.showNodeIDs;
       ctx.visualizersNode.updateLabels();
       break;
 
-    case 'centerViewOnSelectedJBeam':
-      centerViewOnSelectedJBeam = settings.centerViewOnSelectedJBeam;
-      break;
-
     case 'showMeshes':
-      showMeshes = settings.showMeshes;
       ctx.visualizersMesh.updateMeshViz();
       break;
-
-    // Add additional settings logic here as needed
   }
 }
 
-
 // Function to handle setting the value of a toolbar setting (and apply it)
-function setToolbarSetting(settingKey, elementId, value) {
-  const element = document.getElementById(elementId);
-  settings[settingKey] = value;
+function setToolbarSetting(settingKey, value) {
+  const element = document.getElementById('toolbar-' + settingKey + '-toggle');
+  uiSettings[settingKey] = value;
 
   // Apply changes to UI and apply the actual setting logic
   if (value) {
@@ -113,11 +52,12 @@ function setToolbarSetting(settingKey, elementId, value) {
 }
 
 // Function to create a listener for a setting (but do not apply the setting during initialization)
-function setupToolbarSetting(settingKey, elementId) {
-  const element = document.getElementById(elementId);
+function setupToolbarSetting(settingKey) {
+  console.log(">>>>", settingKey)
+  const element = document.getElementById('toolbar-' + settingKey + '-toggle');
 
   // Set the visual state of the button based on the initial setting (without applying the actual setting)
-  if (settings[settingKey]) {
+  if (uiSettings[settingKey]) {
     element.classList.add('active');
     element.title = `${settingKey} On`;
   } else {
@@ -127,52 +67,49 @@ function setupToolbarSetting(settingKey, elementId) {
 
   // Set up the event listener for the button (only apply setting on user interaction)
   element.addEventListener('click', () => {
-    const newValue = !settings[settingKey];
-    setToolbarSetting(settingKey, elementId, newValue);  // Apply when the user clicks
+    const newValue = !uiSettings[settingKey];
+    setToolbarSetting(settingKey, newValue);  // Apply when the user clicks
   });
 }
 
 // Initialize toolbar buttons and UI (but do not apply settings)
 function initHTMLUI() {
-  setupToolbarSetting('perspective', 'perspective-toggle');
-  setupToolbarSetting('showNodeIDs', 'showNodeIDs-toggle');
-  setupToolbarSetting('centerViewOnSelectedJBeam', 'centerView-toggle');
-  setupToolbarSetting('showMeshes', 'showMeshes-toggle');
+  setupToolbarSetting('perspective');
+  setupToolbarSetting('showNodeIDs');
+  setupToolbarSetting('centerViewOnSelectedJBeam');
+  setupToolbarSetting('showMeshes');
 }
 
 // Function to handle settings change (e.g., from config change)
 export async function onConfigChanged(newSettings) {
   Object.assign(settings, newSettings);
 
-  // Reapply settings for each key
-  setToolbarSetting('perspective', 'perspective-toggle', settings.perspective);
-  setToolbarSetting('showNodeIDs', 'showNodeIDs-toggle', settings.showNodeIDs);
-  setToolbarSetting('centerViewOnSelectedJBeam', 'centerView-toggle', settings.centerViewOnSelectedJBeam);
-  setToolbarSetting('showMeshes', 'showMeshes-toggle', settings.showMeshes);
+  // Iterate over all settings and apply each one
+  for (const [settingKey, value] of Object.entries(uisettings)) {
+    setToolbarSetting(settingKey, value);
+  }
 }
 
 export async function init() {
-  initTweakPane()
   initHTMLUI();
 }
 
 export function animate(time) {
   const meshesEnabled = Object.keys(meshFolderCache).length !== 0
 
-  if(meshLoadingBtn) {
-    meshLoadingBtn.disabled = !meshLoadingEnabled
-  }
-
   if(meshesEnabled) {
-    let txt = 'Shallow cache:\n'
+    let txt = 'Shallow cache: '
     for (let ns in meshFolderCache) {
-      txt += ns + ' - ' + Object.keys(meshFolderCache[ns]).length + ' meshes\n'
+      txt += ns + ' - ' + Object.keys(meshFolderCache[ns]).length + ' meshes - '
     }
-    txt += Object.keys(meshLibraryFull).length + ' meshes fully loaded\n'
+    txt += Object.keys(meshLibraryFull).length + ' meshes fully loaded - '
     if(daeLoadingCounter + daeLoadingCounterFull > 0) {
       txt += (daeLoadingCounter + daeLoadingCounterFull) + ' files loading ...'
+      statusBar.setStatus('meshCache', txt);
+    } else {
+      statusBar.removeStatus('meshCache');
+
     }
-    settings.meshStats = txt;
   }
 }
 
