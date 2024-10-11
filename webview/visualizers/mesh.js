@@ -7,6 +7,7 @@ let daeFindfilesDone = false
 let wasLoaded = false
 let defaultMeshOpacity = 1
 let meshesHighlighted = []
+const coordinateSystemRotation = -Math.PI / 2;
 
 // loadedMeshes is in utils
 
@@ -47,6 +48,7 @@ function onReceiveData(message) {
   if(uiSettings.showMeshes) {
     updateMeshViz()
   }
+  applyMeshTransformations()
 }
 
 function tryLoad3dMesh(meshName, onDone) {
@@ -232,6 +234,51 @@ function finalizeMeshes() {
   }
 }
 
+
+function applyMeshTransformations() {
+  for (let partName in jbeamData) {
+    let part = jbeamData[partName];
+
+    if (part.hasOwnProperty('flexbodies')) {
+      for (let flexBodyId in part.flexbodies) {
+        let flexbody = part.flexbodies[flexBodyId];
+
+        // Find the loaded mesh in the scene
+        const colladaNode = loadedMeshes.find(node => node.name === 'flexbody_' + flexbody.mesh);
+        if (!colladaNode) {
+          console.warn(`Mesh ${flexbody.mesh} not found for transformation.`);
+          continue;
+        }
+
+        console.log("positioning flexmesh: ", flexbody.mesh)
+
+        // Apply position (pos) transformation, map Z-up to Y-up
+        if (flexbody.pos) {
+          colladaNode.position.set(
+            flexbody.pos.x ?? 0,  // X stays X
+            flexbody.pos.z ?? 0,  // Z (up) becomes Y in Three.js
+            -(flexbody.pos.y ?? 0) // Y (forward/backward) becomes negative Z
+          );
+        } else {
+          colladaNode.position.set(0, 0, 0)
+        }
+
+        // Apply rotation (rot) transformation, map Z-up to Y-up
+        if (flexbody.rot) {
+          const rotX = (flexbody.rot?.x ?? 0) * (Math.PI / 180) + coordinateSystemRotation;  // Degrees to radians
+          const rotY = (flexbody.rot?.y ?? 0) * (Math.PI / 180);
+          const rotZ = (flexbody.rot?.z ?? 0) * (Math.PI / 180);
+          colladaNode.rotation.set(rotX, rotZ, -rotY);  // Apply the rotations correctly
+        } else {
+          colladaNode.rotation.set(coordinateSystemRotation, 0, 0);
+        }
+
+        colladaNode.__meta = flexbody.__meta;  // Keep meta data updated
+      }
+    }
+  }
+}
+
 function loadMeshShallow(uri, namespace) {
   //console.log(">loadMeshShallow>", uri, namespace)
   daeLoadingCounter++;
@@ -347,6 +394,7 @@ function onReceiveMessage(event) {
       daeFindfilesDone = true
       if (daeLoadingCounter == 0 && daeFindfilesDone) {
         finalizeMeshes();
+        applyMeshTransformations()
       }
       break
     case 'cursorChanged':

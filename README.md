@@ -61,6 +61,10 @@ This is a lightweight visualizer and tool for working with the physics definitio
 
   ![](assets/meshMultiselect.gif)
 
+* Flexmesh translation / rotation support
+
+  ![](assets/flexmeshRotation.gif)
+
 * Ground smart helper
 
   ![](assets/groundHelper1.png)
@@ -148,6 +152,15 @@ If all worked, it should show up like this now:
 ![](assets/fileformatHelp4.png)
 
 ## Release Notes
+
+### 0.4
+* Features:
+  * Flexmesh translation / rotation support
+
+    ![](assets/flexmeshRotation.gif)
+  * new 3D view toolbar:
+
+    ![](assets/toolbar.png)
 
 ### 0.3.92
 * Bugfixes:
