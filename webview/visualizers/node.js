@@ -19,6 +19,7 @@ let nodesMin
 let nodesMax
 let nodesCenter
 let nodeCounter
+let nodesCenterPos
 
 let wasWindowOutOfFocus = false // to track if the user left the view
 
@@ -36,6 +37,17 @@ function highlightNodeinTextEditor() {
       });
       //console.log(">postMessage>", node.__meta.range)
     }
+  }
+}
+
+function updateStatusbar() {
+  if (!selectedNodeIndices || selectedNodeIndices.length == 0) {
+    selectedNodeIndices = null;
+    statusBar.removeStatus('selectedNodes');  // Clear status when no nodes are selected
+  } else {
+    // Update the status bar with the number of selected nodes and their center
+    const statusText = `Selected Nodes: ${selectedNodeIndices.length} | Center: (${nodesCenterPos.x.toFixed(2)}, ${nodesCenterPos.y.toFixed(2)}, ${nodesCenterPos.z.toFixed(2)})`;
+    statusBar.setStatus('selectedNodes', statusText);
   }
 }
 
@@ -113,9 +125,11 @@ function focusNodes(nodesArrToFocus, triggerEditor = true) {
   if(selectedNodeIndices.length == 0) selectedNodeIndices = null
 
   if(uiSettings.centerViewOnSelectedJBeam && ncount > 0) {
-    let nodesCenterPos = new THREE.Vector3(sumX / ncount, sumY / ncount, sumZ / ncount)
+    nodesCenterPos = new THREE.Vector3(sumX / ncount, sumY / ncount, sumZ / ncount)
     moveCameraCenter(nodesCenterPos)
   }
+
+  updateStatusbar()
 
   ctx.visualizersGroundplane.redrawGroundPlane(nodesMin, nodesMax, selectedNodeIndices, pointsCache, jbeamData, currentPartName, nodeCounter)
   updateLabels()
