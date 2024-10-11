@@ -40,16 +40,73 @@ function highlightNodeinTextEditor() {
   }
 }
 
-function updateStatusbar() {
+function updateNodeStatusbar() {
   if (!selectedNodeIndices || selectedNodeIndices.length == 0) {
     selectedNodeIndices = null;
     statusBar.removeStatus('selectedNodes');  // Clear status when no nodes are selected
+  } else if (selectedNodeIndices.length === 1) {
+    // One node selected: Show detailed information
+    const selectedNode = pointsCache[selectedNodeIndices[0]];
+
+    const { name, pos, nodeWeight, connectedBeams, connectedObjects } = selectedNode;
+    const connectedBeamsCount = connectedBeams?.length || 0;
+    const connectedObjectsCount = connectedObjects?.length || 0;
+
+    const statusText = `
+      Selected Node: ${name}<br>
+      Position: (${pos[0].toFixed(2)}, ${pos[1].toFixed(2)}, ${pos[2].toFixed(2)})<br>
+      Mass: ${nodeWeight} kg<br>
+      Connected Beams: ${connectedBeamsCount}<br>
+      Connected Objects: ${connectedObjectsCount}<br>
+    `;
+
+    statusBar.setStatus('selectedNodes', statusText);
   } else {
-    // Update the status bar with the number of selected nodes and their center
-    const statusText = `Selected Nodes: ${selectedNodeIndices.length} | Center: (${nodesCenterPos.x.toFixed(2)}, ${nodesCenterPos.y.toFixed(2)}, ${nodesCenterPos.z.toFixed(2)})`;
+    // Multiple nodes selected: Aggregate mass, bounding box, and center
+    let sumMass = 0;
+    let boundingBoxMin = { x: Infinity, y: Infinity, z: Infinity };
+    let boundingBoxMax = { x: -Infinity, y: -Infinity, z: -Infinity };
+    let center = { x: 0, y: 0, z: 0 };
+
+    selectedNodeIndices.forEach(idx => {
+      const node = pointsCache[idx];
+      const { pos, nodeWeight } = node;
+
+      // Aggregate mass
+      if (nodeWeight) sumMass += nodeWeight;
+
+      // Update bounding box
+      boundingBoxMin.x = Math.min(boundingBoxMin.x, pos[0]);
+      boundingBoxMin.y = Math.min(boundingBoxMin.y, pos[1]);
+      boundingBoxMin.z = Math.min(boundingBoxMin.z, pos[2]);
+
+      boundingBoxMax.x = Math.max(boundingBoxMax.x, pos[0]);
+      boundingBoxMax.y = Math.max(boundingBoxMax.y, pos[1]);
+      boundingBoxMax.z = Math.max(boundingBoxMax.z, pos[2]);
+
+      // Calculate center
+      center.x += pos[0];
+      center.y += pos[1];
+      center.z += pos[2];
+    });
+
+    const ncount = selectedNodeIndices.length;
+    center.x /= ncount;
+    center.y /= ncount;
+    center.z /= ncount;
+
+    const statusText = `
+      Selected Nodes: ${ncount}<br>
+      Total Mass: ${sumMass.toFixed(2)} kg<br>
+      Bounding Box: Min(${boundingBoxMin.x.toFixed(2)}, ${boundingBoxMin.y.toFixed(2)}, ${boundingBoxMin.z.toFixed(2)})
+      - Max(${boundingBoxMax.x.toFixed(2)}, ${boundingBoxMax.y.toFixed(2)}, ${boundingBoxMax.z.toFixed(2)})<br>
+      Center: (${center.x.toFixed(2)}, ${center.y.toFixed(2)}, ${center.z.toFixed(2)})<br>
+    `;
+
     statusBar.setStatus('selectedNodes', statusText);
   }
 }
+
 
 export function updateLabels() {
   // if(!showNodeIDs && currentSectionName !== 'nodes') {
@@ -129,7 +186,7 @@ function focusNodes(nodesArrToFocus, triggerEditor = true) {
     moveCameraCenter(nodesCenterPos)
   }
 
-  updateStatusbar()
+  updateNodeStatusbar()
 
   ctx.visualizersGroundplane.redrawGroundPlane(nodesMin, nodesMax, selectedNodeIndices, pointsCache, jbeamData, currentPartName, nodeCounter)
   updateLabels()

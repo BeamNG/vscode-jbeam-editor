@@ -585,12 +585,12 @@ const statusBar = {
     // If the status entry already exists, update it
     if (this.statuses[consumerId]) {
       const statusElement = document.getElementById(`status-${consumerId}`);
-      statusElement.textContent = text;
+      statusElement.innerHTML = text;
     } else {
       // Create a new status entry
       const newStatusElement = document.createElement('div');
       newStatusElement.id = `status-${consumerId}`;
-      newStatusElement.textContent = text;
+      newStatusElement.innerHTML = text;
       statusContainer.appendChild(newStatusElement);
       this.statuses[consumerId] = newStatusElement;
     }
