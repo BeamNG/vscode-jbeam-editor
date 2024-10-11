@@ -83,30 +83,31 @@ function initHTMLUI() {
 }
 
 function loadSettings() {
-  const savedSettings = localStorage.getItem(localstorageKey);
-  return savedSettings ? JSON.parse(savedSettings) : null;
+  const savedSettingsStr = localStorage.getItem(localstorageKey);
+  if(!savedSettingsStr) return;
+  let savedSettings = JSON.parse(savedSettingsStr)
+  if(!savedSettings) return;
+  console.log("Loaded ui settings: ", savedSettings)
+  Object.assign(uiSettings, savedSettings);
 }
 
 function saveSettings() {
-  //console.log("Saving ui settings: ", uiSettings)
+  console.log("Saving ui settings: ", uiSettings)
   localStorage.setItem(localstorageKey, JSON.stringify(uiSettings));
 }
 
 export async function init() {
+  loadSettings();
   initHTMLUI();
 }
 
 export async function onConfigChanged() {
   // vscode settings changed, lets reload our ui settings as well
-  const savedSettings = loadSettings();
-  if (savedSettings) {
-    //console.log("Loaded ui settings: ", savedSettings)
-    Object.assign(uiSettings, savedSettings);
-    setToolbarSetting('perspectiveRender', uiSettings.perspectiveRender);
-    setToolbarSetting('showNodeIDs', uiSettings.showNodeIDs);
-    setToolbarSetting('centerViewOnSelectedJBeam', uiSettings.centerViewOnSelectedJBeam);
-    setToolbarSetting('showMeshes', uiSettings.showMeshes);
-  }
+  loadSettings();
+  setToolbarSetting('perspectiveRender', uiSettings.perspectiveRender);
+  setToolbarSetting('showNodeIDs', uiSettings.showNodeIDs);
+  setToolbarSetting('centerViewOnSelectedJBeam', uiSettings.centerViewOnSelectedJBeam);
+  setToolbarSetting('showMeshes', uiSettings.showMeshes);
 }
 
 
