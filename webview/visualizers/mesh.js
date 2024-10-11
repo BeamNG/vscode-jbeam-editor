@@ -250,8 +250,6 @@ function applyMeshTransformations() {
           continue;
         }
 
-        console.log("positioning flexmesh: ", flexbody.mesh)
-
         // Apply position (pos) transformation, map Z-up to Y-up
         if (flexbody.pos) {
           colladaNode.position.set(

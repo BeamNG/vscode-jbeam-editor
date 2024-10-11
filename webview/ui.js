@@ -114,17 +114,18 @@ export function animate(time) {
   const meshesEnabled = Object.keys(meshFolderCache).length !== 0
 
   if(meshesEnabled) {
-    let txt = 'Shallow cache: '
+    let txt = 'loading folders: '
     for (let ns in meshFolderCache) {
-      txt += ns + ' - ' + Object.keys(meshFolderCache[ns]).length + ' meshes - '
+      txt += ns + ' (' + Object.keys(meshFolderCache[ns]).length + ' meshes), '
     }
-    txt += Object.keys(meshLibraryFull).length + ' meshes fully loaded - '
+    if(Object.keys(meshLibraryFull).length > 0) {
+      txt += Object.keys(meshLibraryFull).length + ' meshes fully loaded, '
+    }
     if(daeLoadingCounter + daeLoadingCounterFull > 0) {
       txt += (daeLoadingCounter + daeLoadingCounterFull) + ' files loading ...'
       statusBar.setStatus('meshCache', txt);
     } else {
       statusBar.removeStatus('meshCache');
-
     }
   }
 }
