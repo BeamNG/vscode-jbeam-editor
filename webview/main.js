@@ -196,6 +196,7 @@ export function init() {
 
 function onConfigChanged() {
   ctx.visualizersMain.onConfigChanged()
+  ctx.ui.onConfigChanged()
 }
 
 export function destroy() {

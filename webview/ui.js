@@ -19,23 +19,11 @@ const settings = {
 
 // see https://cocopon.github.io/tweakpane/quick-tour/
 
-export async function init() {
+function initTweakPane() {
+
   let pane = new ctx.tweakPane.Pane({
     title:'Settings',
     expanded: false,
-  })
-
-  pane.addBinding( settings, 'perspective', {label: 'Perspective'}).on('change', function(ev) {
-    if (ev.value) {
-      camera = cameraPersp;
-      cameraPersp.position.copy(orthoCamera.position);
-      orbitControls.enableRotate = true
-    } else {
-      camera = orthoCamera;
-      orthoCamera.position.copy(cameraPersp.position);
-      orbitControls.enableRotate = false
-    }
-    orbitControls.object = camera; // Update controls to new camera
   })
 
   pane.addBinding(settings, 'view', {
@@ -52,21 +40,6 @@ export async function init() {
       settings.view = view.name; // Update the settings with the new view name
     }
   });
-
-  pane.addBinding( settings, 'showNodeIDs', {label: 'Show Node IDs'}).on('change', function(ev) {
-    showNodeIDs = ev.value
-    ctx.visualizersNode.updateLabels()
-  })
-  pane.addBinding( settings, 'centerViewOnSelectedJBeam', {label: 'Focus Selected JBeam'}).on('change', function(ev) {
-    centerViewOnSelectedJBeam = ev.value
-  })
-
-  pane.addButton({
-    title: 'Ping Simulation',
-  }).on('click', () => {
-    ctx.vscode.postMessage({command: 'sendPing'})
-  })
-
 
   const folder3d = pane.addFolder({
     title: '3D Meshes',
@@ -86,6 +59,95 @@ export async function init() {
     rows: 5,
     readonly: true,
   });
+}
+
+// Centralized function to apply the logic of each setting
+function applySetting(settingKey) {
+  switch (settingKey) {
+    case 'perspective':
+      if (settings.perspective) {
+        camera = cameraPersp;
+        cameraPersp.position.copy(orthoCamera.position);
+        orbitControls.enableRotate = true;
+      } else {
+        camera = orthoCamera;
+        orthoCamera.position.copy(cameraPersp.position);
+        orbitControls.enableRotate = false;
+      }
+      orbitControls.object = camera;
+      break;
+
+    case 'showNodeIDs':
+      showNodeIDs = settings.showNodeIDs;
+      ctx.visualizersNode.updateLabels();
+      break;
+
+    case 'centerViewOnSelectedJBeam':
+      centerViewOnSelectedJBeam = settings.centerViewOnSelectedJBeam;
+      break;
+
+    // Add additional settings logic here as needed
+  }
+}
+
+
+// Function to handle setting the value of a toolbar setting (and apply it)
+function setToolbarSetting(settingKey, elementId, value) {
+  const element = document.getElementById(elementId);
+  settings[settingKey] = value;
+
+  // Apply changes to UI and apply the actual setting logic
+  if (value) {
+    element.classList.add('active');
+    element.title = `${settingKey} On`;
+  } else {
+    element.classList.remove('active');
+    element.title = `${settingKey} Off`;
+  }
+
+  applySetting(settingKey);  // Centralized application logic
+}
+
+// Function to create a listener for a setting (but do not apply the setting during initialization)
+function setupToolbarSetting(settingKey, elementId) {
+  const element = document.getElementById(elementId);
+
+  // Set the visual state of the button based on the initial setting (without applying the actual setting)
+  if (settings[settingKey]) {
+    element.classList.add('active');
+    element.title = `${settingKey} On`;
+  } else {
+    element.classList.remove('active');
+    element.title = `${settingKey} Off`;
+  }
+
+  // Set up the event listener for the button (only apply setting on user interaction)
+  element.addEventListener('click', () => {
+    const newValue = !settings[settingKey];
+    setToolbarSetting(settingKey, elementId, newValue);  // Apply when the user clicks
+  });
+}
+
+// Initialize toolbar buttons and UI (but do not apply settings)
+function initHTMLUI() {
+  setupToolbarSetting('perspective', 'perspective-toggle');
+  setupToolbarSetting('showNodeIDs', 'showNodeIDs-toggle');
+  setupToolbarSetting('centerViewOnSelectedJBeam', 'centerView-toggle');
+}
+
+// Function to handle settings change (e.g., from config change)
+export async function onConfigChanged(newSettings) {
+  Object.assign(settings, newSettings);
+
+  // Reapply settings for each key
+  setToolbarSetting('perspective', 'perspective-toggle', settings.perspective);
+  setToolbarSetting('showNodeIDs', 'showNodeIDs-toggle', settings.showNodeIDs);
+  setToolbarSetting('centerViewOnSelectedJBeam', 'centerView-toggle', settings.centerViewOnSelectedJBeam);
+}
+
+export async function init() {
+  initTweakPane()
+  initHTMLUI();
 }
 
 export function animate(time) {
