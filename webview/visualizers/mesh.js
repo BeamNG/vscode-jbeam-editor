@@ -43,10 +43,7 @@ function onReceiveData(message) {
   if(!wasLoaded) {
     meshLibraryFull = [] // clear the library on file change
   }
-
-  //if(meshLoadingEnabled && (ctx?.config?.sceneView?.meshes?.loadByDefault ?? false)) {
-  //  startLoadingMeshes()
-  //}
+  ctx.ui.onConfigChanged()
 }
 
 function tryLoad3dMesh(meshName, onDone) {
@@ -290,11 +287,13 @@ function focusMeshes(meshesArrToFocus) {
 }
 
 export function updateMeshViz() {
+  console.log("updateMeshViz > uiSettings.showMeshes ", uiSettings.showMeshes, loadedMeshes)
   if(isInSection || uiSettings.showMeshes) {
     for (let i = 0; i < loadedMeshes.length; i++) {
       loadedMeshes[i].visible = true
     }
-    if(meshLoadingEnabled && (wasLoaded || (ctx?.config?.sceneView?.meshes?.loadByDefault ?? false))) {
+    console.log("> meshLoadingEnabled", meshLoadingEnabled, wasLoaded, uiSettings.showMeshes)
+    if(meshLoadingEnabled && (wasLoaded || uiSettings.showMeshes)) {
       startLoadingMeshes()
     }
   } else {

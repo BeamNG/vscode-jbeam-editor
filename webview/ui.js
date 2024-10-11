@@ -1,3 +1,4 @@
+const localstorageKey = 'BeamNGVScodeJbeamViewerUISettings'
 
 let views = [
   {name: 'Top'   , onActivate() { animateCameraMovement(new THREE.Vector3(0, 10, 0)) }},
@@ -11,7 +12,7 @@ let views = [
 
 function applySetting(settingKey) {
   switch (settingKey) {
-    case 'perspective':
+    case 'perspectiveRender':
       if (uiSettings.perspectiveRender) {
         camera = cameraPersp;
         cameraPersp.position.copy(orthoCamera.position);
@@ -32,6 +33,8 @@ function applySetting(settingKey) {
       ctx.visualizersMesh.updateMeshViz();
       break;
   }
+
+  saveSettings()
 }
 
 // Function to handle setting the value of a toolbar setting (and apply it)
@@ -53,7 +56,6 @@ function setToolbarSetting(settingKey, value) {
 
 // Function to create a listener for a setting (but do not apply the setting during initialization)
 function setupToolbarSetting(settingKey) {
-  console.log(">>>>", settingKey)
   const element = document.getElementById('toolbar-' + settingKey + '-toggle');
 
   // Set the visual state of the button based on the initial setting (without applying the actual setting)
@@ -74,25 +76,39 @@ function setupToolbarSetting(settingKey) {
 
 // Initialize toolbar buttons and UI (but do not apply settings)
 function initHTMLUI() {
-  setupToolbarSetting('perspective');
   setupToolbarSetting('showNodeIDs');
   setupToolbarSetting('centerViewOnSelectedJBeam');
   setupToolbarSetting('showMeshes');
+  setupToolbarSetting('perspectiveRender');
 }
 
-// Function to handle settings change (e.g., from config change)
-export async function onConfigChanged(newSettings) {
-  Object.assign(settings, newSettings);
+function loadSettings() {
+  const savedSettings = localStorage.getItem(localstorageKey);
+  return savedSettings ? JSON.parse(savedSettings) : null;
+}
 
-  // Iterate over all settings and apply each one
-  for (const [settingKey, value] of Object.entries(uisettings)) {
-    setToolbarSetting(settingKey, value);
-  }
+function saveSettings() {
+  //console.log("Saving ui settings: ", uiSettings)
+  localStorage.setItem(localstorageKey, JSON.stringify(uiSettings));
 }
 
 export async function init() {
   initHTMLUI();
 }
+
+export async function onConfigChanged() {
+  // vscode settings changed, lets reload our ui settings as well
+  const savedSettings = loadSettings();
+  if (savedSettings) {
+    //console.log("Loaded ui settings: ", savedSettings)
+    Object.assign(uiSettings, savedSettings);
+    setToolbarSetting('perspectiveRender', uiSettings.perspectiveRender);
+    setToolbarSetting('showNodeIDs', uiSettings.showNodeIDs);
+    setToolbarSetting('centerViewOnSelectedJBeam', uiSettings.centerViewOnSelectedJBeam);
+    setToolbarSetting('showMeshes', uiSettings.showMeshes);
+  }
+}
+
 
 export function animate(time) {
   const meshesEnabled = Object.keys(meshFolderCache).length !== 0

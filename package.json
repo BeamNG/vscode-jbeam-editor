@@ -169,12 +169,6 @@
             "description": "Developer setting: Show all data hover, do not clean up",
             "order": 91
           },
-          "jbeam-editor.sceneView.meshes.loadByDefault": {
-            "type": "boolean",
-            "default": true,
-            "description": "Load 3D Meshes on startup",
-            "order": 91
-          },
           "jbeam-editor.sceneView.fpsLimit": {
             "type": "number",
             "default": 60,
