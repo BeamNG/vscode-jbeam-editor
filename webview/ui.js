@@ -26,7 +26,7 @@ function applySetting(settingKey) {
       break;
 
     case 'showNodeIDs':
-      ctx.visualizersNode.updateLabels();
+      updateNodeLabels();
       break;
 
     case 'showMeshes':
