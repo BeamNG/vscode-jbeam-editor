@@ -65,7 +65,9 @@ This is a lightweight visualizer and tool for working with the physics definitio
 
   ![](assets/flexmeshRotation.gif)
 
-* Symmetry error detection - detects where the symmetry across mirror planes seems to be broken
+* Mirror planes and symmetry detection (with error support)
+
+  ![](assets/symmetryGroups.gif)
 
   ![](assets/symmetryDetection.gif)
 
