@@ -262,3 +262,153 @@ function distanceBetweenPoints(posA, posB) {
   const dz = posA[2] - posB[2];
   return Math.sqrt(dx * dx + dy * dy + dz * dz);
 }
+
+/**
+ * Detects if there are any potential mirror planes aligned with the principal axes (XY, XZ, YZ).
+ * @param {Array} points - An array of point objects, each with a 'pos' property as [x, y, z].
+ * @param {Number} tolerance - The distance tolerance to consider two points as mirrored.
+ * @returns {Array} A list of detected planes with the number of mirrored points.
+ */
+function detectAxisAlignedMirrorPlanes(points, tolerance = 0.001) {
+  const centroid = computeCentroid(points);
+
+  // Define the axis-aligned planes (XY, XZ, YZ) at the centroid.
+  const planes = [
+    { normal: { x: 0, y: 0, z: 1 }, point: { x: centroid.x, y: centroid.y, z: centroid.z } }, // XY plane
+    { normal: { x: 0, y: 1, z: 0 }, point: { x: centroid.x, y: centroid.y, z: centroid.z } }, // XZ plane
+    { normal: { x: 1, y: 0, z: 0 }, point: { x: centroid.x, y: centroid.y, z: centroid.z } }, // YZ plane
+  ];
+
+  const mirroredResults = [];
+
+  planes.forEach((plane) => {
+    let mirroredCount = 0;
+
+    points.forEach((point) => {
+      // Mirror the point across the current plane
+      const mirroredPoint = mirrorPointAcrossPlane(point.pos, plane.normal, plane.point);
+
+      // Check if there is a matching point in the original dataset
+      const hasMirroredPair = points.some(
+        (p) => distanceBetweenPoints(p.pos, mirroredPoint) < tolerance
+      );
+
+      if (hasMirroredPair) {
+        mirroredCount++;
+      }
+    });
+
+    if (mirroredCount > 3) {
+      mirroredResults.push({
+        plane,
+        mirroredCount,
+      });
+    }
+  });
+
+  return mirroredResults;
+}
+
+/**
+ * Main function to detect mirror planes from 3D points.
+ * First detects axis-aligned planes, then custom PCA planes.
+ * Duplicates are removed based on normal vector comparison.
+ * @param {Array} points - An array of point objects, each with a 'pos' property as [x, y, z].
+ * @param {Number} tolerance - The tolerance to consider two planes as duplicates.
+ * @returns {Array} A unique set of mirror planes.
+ */
+function detectAllMirrorPlanes(points, tolerance = 0.01) {
+  // Step 1: Detect axis-aligned planes (XY, XZ, YZ)
+  const axisAlignedPlanes = detectAxisAlignedMirrorPlanes(points, tolerance);
+
+  // Step 2: Detect custom mirror planes using PCA
+  const pcaMirrorPlanes = calculateMirrorPlanes(points);
+
+  // Step 3: Remove duplicates between PCA planes and axis-aligned planes
+  const uniquePlanes = mergeUniquePlanes(axisAlignedPlanes, pcaMirrorPlanes, tolerance);
+
+  return uniquePlanes;
+}
+
+/**
+ * Merges axis-aligned planes and PCA-calculated planes while removing duplicates.
+ * @param {Array} axisAlignedPlanes - List of axis-aligned planes.
+ * @param {Array} pcaPlanes - List of PCA-calculated planes.
+ * @param {Number} tolerance - The tolerance to consider two planes as duplicates.
+ * @returns {Array} A list of unique planes.
+ */
+function mergeUniquePlanes(axisAlignedPlanes, pcaPlanes, tolerance) {
+  const uniquePlanes = [...axisAlignedPlanes];
+
+  pcaPlanes.forEach((pcaPlane) => {
+    const isDuplicate = uniquePlanes.some(
+      (plane) => arePlanesSimilar(plane, pcaPlane, tolerance)
+    );
+    if (!isDuplicate) {
+      uniquePlanes.push(pcaPlane);
+    }
+  });
+
+  return uniquePlanes;
+}
+
+/**
+ * Compares two planes to check if they are similar based on their normal vectors.
+ * @param {Object} planeA - The first plane {normal, point}.
+ * @param {Object} planeB - The second plane {normal, point}.
+ * @param {Number} tolerance - The tolerance for normal vector comparison.
+ * @returns {Boolean} True if the planes are similar, false otherwise.
+ */
+function arePlanesSimilar(planeA, planeB, tolerance) {
+  const normalA = new THREE.Vector3(planeA.normal.x, planeA.normal.y, planeA.normal.z).normalize();
+  const normalB = new THREE.Vector3(planeB.normal.x, planeB.normal.y, planeB.normal.z).normalize();
+
+  return normalA.distanceTo(normalB) < tolerance || normalA.distanceTo(normalB.negate()) < tolerance;
+}
+
+/**
+ * Detects if there are any potential mirror planes aligned with the principal axes (XY, XZ, YZ).
+ * @param {Array} points - An array of point objects, each with a 'pos' property as [x, y, z].
+ * @param {Number} tolerance - The distance tolerance to consider two points as mirrored.
+ * @returns {Array} A list of detected planes with the number of mirrored points.
+ */
+function detectAxisAlignedMirrorPlanes(points, tolerance = 0.001) {
+  const centroid = computeCentroid(points);
+
+  // Define the axis-aligned planes (XY, XZ, YZ) at the centroid.
+  const planes = [
+    { normal: { x: 0, y: 0, z: 1 }, point: { x: centroid.x, y: centroid.y, z: centroid.z } }, // XY plane
+    { normal: { x: 0, y: 1, z: 0 }, point: { x: centroid.x, y: centroid.y, z: centroid.z } }, // XZ plane
+    { normal: { x: 1, y: 0, z: 0 }, point: { x: centroid.x, y: centroid.y, z: centroid.z } }, // YZ plane
+  ];
+
+  const mirroredResults = [];
+
+  planes.forEach((plane) => {
+    let mirroredCount = 0;
+
+    points.forEach((point) => {
+      // Mirror the point across the current plane
+      const mirroredPoint = mirrorPointAcrossPlane(point.pos, plane.normal, plane.point);
+
+      // Check if there is a matching point in the original dataset
+      const hasMirroredPair = points.some(
+        (p) => distanceBetweenPoints(p.pos, mirroredPoint) < tolerance
+      );
+
+      if (hasMirroredPair) {
+        mirroredCount++;
+      }
+    });
+
+    if (mirroredCount > 3) {
+      mirroredResults.push({
+        normal: plane.normal,
+        point: plane.point,
+        mirroredCount,
+      });
+    }
+  });
+
+  return mirroredResults;
+}

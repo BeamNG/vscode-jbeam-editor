@@ -71,50 +71,54 @@ function focusNodes(nodesArrToFocus, triggerEditor = true) {
     nodeCounter
   );
 
-  // Calculate mirror planes once when nodes are focused
-  mirrorPlanes = calculateMirrorPlanes(pointsCache);
-
-  // Highlight mirrored nodes without overwriting selected nodes
-  highlightMirroredNodes();
-
   // Visualize the mirror planes
   visualizeMirrorPlanes();
 
   // Detect and highlight nodes near mirror planes (errors)
-  //highlightNodesNearMirrorPlanes();
+  highlightMirroredAndErrorNodes();
 
   updateNodeLabels();
 }
 
 /**
- * Highlights mirrored nodes based on the detected mirror planes.
- * Ensures that selected nodes retain their highlighting.
+ * Highlights mirrored nodes based on the detected mirror planes and highlights errors.
+ * Ensures valid mirrored nodes retain their highlighting and potential errors are marked red.
  */
-function highlightMirroredNodes() {
-  if (!mirrorPlanes || mirrorPlanes.length === 0 || !selectedNodeIndices) return;
+function highlightMirroredAndErrorNodes() {
+  if (!mirrorPlanes || mirrorPlanes.length === 0 || !selectedNodeIndices || selectedNodeIndices.length === 0) return;
 
-  const tolerance = 0.01; // Adjust based on your precision requirements
+  const validMirrorTolerance = 0.01; // Tolerance for valid mirrored nodes
+  const errorTolerance = 0.05; // 5 centimeters for potential error detection
+
   const alphasAttribute = pointsObject.geometry.getAttribute('alpha');
   const colorsAttribute = pointsObject.geometry.getAttribute('color');
   const sizesAttribute = pointsObject.geometry.getAttribute('size');
 
-  // Reset mirrored nodes and used planes
+  // Reset mirrored nodes and error nodes
   mirroredNodeIndices.clear();
   usedMirrorPlanes.clear();
+  nodesNearMirrorPlanes.clear();
 
-  // Set to keep track of already highlighted nodes to avoid duplication
+  // Set to keep track of already highlighted nodes (to avoid duplicate processing)
   const highlightedIndices = new Set(selectedNodeIndices);
 
+  // Loop over all selected nodes to check for mirrored pairs and errors
   selectedNodeIndices.forEach(selectedIdx => {
     const selectedNode = pointsCache[selectedIdx];
-    mirrorPlanes.forEach((plane, planeIdx) => { // Assuming plane index
+
+    mirrorPlanes.forEach((plane, planeIdx) => {
       const mirroredPos = mirrorPointAcrossPlane(selectedNode.pos, plane.normal, plane.point);
+
+      let hasValidMirror = false;
+
+      // Check for valid mirrored nodes
       for (let j = 0; j < pointsCache.length; j++) {
         if (highlightedIndices.has(j)) continue; // Skip already highlighted nodes
         const nodeB = pointsCache[j];
         const distance = distanceBetweenPoints(mirroredPos, nodeB.pos);
-        if (distance < tolerance) {
-          // Highlight mirrored node
+
+        if (distance < validMirrorTolerance) {
+          // Highlight mirrored node (valid)
           alphasAttribute.setX(j, 0.8);
           sizesAttribute.setX(j, selectedSize);
           colorsAttribute.setXYZ(j, mirroredColor.r, mirroredColor.g, mirroredColor.b); // Green color
@@ -122,46 +126,43 @@ function highlightMirroredNodes() {
           highlightedIndices.add(j);
           mirroredNodeIndices.add(j);
           usedMirrorPlanes.add(planeIdx); // Store the plane index used
+          hasValidMirror = true;
+          break; // No need to keep checking for this node
+        }
+      }
+
+      // If no valid mirror found, check for potential matching node based on mirrored position
+      if (!hasValidMirror) {
+        const mirroredPos = mirrorPointAcrossPlane(selectedNode.pos, plane.normal, plane.point);
+
+        let closestNodeIdx = null;
+        let closestDistance = Infinity;
+
+        // Find the closest node to the mirrored position
+        for (let k = 0; k < pointsCache.length; k++) {
+          if (highlightedIndices.has(k)) continue; // Skip already highlighted nodes
+
+          const node = pointsCache[k];
+          const distanceToMirroredPos = distanceBetweenPoints(node.pos, mirroredPos);
+
+          if (distanceToMirroredPos < closestDistance && distanceToMirroredPos < errorTolerance) {
+            closestNodeIdx = k;
+            closestDistance = distanceToMirroredPos;
+          }
+        }
+
+        // If a node is found near the mirrored position, highlight it as an error
+        if (closestNodeIdx !== null) {
+          // Highlight the node as an error (red)
+          alphasAttribute.setX(closestNodeIdx, 1.0);
+          sizesAttribute.setX(closestNodeIdx, selectedSize);
+          colorsAttribute.setXYZ(closestNodeIdx, errorColor.r, errorColor.g, errorColor.b); // Red color
+
+          nodesNearMirrorPlanes.add(closestNodeIdx);
         }
       }
     });
   });
-
-  // Update geometry attributes to reflect changes
-  alphasAttribute.needsUpdate = true;
-  colorsAttribute.needsUpdate = true;
-  sizesAttribute.needsUpdate = true;
-}
-
-/**
- * Highlights nodes that are within 5cm of any mirror plane.
- * These nodes are colored red to indicate potential errors.
- */
-function highlightNodesNearMirrorPlanes() {
-  if (!mirrorPlanes || mirrorPlanes.length === 0) return;
-
-  const tolerance = 0.05; // 5 centimeters
-  const alphasAttribute = pointsObject.geometry.getAttribute('alpha');
-  const colorsAttribute = pointsObject.geometry.getAttribute('color');
-  const sizesAttribute = pointsObject.geometry.getAttribute('size');
-
-  // Clear previous error highlights
-  nodesNearMirrorPlanes.clear();
-
-  for (let i = 0; i < pointsCache.length; i++) {
-    const node = pointsCache[i];
-    for (let plane of mirrorPlanes) {
-      const distance = distanceFromPointToPlane(node.pos, plane.normal, plane.point);
-      if (Math.abs(distance) < tolerance) { // Use absolute distance
-        // Highlight node in red
-        alphasAttribute.setX(i, 1.0);
-        sizesAttribute.setX(i, selectedSize);
-        colorsAttribute.setXYZ(i, errorColor.r, errorColor.g, errorColor.b); // Red color
-        nodesNearMirrorPlanes.add(i);
-        break; // No need to check other planes for this node
-      }
-    }
-  }
 
   // Update geometry attributes to reflect changes
   alphasAttribute.needsUpdate = true;
@@ -267,9 +268,9 @@ function updateNodeViz(moveCamera) {
       }
 
       // Calculate mirror planes for the current part
-      mirrorPlanes = calculateMirrorPlanes(pointsCache);
     }
   }
+  mirrorPlanes = detectAllMirrorPlanes(pointsCache);
 
   if (nodeCounter === 0) {
     // Do not leak Infinity values
