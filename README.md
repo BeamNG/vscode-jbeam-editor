@@ -168,9 +168,14 @@ If all worked, it should show up like this now:
 
     ![](assets/toolbar.png)
 
+  * Mirror planes and symmetry support - highlights nodes across any detected mirror planes
+
+    ![](assets/symmetryGroups.gif)
+
   * Symmetry error detection - detects where the symmetry across mirror planes seems to be broken
 
     ![](assets/symmetryDetection.gif)
+
 
 ### 0.3.92
 * Bugfixes:
