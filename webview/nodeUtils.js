@@ -197,7 +197,6 @@ function distanceFromPointToPlane(point, planeNormal, planePoint) {
   return plane.distanceToPoint(pointVector);
 }
 
-
 /**
  * Visualizes the detected mirror planes in the Three.js scene.
  * Only visualizes planes that are effective for the selected node(s).
@@ -218,31 +217,48 @@ function visualizeMirrorPlanes() {
 
     const { normal, point } = plane;
 
-    // Create plane geometry and material
+    // Create plane geometry
     const planeSize = 10; // Adjust size as needed
     const geometry = new THREE.PlaneGeometry(planeSize, planeSize);
-    const material = new THREE.MeshBasicMaterial({
-      color: 0xf0fff0,
-      side: THREE.DoubleSide,
+
+    // Front side material (visible from the front)
+    const frontMaterial = new THREE.MeshBasicMaterial({
+      color: 0xf0fff0, // Light color for the front side
+      side: THREE.FrontSide, // Front side only
       transparent: true,
-      opacity: 0.1,
-      depthWrite: false,
+      opacity: 0.1, // Adjust for transparency, keep it semi-transparent
+      depthWrite: true, // Allow proper depth ordering
     });
 
-    const mirrorPlane = new THREE.Mesh(geometry, material);
+    // Back side material (visible from the back)
+    const backMaterial = new THREE.MeshBasicMaterial({
+      color: 0xff0000, // Red tint for the back side
+      side: THREE.BackSide, // Back side only
+      transparent: true,
+      opacity: 0.1, // Semi-transparent to see objects behind
+      depthWrite: true, // Keep depth ordering
+    });
+
+    // Create meshes for the front and back sides of the plane
+    const frontMesh = new THREE.Mesh(geometry, frontMaterial);
+    const backMesh = new THREE.Mesh(geometry, backMaterial);
 
     // Position the plane at the centroid
-    mirrorPlane.position.set(point.x, point.y, point.z);
+    frontMesh.position.set(point.x, point.y, point.z);
+    backMesh.position.set(point.x, point.y, point.z);
 
     // Align the plane with the normal vector
     const normalVector = new THREE.Vector3(normal.x, normal.y, normal.z).normalize();
     const quaternion = new THREE.Quaternion();
     quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normalVector);
-    mirrorPlane.setRotationFromQuaternion(quaternion);
+    frontMesh.setRotationFromQuaternion(quaternion);
+    backMesh.setRotationFromQuaternion(quaternion);
 
-    // Add the plane to the scene and store the mesh for future reference
-    scene.add(mirrorPlane);
-    mirrorPlaneMeshes.push(mirrorPlane);
+    // Add both meshes (front and back) to the scene
+    scene.add(frontMesh);
+    scene.add(backMesh);
+
+    // Store the meshes for future reference
+    mirrorPlaneMeshes.push(frontMesh, backMesh);
   });
 }
-
