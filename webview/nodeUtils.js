@@ -36,6 +36,37 @@ let usedMirrorPlanes = new Set();
 // Set to track nodes near mirror planes (potential errors)
 let nodesNearMirrorPlanes = new Set();
 
+// Known key formatters with icons and special formatting
+const nodePropertiesFormatters = {
+  name: value => `📝 Selected Node`,
+  pos: value => `📍 Position`,
+  nodeWeight: value => `⚖️ Mass`,
+  slotType: value => `🛠️ Slot Type`,
+  frictionCoef: value => `🧲 Friction Coefficient`,
+  nodeMaterial: value => `📦 Node Material`,
+  connectedBeams: value => `🔗 Connected Beams`,
+  connectedObjects: value => `🛠️ Connected Objects`,
+  collision: value => `🌀 Collision Enabled`,
+  selfCollision: value => `🔄 Self-Collision`,
+  group: value => `🔧 Group`,
+  default: key => `🔍 ${key}`
+};
+
+// Value formatters for each key
+const nodeValueFormatters = {
+  name: value => `${value}`,
+  pos: value => `(${value[0].toFixed(2)}, ${value[1].toFixed(2)}, ${value[2].toFixed(2)})`,
+  nodeWeight: value => `${value} kg`,
+  slotType: value => `${value}`,
+  frictionCoef: value => `${value}`,
+  nodeMaterial: value => `${value}`,
+  connectedBeams: value => `${value.length}`,
+  connectedObjects: value => `${value.length}`,
+  collision: value => value ? 'Yes' : 'No',
+  selfCollision: value => value ? 'Yes' : 'No',
+  group: value => Object.values(value).join(', '),
+  default: value => `${JSON.stringify(value)}`
+};
 
 /**
  * Highlights the selected node in the text editor.
@@ -73,17 +104,44 @@ function updateNodeStatusbar() {
       // One node selected: Show detailed information
       const selectedNode = pointsCache[selectedNodeIndices[0]];
 
-      const { name, pos, nodeWeight, connectedBeams, connectedObjects } = selectedNode;
-      const connectedBeamsCount = connectedBeams?.length || 0;
-      const connectedObjectsCount = connectedObjects?.length || 0;
 
+      // Sorting and preparing data for the table
+      let sortedKeys = Object.keys(selectedNode).sort((a, b) => {
+        if (a === 'name') return -1; // Put 'name' first
+        if (b === 'name') return 1;
+        return a.localeCompare(b); // Alphabetically sort other keys
+      });
+
+      // Loop through all properties of the selected node, except excluded ones
+      let tableRows = '';
+      sortedKeys.forEach(key => {
+        if (key === '__meta' || key === 'posX' || key === 'posY' || key === 'posZ' || key === 'pos3d' || key === 'id') {
+          return; // Skip excluded keys
+        }
+
+        const value = selectedNode[key];
+
+        // Skip undefined values
+        if (value === undefined) return;
+
+        // Add formatted row to the table with key and value in separate columns
+        const keyLabel = nodePropertiesFormatters[key] ? nodePropertiesFormatters[key](key) : nodePropertiesFormatters['default'](key);
+        const valueLabel = nodeValueFormatters[key] ? nodeValueFormatters[key](value) : nodeValueFormatters['default'](value);
+
+        tableRows += `<tr><td style="color: grey;">${keyLabel}</td><td>${valueLabel}</td></tr>`;
+      });
+
+      // Create a collapsible/expandable table structure
       statusText += `
-        Selected Node: ${name}<br>
-        Position: (${pos[0].toFixed(2)}, ${pos[1].toFixed(2)}, ${pos[2].toFixed(2)})<br>
-        Mass: ${nodeWeight} kg<br>
-        Connected Beams: ${connectedBeamsCount}<br>
-        Connected Objects: ${connectedObjectsCount}<br>
+        <div style="font-size: 8px;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tbody>
+              ${tableRows}
+            </tbody>
+          </table>
+        </div>
       `;
+
     } else {
       // Multiple nodes selected: Aggregate mass, bounding box, and center
       let sumMass = 0;
