@@ -65,6 +65,10 @@ This is a lightweight visualizer and tool for working with the physics definitio
 
   ![](assets/flexmeshRotation.gif)
 
+* Symmetry error detection - detects where the symmetry across mirror planes seems to be broken
+
+  ![](assets/symmetryDetection.gif)
+
 * Ground smart helper
 
   ![](assets/groundHelper1.png)
@@ -155,12 +159,16 @@ If all worked, it should show up like this now:
 
 ### 0.4
 * Features:
-  * Flexmesh translation / rotation support
+  * Flexmesh translation / rotation support - now fits the visualization in the simulation
 
     ![](assets/flexmeshRotation.gif)
-  * new 3D view toolbar:
+  * new 3D view toolbar - quick switches for most commonly used tools
 
     ![](assets/toolbar.png)
+
+  * Symmetry error detection - detects where the symmetry across mirror planes seems to be broken
+
+    ![](assets/symmetryDetection.gif)
 
 ### 0.3.92
 * Bugfixes:

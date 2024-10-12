@@ -129,7 +129,7 @@ function updateNodeStatusbar() {
   }
 
   if (nodesNearMirrorPlanes.size > 0) {
-    statusText += `<br><strong>Nodes Near Mirror Planes (Potential Errors): ${nodesNearMirrorPlanes.size}</strong><br>`;
+    statusText += `<br><strong>Potential Symmetry problem:</strong><br>`;
     nodesNearMirrorPlanes.forEach(idx => {
       const node = pointsCache[idx];
       statusText += `Node: ${node.name} at (${node.pos[0].toFixed(2)}, ${node.pos[1].toFixed(2)}, ${node.pos[2].toFixed(2)})<br>`;

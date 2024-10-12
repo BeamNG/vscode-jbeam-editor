@@ -59,8 +59,6 @@ function focusNodes(nodesArrToFocus, triggerEditor = true) {
     moveCameraCenter(nodesCenterPos);
   }
 
-  updateNodeStatusbar();
-
   ctx.visualizersGroundplane.redrawGroundPlane(
     nodesMin,
     nodesMax,
@@ -78,6 +76,7 @@ function focusNodes(nodesArrToFocus, triggerEditor = true) {
   highlightMirroredAndErrorNodes();
 
   updateNodeLabels();
+  updateNodeStatusbar()
 }
 
 /**
