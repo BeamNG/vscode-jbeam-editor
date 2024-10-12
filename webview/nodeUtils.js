@@ -48,7 +48,6 @@ const nodePropertiesFormatters = {
   connectedObjects: value => `🛠️ Connected Objects`,
   collision: value => `🌀 Collision Enabled`,
   selfCollision: value => `🔄 Self-Collision`,
-  group: value => `🔧 Group`,
   default: key => `🔍 ${key}`
 };
 
@@ -64,7 +63,6 @@ const nodeValueFormatters = {
   connectedObjects: value => `${value.length}`,
   collision: value => value ? 'Yes' : 'No',
   selfCollision: value => value ? 'Yes' : 'No',
-  group: value => Object.values(value).join(', '),
   default: value => `${JSON.stringify(value)}`
 };
 
@@ -104,7 +102,6 @@ function updateNodeStatusbar() {
       // One node selected: Show detailed information
       const selectedNode = pointsCache[selectedNodeIndices[0]];
 
-
       // Sorting and preparing data for the table
       let sortedKeys = Object.keys(selectedNode).sort((a, b) => {
         if (a === 'name') return -1; // Put 'name' first
@@ -115,7 +112,7 @@ function updateNodeStatusbar() {
       // Loop through all properties of the selected node, except excluded ones
       let tableRows = '';
       sortedKeys.forEach(key => {
-        if (key === '__meta' || key === 'posX' || key === 'posY' || key === 'posZ' || key === 'pos3d' || key === 'id') {
+        if (key === '__meta' || key === 'posX' || key === 'posY' || key === 'posZ' || key === 'pos3d' || key === 'id' || key === 'group') {
           return; // Skip excluded keys
         }
 
@@ -133,7 +130,7 @@ function updateNodeStatusbar() {
 
       // Create a collapsible/expandable table structure
       statusText += `
-        <div style="font-size: 8px;">
+        <div style="font-size: 10px;">
           <table style="width: 100%; border-collapse: collapse;">
             <tbody>
               ${tableRows}
@@ -176,16 +173,29 @@ function updateNodeStatusbar() {
       center.y /= ncount;
       center.z /= ncount;
 
+      // Display aggregated information in a table format
       statusText += `
-        Selected Nodes: ${ncount}<br>
-        Total Mass: ${sumMass.toFixed(2)} kg<br>
-        Bounding Box: Min(${boundingBoxMin.x.toFixed(2)}, ${boundingBoxMin.y.toFixed(2)}, ${boundingBoxMin.z.toFixed(2)})
-        - Max(${boundingBoxMax.x.toFixed(2)}, ${boundingBoxMax.y.toFixed(2)}, ${boundingBoxMax.z.toFixed(2)})<br>
-        Center: (${center.x.toFixed(2)}, ${center.y.toFixed(2)}, ${center.z.toFixed(2)})<br>
+        <div style="font-size: 10px;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tbody>
+              <tr><td style="color: grey;">Selected Nodes</td><td>${ncount} nodes</td></tr>
+              <tr><td style="color: grey;">Total Mass</td><td>${sumMass.toFixed(2)} kg</td></tr>
+              <tr>
+                <td style="color: grey;">Bounding Box</td>
+                <td>
+                  Min(${boundingBoxMin.x.toFixed(2)}, ${boundingBoxMin.y.toFixed(2)}, ${boundingBoxMin.z.toFixed(2)})
+                  - Max(${boundingBoxMax.x.toFixed(2)}, ${boundingBoxMax.y.toFixed(2)}, ${boundingBoxMax.z.toFixed(2)})
+                </td>
+              </tr>
+              <tr><td style="color: grey;">Center</td><td>(${center.x.toFixed(2)}, ${center.y.toFixed(2)}, ${center.z.toFixed(2)})</td></tr>
+            </tbody>
+          </table>
+        </div>
       `;
     }
   }
 
+  // Handle nodes near mirror planes
   if (nodesNearMirrorPlanes.size > 0) {
     statusText += `<br><strong>Potential Symmetry problem:</strong><br>`;
     nodesNearMirrorPlanes.forEach(idx => {
@@ -196,7 +206,6 @@ function updateNodeStatusbar() {
 
   statusBar.setStatus('selectedNodes', statusText);
 }
-
 
 /**
  * Updates labels for nodes, including selected, mirrored, and error nodes.
