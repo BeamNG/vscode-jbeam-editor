@@ -90,14 +90,8 @@ function highlightNodeinTextEditor() {
  * Updates the status bar based on selected and mirrored nodes.
  */
 function updateNodeStatusbar() {
-  if ((!selectedNodeIndices || selectedNodeIndices.length === 0) && nodesNearMirrorPlanes.size === 0) {
-    statusBar.removeStatus('selectedNodes'); // Clear status when no nodes are selected and no errors
-    return;
-  }
-
-  let statusText = '';
-
   if (selectedNodeIndices && selectedNodeIndices.length > 0) {
+    let statusText = '';
     if (selectedNodeIndices.length === 1) {
       // One node selected: Show detailed information
       const selectedNode = pointsCache[selectedNodeIndices[0]];
@@ -193,18 +187,38 @@ function updateNodeStatusbar() {
         </div>
       `;
     }
+    statusBar.setStatus('selected nodes', statusText);
+  } else {
+    statusBar.removeStatus('selected nodes');
+  }
+
+  if(mirroredNodeIndices && mirroredNodeIndices.size > 0) {
+    const ncount = mirroredNodeIndices.size;
+    let statusText = `
+      <div style="font-size: 10px;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <tbody>
+            <tr><td style="color: grey;">Symmetric Nodes</td><td>${ncount} nodes</td></tr>
+          </tbody>
+        </table>
+      </div>
+    `;
+    statusBar.setStatus('symmetry', statusText);
+  } else {
+    statusBar.removeStatus('symmetry');
   }
 
   // Handle nodes near mirror planes
   if (nodesNearMirrorPlanes.size > 0) {
-    statusText += `<br><strong>Potential Symmetry problem:</strong><br>`;
+    let statusText = `<br><strong>Potential Symmetry problem:</strong><br>`;
     nodesNearMirrorPlanes.forEach(idx => {
       const node = pointsCache[idx];
       statusText += `Node: ${node.name} at (${node.pos[0].toFixed(2)}, ${node.pos[1].toFixed(2)}, ${node.pos[2].toFixed(2)})<br>`;
     });
+    statusBar.setStatus('symmetry problems', statusText);
+  } else {
+    statusBar.removeStatus('symmetry problems');
   }
-
-  statusBar.setStatus('selectedNodes', statusText);
 }
 
 /**

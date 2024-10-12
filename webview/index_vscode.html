@@ -30,6 +30,8 @@
 
 <script src="<!-- LocalResource:libs/three.min.js -->"></script>
 <script src="<!-- LocalResource:utils.js -->"></script>
+<script src="<!-- LocalResource:uiSettings.js -->"></script>
+<script src="<!-- LocalResource:statusbar.js -->"></script>
 <script src="<!-- LocalResource:libs/OrbitControls.js -->"></script>
 <script src="<!-- LocalResource:libs/tween.js -->"></script>
 <script src="<!-- LocalResource:gizmo.js -->"></script>
@@ -120,16 +122,91 @@ body, html, canvas {
 #status-bar {
   display: none;
   position: absolute;
-  bottom: 0px;
+  bottom: 0;
+  margin:0;
   width: 100%;
   text-align: left;
-  pointer-events: none;
+  z-index: 9999;
+  vertical-align: bottom;
 }
+
 #status-container {
   display: inline-block;
   background: rgba(0, 0, 0, 0.7);
   color: white;
   padding: 5px 5px;
+}
+
+.status-entry {
+  display: flex;
+  position: relative;
+  align-items: center;
+  padding: 0;
+  margin-top:5px;
+  background-color: rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  min-height:20px;
+  min-width:250px;
+}
+
+.status-header {
+  position: absolute;
+  top: 50%;
+  width: 150px; /* Explicit width to keep consistent when rotated */
+  height: auto; /* Ensure height is dynamic */
+  left: 0;
+  transform: rotate(-90deg) translateX(-50%);
+  transform-origin: left top;
+  padding: 3px;
+  background-color: rgb(0, 26, 93);
+  color: rgba(180, 180, 180, 0.763);
+  font-size: 10px;
+  cursor: pointer;
+  text-align: center;
+  overflow: visible; /* Ensure content is not clipped */
+}
+
+.status-header.collapsed {
+  transform: none; /* Remove rotation when collapsed */
+  height: auto; /* Make sure height is dynamic */
+  padding: 3px;
+  top:0;
+  text-align: left;
+  overflow: visible; /* Keep overflow visible to avoid clipping */
+}
+
+.status-content {
+  display: grid;
+  grid-template-columns: auto auto;
+  margin-left: 25px;
+  color: white;
+  gap: 10px;
+}
+
+.status-content.collapsed {
+  display:none
+}
+
+.status-content div {
+  display: flex;
+  align-items: center;
+}
+
+.status-content div i {
+  margin-right: 5px;
+}
+
+.status-content .label {
+  color: lightgrey;
+}
+
+.status-content .value {
+  color: white;
+}
+
+.status-bar-icon {
+  width: 16px;
+  height: 16px;
 }
 </style>
 </html>

@@ -1,5 +1,3 @@
-const localstorageKey = 'BeamNGVScodeJbeamViewerUISettings'
-
 let views = [
   {name: 'Top'   , onActivate() { animateCameraMovement(new THREE.Vector3(0, 10, 0)) }},
   {name: 'Bottom', onActivate() { animateCameraMovement(new THREE.Vector3(0,-10, 0)) }},
@@ -40,7 +38,7 @@ function applySetting(settingKey) {
       break
   }
 
-  saveSettings()
+  saveUISettings()
 }
 
 // Function to handle setting the value of a toolbar setting (and apply it)
@@ -90,28 +88,14 @@ function initHTMLUI() {
   setupToolbarSetting('perspectiveRender');
 }
 
-function loadSettings() {
-  const savedSettingsStr = localStorage.getItem(localstorageKey);
-  if(!savedSettingsStr) return;
-  let savedSettings = JSON.parse(savedSettingsStr)
-  if(!savedSettings) return;
-  console.log("Loaded ui settings: ", savedSettings)
-  Object.assign(uiSettings, savedSettings);
-}
-
-function saveSettings() {
-  console.log("Saving ui settings: ", uiSettings)
-  localStorage.setItem(localstorageKey, JSON.stringify(uiSettings));
-}
-
 export async function init() {
-  loadSettings();
+  loadUISettings();
   initHTMLUI();
 }
 
 export async function onConfigChanged() {
   // vscode settings changed, lets reload our ui settings as well
-  loadSettings();
+  loadUISettings();
   setToolbarSetting('perspectiveRender', uiSettings.perspectiveRender);
   setToolbarSetting('showNodeIDs', uiSettings.showNodeIDs);
   setToolbarSetting('centerViewOnSelectedJBeam', uiSettings.centerViewOnSelectedJBeam);
@@ -134,9 +118,9 @@ export function animate(time) {
     }
     if(daeLoadingCounter + daeLoadingCounterFull > 0) {
       txt += (daeLoadingCounter + daeLoadingCounterFull) + ' files loading ...'
-      statusBar.setStatus('meshCache', txt);
+      statusBar.setStatus('3d mesh cache', txt);
     } else {
-      statusBar.removeStatus('meshCache');
+      statusBar.removeStatus('3d mesh cache');
     }
   }
 }

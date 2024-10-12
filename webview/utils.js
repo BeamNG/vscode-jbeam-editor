@@ -16,14 +16,6 @@ let daeLoadingCounterFull = 0
 let loadedMeshes = []
 let meshLoadingEnabled = false
 
-let uiSettings = {
-  perspectiveRender: false,
-  showNodeIDs: true,
-  showMeshes: true,
-  centerViewOnSelectedJBeam: true,
-  symmetry: true,
-  mirrorplanes: true,
-}
 
 const raycaster = new THREE.Raycaster()
 const mouse = new THREE.Vector2()
@@ -569,63 +561,3 @@ class TooltipPool {
 
 }
 
-
-const statusBar = {
-  statuses: {},
-
-  // Register or update a status entry for a consumer
-  setStatus(consumerId, text) {
-    const statusContainer = document.getElementById('status-container');
-    const statusBarElement = document.getElementById('status-bar');
-
-    // Update the status text for this consumer
-    if (text.trim() === '') {
-      this.removeStatus(consumerId);
-      return;
-    }
-
-    // If the status entry already exists, update it
-    if (this.statuses[consumerId]) {
-      const statusElement = document.getElementById(`status-${consumerId}`);
-      statusElement.innerHTML = text;
-    } else {
-      // Create a new status entry
-      const newStatusElement = document.createElement('div');
-      newStatusElement.id = `status-${consumerId}`;
-      newStatusElement.innerHTML = text;
-      statusContainer.appendChild(newStatusElement);
-      this.statuses[consumerId] = newStatusElement;
-    }
-
-    // Show the status bar if there are any active statuses
-    statusBarElement.style.display = 'block';
-  },
-
-  // Remove a status entry for a consumer
-  removeStatus(consumerId) {
-    const statusBarElement = document.getElementById('status-bar');
-
-    if (this.statuses[consumerId]) {
-      const statusElement = document.getElementById(`status-${consumerId}`);
-      statusElement.remove();
-      delete this.statuses[consumerId];
-    }
-
-    // Hide the status bar if no statuses are left
-    if (Object.keys(this.statuses).length === 0) {
-      statusBarElement.style.display = 'none';
-    }
-  },
-
-  // Clear all statuses
-  clearAll() {
-    const statusBarElement = document.getElementById('status-bar');
-    const statusContainer = document.getElementById('status-container');
-
-    statusContainer.innerHTML = ''; // Remove all child elements
-    this.statuses = {}; // Clear the statuses object
-
-    // Hide the status bar
-    statusBarElement.style.display = 'none';
-  }
-};
