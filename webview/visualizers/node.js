@@ -4,14 +4,19 @@
  * @param {Boolean} triggerEditor - Whether to trigger the text editor highlighting.
  */
 function focusNodes(nodesArrToFocus, triggerEditor = true) {
-  if (!nodesArrToFocus || !pointsObject) return;
+  selectedNodeIndices = nodesArrToFocus;
+  redrawNodeFocus()
+  if (triggerEditor) {
+    highlightNodeinTextEditor();
+  }
+}
 
+export function redrawNodeFocus() {
+  if (!selectedNodeIndices || !pointsObject) return;
   let sumX = 0;
   let sumY = 0;
   let sumZ = 0;
   let ncount = 0;
-
-  selectedNodeIndices = nodesArrToFocus;
 
   // Access geometry attributes
   const alphasAttribute = pointsObject.geometry.getAttribute('alpha');
@@ -26,7 +31,7 @@ function focusNodes(nodesArrToFocus, triggerEditor = true) {
   }
 
   // Highlight selected nodes
-  nodesArrToFocus.forEach((idx) => {
+  selectedNodeIndices.forEach((idx) => {
     const node = pointsCache[idx];
     alphasAttribute.setX(idx, 1);
     sizesAttribute.setX(idx, selectedSize);
@@ -41,10 +46,6 @@ function focusNodes(nodesArrToFocus, triggerEditor = true) {
   alphasAttribute.needsUpdate = true;
   colorsAttribute.needsUpdate = true;
   sizesAttribute.needsUpdate = true;
-
-  if (triggerEditor) {
-    highlightNodeinTextEditor();
-  }
 
   ctx.vscode.postMessage({
     command: 'selectNodes',
@@ -97,6 +98,8 @@ function highlightMirroredAndErrorNodes() {
   mirroredNodeIndices.clear();
   usedMirrorPlanes.clear();
   nodesNearMirrorPlanes.clear();
+
+  if(!uiSettings.symmetry) return
 
   // Set to keep track of already highlighted nodes (to avoid duplicate processing)
   const highlightedIndices = new Set(selectedNodeIndices);

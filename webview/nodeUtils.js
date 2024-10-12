@@ -210,6 +210,8 @@ function visualizeMirrorPlanes() {
   }
   mirrorPlaneMeshes = [];
 
+  if(!uiSettings.mirrorplanes) return
+
   // Iterate over usedMirrorPlanes
   usedMirrorPlanes.forEach(planeIdx => {
     const plane = mirrorPlanes[planeIdx];

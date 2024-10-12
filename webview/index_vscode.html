@@ -14,24 +14,12 @@
 <canvas id="canvas3D" tabindex="1"></canvas>
 
 <div id="toolbar">
-  <!-- Show Node IDs Toggle Icon -->
-  <div class="toolbar-item" id="toolbar-showNodeIDs-toggle" style="cursor: pointer; margin-right: 3px;" title="Toggle Show Node IDs">
-    🆔
-  </div>
-
-  <div class="toolbar-item" id="toolbar-showMeshes-toggle" style="cursor: pointer; margin-right: 3px;" title="Toggle 3D Meshes">
-    🧊
-  </div>
-
-  <!-- Focus on JBeam Toggle Icon -->
-  <div class="toolbar-item" id="toolbar-centerViewOnSelectedJBeam-toggle" style="cursor: pointer; margin-right: 3px;" title="Toggle Focus on JBeam">
-    🎯
-  </div>
-
-  <!-- Perspective Toggle Icon -->
-  <div class="toolbar-item" id="toolbar-perspectiveRender-toggle" style="cursor: pointer;" title="Toggle Perspective">
-    🔲
-  </div>
+  <div class="toolbar-item toolbar-item-spacer" id="toolbar-showNodeIDs-toggle">🆔</div>
+  <div class="toolbar-item toolbar-item-spacer" id="toolbar-showMeshes-toggle">🧊</div>
+  <div class="toolbar-item toolbar-item-spacer" id="toolbar-centerViewOnSelectedJBeam-toggle">🎯</div>
+  <div class="toolbar-item toolbar-item-spacer" id="toolbar-symmetry-toggle">△</div>
+  <div class="toolbar-item toolbar-item-spacer" id="toolbar-mirrorplanes-toggle">⇄</div>
+  <div class="toolbar-item" id="toolbar-perspectiveRender-toggle">🔲</div>
 </div>
 
 <div id="status-bar" style="display: none; position: absolute; bottom: 0px; width: 100%; text-align: left; pointer-events: none;">
@@ -109,6 +97,8 @@ body, html, canvas {
   padding: 3px;
   cursor: pointer;
   border-radius: 5px;
+  width:21px;
+  text-align: center;
   transition: background-color 0.2s, color 0.2s;
   filter: grayscale(100%); /* Greyscale for inactive */
 }
@@ -121,6 +111,10 @@ body, html, canvas {
 
 .toolbar-item:hover {
   background: rgba(255, 255, 255, 0.2); /* Hover effect */
+}
+
+.toolbar-item-spacer {
+  margin-right: 3px;
 }
 </style>
 </html>

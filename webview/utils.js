@@ -21,6 +21,8 @@ let uiSettings = {
   showNodeIDs: true,
   showMeshes: true,
   centerViewOnSelectedJBeam: true,
+  symmetry: true,
+  mirrorplanes: true,
 }
 
 const raycaster = new THREE.Raycaster()

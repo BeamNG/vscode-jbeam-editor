@@ -32,6 +32,12 @@ function applySetting(settingKey) {
     case 'showMeshes':
       ctx.visualizersMesh.updateMeshViz();
       break;
+    case 'mirrorplanes':
+      visualizeMirrorPlanes()
+      break;
+    case 'symmetry':
+      ctx.visualizersNode.redrawNodeFocus()
+      break
   }
 
   saveSettings()
@@ -79,6 +85,8 @@ function initHTMLUI() {
   setupToolbarSetting('showNodeIDs');
   setupToolbarSetting('centerViewOnSelectedJBeam');
   setupToolbarSetting('showMeshes');
+  setupToolbarSetting('symmetry');
+  setupToolbarSetting('mirrorplanes');
   setupToolbarSetting('perspectiveRender');
 }
 
@@ -108,6 +116,8 @@ export async function onConfigChanged() {
   setToolbarSetting('showNodeIDs', uiSettings.showNodeIDs);
   setToolbarSetting('centerViewOnSelectedJBeam', uiSettings.centerViewOnSelectedJBeam);
   setToolbarSetting('showMeshes', uiSettings.showMeshes);
+  setToolbarSetting('symmetry', uiSettings.symmetry);
+  setToolbarSetting('mirrorplanes', uiSettings.mirrorplanes);
 }
 
 
