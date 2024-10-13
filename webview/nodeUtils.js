@@ -342,3 +342,87 @@ function visualizeMirrorPlanes() {
     mirrorPlaneMeshes.push(frontMesh, backMesh);
   });
 }
+
+// Gizmo things ...
+
+function setupGizmoForSelectedNodes() {
+  if (selectedNodeIndices.length > 0) {
+    // If we have more than one node selected, calculate the bounding box center
+    if (selectedNodeIndices.length === 1) {
+      // Single node selected, allow translation
+      const targetNode = pointsCache[selectedNodeIndices[0]];
+      const nodePosition = new THREE.Vector3(targetNode.pos[0], targetNode.pos[1], targetNode.pos[2]);
+
+      if (!dummyTranformObj) {
+        dummyTranformObj = new THREE.Object3D();
+        scene.add(dummyTranformObj);
+      }
+      dummyTranformObj.position.copy(nodePosition);
+      transformControl.attach(dummyTranformObj);
+
+      // Enable translation mode for single node
+      transformControl.setMode('translate');
+    } else {
+      // Multiple nodes selected, calculate group center and allow only scaling and rotation
+      let sumX = 0, sumY = 0, sumZ = 0;
+      selectedNodeIndices.forEach((idx) => {
+        const node = pointsCache[idx];
+        sumX += node.pos[0];
+        sumY += node.pos[1];
+        sumZ += node.pos[2];
+      });
+
+      const groupCenter = new THREE.Vector3(
+        sumX / selectedNodeIndices.length,
+        sumY / selectedNodeIndices.length,
+        sumZ / selectedNodeIndices.length
+      );
+
+      if (!dummyTranformObj) {
+        dummyTranformObj = new THREE.Object3D();
+        scene.add(dummyTranformObj);
+      }
+      dummyTranformObj.position.copy(groupCenter);
+      transformControl.attach(dummyTranformObj);
+    }
+  } else {
+    transformControl.detach(); // Detach when no nodes are selected
+  }
+}
+
+function onTransformChange() {
+  if (!selectedNodeIndices || selectedNodeIndices.length === 0) return;
+
+  const newPosition = transformControl.object.position;
+
+  if (selectedNodeIndices.length === 1) {
+    // Single node, apply translation
+    const node = pointsCache[selectedNodeIndices[0]];
+    node.pos = [newPosition.x, newPosition.y, newPosition.z];
+    node.pos3d.set(newPosition.x, newPosition.y, newPosition.z);
+
+    // Redraw the scene with updated positions
+    redrawNodeFocus();
+  } else {
+    // Group transformation, apply scaling and rotation
+    const matrix = transformControl.object.matrix;
+
+    selectedNodeIndices.forEach((idx) => {
+      const node = pointsCache[idx];
+      const originalPos = new THREE.Vector3(node.pos[0], node.pos[1], node.pos[2]);
+
+      // Apply transformation matrix to each node
+      originalPos.applyMatrix4(matrix);
+      node.pos = [originalPos.x, originalPos.y, originalPos.z];
+      node.pos3d.set(originalPos.x, originalPos.y, originalPos.z);
+    });
+
+    // After transforming the group, reset the transform control's matrix to identity
+    transformControl.object.matrix.identity();
+    transformControl.object.position.copy(newPosition);
+
+    // Redraw the scene with updated node positions
+    redrawNodeFocus();
+  }
+}
+

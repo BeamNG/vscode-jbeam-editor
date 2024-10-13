@@ -6,21 +6,7 @@
 function focusNodes(nodesArrToFocus, triggerEditor = true) {
   selectedNodeIndices = nodesArrToFocus;
   redrawNodeFocus()
-
-  if (selectedNodeIndices.length > 0) {
-    const targetNode = pointsCache[selectedNodeIndices[0]];
-    const nodePosition = new THREE.Vector3(targetNode.pos[0], targetNode.pos[1], targetNode.pos[2]);
-
-    // Create a dummy object to represent the selected node(s) and attach the control
-    if(!dummyTranformObj) {
-      dummyTranformObj = new THREE.Object3D();
-    }
-    dummyTranformObj.position.copy(nodePosition);
-    transformControl.attach(dummyTranformObj);
-  } else {
-    transformControl.detach();  // Detach when no nodes are selected
-  }
-
+  setupGizmoForSelectedNodes()
   if (triggerEditor) {
     highlightNodeinTextEditor();
   }
@@ -573,6 +559,10 @@ function onTransformChange() {
   redrawNodeFocus();
 }
 
+function onObjectMoved() {
+  // Any additional logic after the object is moved can go here
+}
+
 /**
  * Initializes event listeners.
  */
@@ -585,6 +575,11 @@ export function init() {
   // Initialize the transform control for node manipulation
   transformControl = new TransformControls(camera, renderer.domElement);
   scene.add(transformControl);
+
+  // Disable camera controls while using transform control
+  transformControl.addEventListener('dragging-changed', function(event) {
+    orbitControls.enabled = !event.value;  // Disable camera controls when dragging
+  });
 
   // Event listener for detecting transform events
   transformControl.addEventListener('change', onTransformChange);
