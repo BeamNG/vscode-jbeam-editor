@@ -7,6 +7,8 @@ let daeFindfilesDone = false
 let wasLoaded = false
 let defaultMeshOpacity = 1
 let meshesHighlighted = []
+let forceLoadCommonFolders = false
+let meshesMissingCurrentRun = false
 const coordinateSystemRotation = -Math.PI / 2;
 
 // loadedMeshes is in utils
@@ -16,9 +18,10 @@ let loadedCommonFolders
 
 export function startLoadingMeshes() {
   daeFindfilesDone = false
+  meshesMissingCurrentRun = false
   daeLoadingCounter = 0
   daeLoadingCounterFull = 0
-  loadedCommonFolders = ctx?.config?.sceneView?.meshes?.loadCommonFolder ?? false
+  loadedCommonFolders = (ctx?.config?.sceneView?.meshes?.loadCommonFolder ?? false) || forceLoadCommonFolders
   if(ctx.vscode) {
     ctx.vscode.postMessage({
       command: 'loadColladaNamespaces',
@@ -65,6 +68,7 @@ function tryLoad3dMesh(meshName, onDone) {
   const uri = meshFilenameLookupLibrary[meshName]
   if(!uri) {
     console.error(`Mesh not found: '${meshName}'`, meshFilenameLookupLibrary)
+    meshesMissingCurrentRun = true
     return
   }
   daeLoadingCounterFull++
@@ -100,6 +104,15 @@ function tryLoad3dMesh(meshName, onDone) {
 }
 
 function finalizeMeshes() {
+
+  if(meshesMissingCurrentRun && forceLoadCommonFolders === false && (ctx?.config?.sceneView?.meshes?.loadCommonFolder ?? false) === false) {
+    forceLoadCommonFolders = true;
+    console.log('Meshes where missing, trying to load the common folder')
+    meshLibraryFull = {}
+    meshFolderCache = {}
+    startLoadingMeshes()
+    return
+  }
   //console.log(">>>> finalizeMeshes <<<<")
   //console.log('Adding meshes to scene ...')
 
