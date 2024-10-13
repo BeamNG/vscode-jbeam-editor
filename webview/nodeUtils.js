@@ -169,22 +169,20 @@ function updateNodeStatusbar() {
 
       // Display aggregated information in a table format
       statusText += `
-        <div style="font-size: 10px;">
-          <table style="width: 100%; border-collapse: collapse;">
-            <tbody>
-              <tr><td style="color: grey;">Selected Nodes</td><td>${ncount} nodes</td></tr>
-              <tr><td style="color: grey;">Total Mass</td><td>${sumMass.toFixed(2)} kg</td></tr>
-              <tr>
-                <td style="color: grey;">Bounding Box</td>
-                <td>
-                  Min(${boundingBoxMin.x.toFixed(2)}, ${boundingBoxMin.y.toFixed(2)}, ${boundingBoxMin.z.toFixed(2)})
-                  - Max(${boundingBoxMax.x.toFixed(2)}, ${boundingBoxMax.y.toFixed(2)}, ${boundingBoxMax.z.toFixed(2)})
-                </td>
-              </tr>
-              <tr><td style="color: grey;">Center</td><td>(${center.x.toFixed(2)}, ${center.y.toFixed(2)}, ${center.z.toFixed(2)})</td></tr>
-            </tbody>
-          </table>
-        </div>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tbody>
+            <tr><td style="color: grey;">Selected Nodes</td><td>${ncount} nodes</td></tr>
+            <tr><td style="color: grey;">Total Mass</td><td>${sumMass.toFixed(2)} kg</td></tr>
+            <tr>
+              <td style="color: grey;">Bounding Box</td>
+              <td>
+                Min(${boundingBoxMin.x.toFixed(2)}, ${boundingBoxMin.y.toFixed(2)}, ${boundingBoxMin.z.toFixed(2)})
+                - Max(${boundingBoxMax.x.toFixed(2)}, ${boundingBoxMax.y.toFixed(2)}, ${boundingBoxMax.z.toFixed(2)})
+              </td>
+            </tr>
+            <tr><td style="color: grey;">Center</td><td>(${center.x.toFixed(2)}, ${center.y.toFixed(2)}, ${center.z.toFixed(2)})</td></tr>
+          </tbody>
+        </table>
       `;
     }
     statusBar.setStatus('selected nodes', statusText);
@@ -193,27 +191,22 @@ function updateNodeStatusbar() {
   }
 
   if(mirroredNodeIndices && mirroredNodeIndices.size > 0) {
-    const ncount = mirroredNodeIndices.size;
-    let statusText = `
-      <div style="font-size: 10px;">
-        <table style="width: 100%; border-collapse: collapse;">
-          <tbody>
-            <tr><td style="color: grey;">Symmetric Nodes</td><td>${ncount} nodes</td></tr>
-          </tbody>
-        </table>
-      </div>
-    `;
-    statusBar.setStatus('symmetry', statusText);
+    let statusText = '';
+    mirroredNodeIndices.forEach(idx => {
+      const node = pointsCache[idx];
+      statusText += `Node ${node.name} at (${node.pos[0].toFixed(2)}, ${node.pos[1].toFixed(2)}, ${node.pos[2].toFixed(2)})<br>`;
+    });
+   statusBar.setStatus('symmetry', statusText);
   } else {
     statusBar.removeStatus('symmetry');
   }
 
   // Handle nodes near mirror planes
   if (nodesNearMirrorPlanes.size > 0) {
-    let statusText = `<br><strong>Potential Symmetry problem:</strong><br>`;
+    let statusText = `<strong>Potential Symmetry problem</strong><br>`;
     nodesNearMirrorPlanes.forEach(idx => {
       const node = pointsCache[idx];
-      statusText += `Node: ${node.name} at (${node.pos[0].toFixed(2)}, ${node.pos[1].toFixed(2)}, ${node.pos[2].toFixed(2)})<br>`;
+      statusText += `Node ${node.name} at (${node.pos[0].toFixed(2)}, ${node.pos[1].toFixed(2)}, ${node.pos[2].toFixed(2)})<br>`;
     });
     statusBar.setStatus('symmetry problems', statusText);
   } else {
