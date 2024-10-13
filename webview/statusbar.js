@@ -52,34 +52,42 @@ const statusBar = {
         event.preventDefault();
         this.toggleCollapse(consumerId);
       });
+
+      // Insert the new status at the correct position in the DOM
+      this.insertStatusAtCorrectPosition(statusElement);
     } else {
       // Update the content if the status already exists
       const statusContent = statusElement.querySelector('.status-content');
       statusContent.innerHTML = text;
     }
 
-    // Reorder statuses according to the consumerId order
-    this.reorderStatuses();
-
     // Show the status bar if there are any active statuses
     statusBarElement.style.display = 'block';
   },
 
-  // Function to reorder the statuses by consumerId
-  reorderStatuses() {
+  // Insert the status element in the correct alphabetical order
+  insertStatusAtCorrectPosition(statusElement) {
     const statusContainer = document.getElementById('status-container');
-    // Get all consumerIds, sort them alphabetically
-    const sortedConsumerIds = Object.keys(this.statuses).sort((a, b) => a.localeCompare(b));
+    const consumerId = statusElement.id.replace('status-', '');
 
-    // Clear the container first
-    statusContainer.innerHTML = '';
+    let inserted = false;
 
-    // Reinsert the statuses in sorted order
-    sortedConsumerIds.forEach(consumerId => {
-      if (this.statuses[consumerId]) {
-        statusContainer.appendChild(this.statuses[consumerId]);
+    // Loop through existing statuses and insert in the correct alphabetical order
+    for (const existingElement of statusContainer.children) {
+      const existingId = existingElement.id.replace('status-', '');
+
+      // If the current status's consumerId is alphabetically after the new one, insert before it
+      if (consumerId.localeCompare(existingId) < 0) {
+        statusContainer.insertBefore(statusElement, existingElement);
+        inserted = true;
+        break;
       }
-    });
+    }
+
+    // If the element wasn't inserted, append it at the end
+    if (!inserted) {
+      statusContainer.appendChild(statusElement);
+    }
   },
 
   // Remove a status entry for a consumer
@@ -91,9 +99,6 @@ const statusBar = {
       statusElement.remove();
       delete this.statuses[consumerId];
     }
-
-    // Reorder statuses after removal
-    this.reorderStatuses();
 
     // Hide the status bar if no statuses are left
     if (Object.keys(this.statuses).length === 0) {
