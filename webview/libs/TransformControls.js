@@ -1,42 +1,20 @@
-import {
-	BoxGeometry,
-	BufferGeometry,
-	CylinderGeometry,
-	DoubleSide,
-	Euler,
-	Float32BufferAttribute,
-	Line,
-	LineBasicMaterial,
-	Matrix4,
-	Mesh,
-	MeshBasicMaterial,
-	Object3D,
-	OctahedronGeometry,
-	PlaneGeometry,
-	Quaternion,
-	Raycaster,
-	SphereGeometry,
-	TorusGeometry,
-	Vector3
-} from 'three';
+const _raycaster_tcc = new THREE.Raycaster();
 
-const _raycaster = new Raycaster();
-
-const _tempVector = new Vector3();
-const _tempVector2 = new Vector3();
-const _tempQuaternion = new Quaternion();
-const _unit = {
-	X: new Vector3( 1, 0, 0 ),
-	Y: new Vector3( 0, 1, 0 ),
-	Z: new Vector3( 0, 0, 1 )
+const _tempVector_tcc = new THREE.Vector3();
+const _tempVector2_tcc = new THREE.Vector3();
+const _tempQuaternion_tcc = new THREE.Quaternion();
+const _unit_tcc = {
+	X: new THREE.Vector3( 1, 0, 0 ),
+	Y: new THREE.Vector3( 0, 1, 0 ),
+	Z: new THREE.Vector3( 0, 0, 1 )
 };
 
-const _changeEvent = { type: 'change' };
-const _mouseDownEvent = { type: 'mouseDown' };
-const _mouseUpEvent = { type: 'mouseUp', mode: null };
-const _objectChangeEvent = { type: 'objectChange' };
+const _changeEvent_tcc = { type: 'change' };
+const _mouseDownEvent_tcc = { type: 'mouseDown' };
+const _mouseUpEvent_tcc = { type: 'mouseUp', mode: null };
+const _objectChangeEvent_tcc = { type: 'objectChange' };
 
-class TransformControls extends Object3D {
+class TransformControls extends THREE.Object3D {
 
 	constructor( camera, domElement ) {
 
@@ -87,7 +65,7 @@ class TransformControls extends Object3D {
 						_gizmo[ propName ] = value;
 
 						scope.dispatchEvent( { type: propName + '-changed', value: value } );
-						scope.dispatchEvent( _changeEvent );
+						scope.dispatchEvent( _changeEvent_tcc );
 
 					}
 
@@ -122,17 +100,17 @@ class TransformControls extends Object3D {
 
 		// Reusable utility variables
 
-		const worldPosition = new Vector3();
-		const worldPositionStart = new Vector3();
-		const worldQuaternion = new Quaternion();
-		const worldQuaternionStart = new Quaternion();
-		const cameraPosition = new Vector3();
-		const cameraQuaternion = new Quaternion();
-		const pointStart = new Vector3();
-		const pointEnd = new Vector3();
-		const rotationAxis = new Vector3();
+		const worldPosition = new THREE.Vector3();
+		const worldPositionStart = new THREE.Vector3();
+		const worldQuaternion = new THREE.Quaternion();
+		const worldQuaternionStart = new THREE.Quaternion();
+		const cameraPosition = new THREE.Vector3();
+		const cameraQuaternion = new THREE.Quaternion();
+		const pointStart = new THREE.Vector3();
+		const pointEnd = new THREE.Vector3();
+		const rotationAxis = new THREE.Vector3();
 		const rotationAngle = 0;
-		const eye = new Vector3();
+		const eye = new THREE.Vector3();
 
 		// TODO: remove properties unused in plane and gizmo
 
@@ -148,23 +126,23 @@ class TransformControls extends Object3D {
 		defineProperty( 'rotationAngle', rotationAngle );
 		defineProperty( 'eye', eye );
 
-		this._offset = new Vector3();
-		this._startNorm = new Vector3();
-		this._endNorm = new Vector3();
-		this._cameraScale = new Vector3();
+		this._offset = new THREE.Vector3();
+		this._startNorm = new THREE.Vector3();
+		this._endNorm = new THREE.Vector3();
+		this._cameraScale = new THREE.Vector3();
 
-		this._parentPosition = new Vector3();
-		this._parentQuaternion = new Quaternion();
-		this._parentQuaternionInv = new Quaternion();
-		this._parentScale = new Vector3();
+		this._parentPosition = new THREE.Vector3();
+		this._parentQuaternion = new THREE.Quaternion();
+		this._parentQuaternionInv = new THREE.Quaternion();
+		this._parentScale = new THREE.Vector3();
 
-		this._worldScaleStart = new Vector3();
-		this._worldQuaternionInv = new Quaternion();
-		this._worldScale = new Vector3();
+		this._worldScaleStart = new THREE.Vector3();
+		this._worldQuaternionInv = new THREE.Quaternion();
+		this._worldScale = new THREE.Vector3();
 
-		this._positionStart = new Vector3();
-		this._quaternionStart = new Quaternion();
-		this._scaleStart = new Vector3();
+		this._positionStart = new THREE.Vector3();
+		this._quaternionStart = new THREE.Quaternion();
+		this._scaleStart = new THREE.Vector3();
 
 		this._getPointer = getPointer.bind( this );
 		this._onPointerDown = onPointerDown.bind( this );
@@ -223,9 +201,9 @@ class TransformControls extends Object3D {
 
 		if ( this.object === undefined || this.dragging === true ) return;
 
-		if ( pointer !== null ) _raycaster.setFromCamera( pointer, this.camera );
+		if ( pointer !== null ) _raycaster_tcc.setFromCamera( pointer, this.camera );
 
-		const intersect = intersectObjectWithRay( this._gizmo.picker[ this.mode ], _raycaster );
+		const intersect = intersectObjectWithRay( this._gizmo.picker[ this.mode ], _raycaster_tcc );
 
 		if ( intersect ) {
 
@@ -245,9 +223,9 @@ class TransformControls extends Object3D {
 
 		if ( this.axis !== null ) {
 
-			if ( pointer !== null ) _raycaster.setFromCamera( pointer, this.camera );
+			if ( pointer !== null ) _raycaster_tcc.setFromCamera( pointer, this.camera );
 
-			const planeIntersect = intersectObjectWithRay( this._plane, _raycaster, true );
+			const planeIntersect = intersectObjectWithRay( this._plane, _raycaster_tcc, true );
 
 			if ( planeIntersect ) {
 
@@ -265,8 +243,8 @@ class TransformControls extends Object3D {
 			}
 
 			this.dragging = true;
-			_mouseDownEvent.mode = this.mode;
-			this.dispatchEvent( _mouseDownEvent );
+			_mouseDownEvent_tcc.mode = this.mode;
+			this.dispatchEvent( _mouseDownEvent_tcc );
 
 		}
 
@@ -291,9 +269,9 @@ class TransformControls extends Object3D {
 
 		if ( object === undefined || axis === null || this.dragging === false || ( pointer !== null && pointer.button !== - 1 ) ) return;
 
-		if ( pointer !== null ) _raycaster.setFromCamera( pointer, this.camera );
+		if ( pointer !== null ) _raycaster_tcc.setFromCamera( pointer, this.camera );
 
-		const planeIntersect = intersectObjectWithRay( this._plane, _raycaster, true );
+		const planeIntersect = intersectObjectWithRay( this._plane, _raycaster_tcc, true );
 
 		if ( ! planeIntersect ) return;
 
@@ -333,7 +311,7 @@ class TransformControls extends Object3D {
 
 				if ( space === 'local' ) {
 
-					object.position.applyQuaternion( _tempQuaternion.copy( this._quaternionStart ).invert() );
+					object.position.applyQuaternion( _tempQuaternion_tcc.copy( this._quaternionStart ).invert() );
 
 					if ( axis.search( 'X' ) !== - 1 ) {
 
@@ -361,7 +339,7 @@ class TransformControls extends Object3D {
 
 					if ( object.parent ) {
 
-						object.position.add( _tempVector.setFromMatrixPosition( object.parent.matrixWorld ) );
+						object.position.add( _tempVector_tcc.setFromMatrixPosition( object.parent.matrixWorld ) );
 
 					}
 
@@ -385,7 +363,7 @@ class TransformControls extends Object3D {
 
 					if ( object.parent ) {
 
-						object.position.sub( _tempVector.setFromMatrixPosition( object.parent.matrixWorld ) );
+						object.position.sub( _tempVector_tcc.setFromMatrixPosition( object.parent.matrixWorld ) );
 
 					}
 
@@ -401,33 +379,33 @@ class TransformControls extends Object3D {
 
 				if ( this.pointEnd.dot( this.pointStart ) < 0 ) d *= - 1;
 
-				_tempVector2.set( d, d, d );
+				_tempVector2_tcc.set( d, d, d );
 
 			} else {
 
-				_tempVector.copy( this.pointStart );
-				_tempVector2.copy( this.pointEnd );
+				_tempVector_tcc.copy( this.pointStart );
+				_tempVector2_tcc.copy( this.pointEnd );
 
-				_tempVector.applyQuaternion( this._worldQuaternionInv );
-				_tempVector2.applyQuaternion( this._worldQuaternionInv );
+				_tempVector_tcc.applyQuaternion( this._worldQuaternionInv );
+				_tempVector2_tcc.applyQuaternion( this._worldQuaternionInv );
 
-				_tempVector2.divide( _tempVector );
+				_tempVector2_tcc.divide( _tempVector_tcc );
 
 				if ( axis.search( 'X' ) === - 1 ) {
 
-					_tempVector2.x = 1;
+					_tempVector2_tcc.x = 1;
 
 				}
 
 				if ( axis.search( 'Y' ) === - 1 ) {
 
-					_tempVector2.y = 1;
+					_tempVector2_tcc.y = 1;
 
 				}
 
 				if ( axis.search( 'Z' ) === - 1 ) {
 
-					_tempVector2.z = 1;
+					_tempVector2_tcc.z = 1;
 
 				}
 
@@ -435,7 +413,7 @@ class TransformControls extends Object3D {
 
 			// Apply scale
 
-			object.scale.copy( this._scaleStart ).multiply( _tempVector2 );
+			object.scale.copy( this._scaleStart ).multiply( _tempVector2_tcc );
 
 			if ( this.scaleSnap ) {
 
@@ -463,37 +441,37 @@ class TransformControls extends Object3D {
 
 			this._offset.copy( this.pointEnd ).sub( this.pointStart );
 
-			const ROTATION_SPEED = 20 / this.worldPosition.distanceTo( _tempVector.setFromMatrixPosition( this.camera.matrixWorld ) );
+			const ROTATION_SPEED = 20 / this.worldPosition.distanceTo( _tempVector_tcc.setFromMatrixPosition( this.camera.matrixWorld ) );
 
 			let _inPlaneRotation = false;
 
 			if ( axis === 'XYZE' ) {
 
 				this.rotationAxis.copy( this._offset ).cross( this.eye ).normalize();
-				this.rotationAngle = this._offset.dot( _tempVector.copy( this.rotationAxis ).cross( this.eye ) ) * ROTATION_SPEED;
+				this.rotationAngle = this._offset.dot( _tempVector_tcc.copy( this.rotationAxis ).cross( this.eye ) ) * ROTATION_SPEED;
 
 			} else if ( axis === 'X' || axis === 'Y' || axis === 'Z' ) {
 
-				this.rotationAxis.copy( _unit[ axis ] );
+				this.rotationAxis.copy( _unit_tcc[ axis ] );
 
-				_tempVector.copy( _unit[ axis ] );
+				_tempVector_tcc.copy( _unit_tcc[ axis ] );
 
 				if ( space === 'local' ) {
 
-					_tempVector.applyQuaternion( this.worldQuaternion );
+					_tempVector_tcc.applyQuaternion( this.worldQuaternion );
 
 				}
 
-				_tempVector.cross( this.eye );
+				_tempVector_tcc.cross( this.eye );
 
-				// When _tempVector is 0 after cross with this.eye the vectors are parallel and should use in-plane rotation logic.
-				if ( _tempVector.length() === 0 ) {
+				// When _tempVector_tcc is 0 after cross with this.eye the vectors are parallel and should use in-plane rotation logic.
+				if ( _tempVector_tcc.length() === 0 ) {
 
 					_inPlaneRotation = true;
 
 				} else {
 
-					this.rotationAngle = this._offset.dot( _tempVector.normalize() ) * ROTATION_SPEED;
+					this.rotationAngle = this._offset.dot( _tempVector_tcc.normalize() ) * ROTATION_SPEED;
 
 				}
 
@@ -520,20 +498,20 @@ class TransformControls extends Object3D {
 			if ( space === 'local' && axis !== 'E' && axis !== 'XYZE' ) {
 
 				object.quaternion.copy( this._quaternionStart );
-				object.quaternion.multiply( _tempQuaternion.setFromAxisAngle( this.rotationAxis, this.rotationAngle ) ).normalize();
+				object.quaternion.multiply( _tempQuaternion_tcc.setFromAxisAngle( this.rotationAxis, this.rotationAngle ) ).normalize();
 
 			} else {
 
 				this.rotationAxis.applyQuaternion( this._parentQuaternionInv );
-				object.quaternion.copy( _tempQuaternion.setFromAxisAngle( this.rotationAxis, this.rotationAngle ) );
+				object.quaternion.copy( _tempQuaternion_tcc.setFromAxisAngle( this.rotationAxis, this.rotationAngle ) );
 				object.quaternion.multiply( this._quaternionStart ).normalize();
 
 			}
 
 		}
 
-		this.dispatchEvent( _changeEvent );
-		this.dispatchEvent( _objectChangeEvent );
+		this.dispatchEvent( _changeEvent_tcc );
+		this.dispatchEvent( _objectChangeEvent_tcc );
 
 	}
 
@@ -543,8 +521,8 @@ class TransformControls extends Object3D {
 
 		if ( this.dragging && ( this.axis !== null ) ) {
 
-			_mouseUpEvent.mode = this.mode;
-			this.dispatchEvent( _mouseUpEvent );
+			_mouseUpEvent_tcc.mode = this.mode;
+			this.dispatchEvent( _mouseUpEvent_tcc );
 
 		}
 
@@ -600,8 +578,8 @@ class TransformControls extends Object3D {
 			this.object.quaternion.copy( this._quaternionStart );
 			this.object.scale.copy( this._scaleStart );
 
-			this.dispatchEvent( _changeEvent );
-			this.dispatchEvent( _objectChangeEvent );
+			this.dispatchEvent( _changeEvent_tcc );
+			this.dispatchEvent( _objectChangeEvent_tcc );
 
 			this.pointStart.copy( this.pointEnd );
 
@@ -611,7 +589,7 @@ class TransformControls extends Object3D {
 
 	getRaycaster() {
 
-		return _raycaster;
+		return _raycaster_tcc;
 
 	}
 
@@ -761,24 +739,24 @@ function intersectObjectWithRay( object, raycaster, includeInvisible ) {
 
 // Reusable utility variables
 
-const _tempEuler = new Euler();
-const _alignVector = new Vector3( 0, 1, 0 );
-const _zeroVector = new Vector3( 0, 0, 0 );
-const _lookAtMatrix = new Matrix4();
-const _tempQuaternion2 = new Quaternion();
-const _identityQuaternion = new Quaternion();
-const _dirVector = new Vector3();
-const _tempMatrix = new Matrix4();
+const _tempEuler = new THREE.Euler();
+const _alignVector = new THREE.Vector3( 0, 1, 0 );
+const _zeroVector = new THREE.Vector3( 0, 0, 0 );
+const _lookAtMatrix = new THREE.Matrix4();
+const _tempQuaternion2 = new THREE.Quaternion();
+const _identityQuaternion = new THREE.Quaternion();
+const _dirVector = new THREE.Vector3();
+const _tempMatrix = new THREE.Matrix4();
 
-const _unitX = new Vector3( 1, 0, 0 );
-const _unitY = new Vector3( 0, 1, 0 );
-const _unitZ = new Vector3( 0, 0, 1 );
+const _unitX = new THREE.Vector3( 1, 0, 0 );
+const _unitY = new THREE.Vector3( 0, 1, 0 );
+const _unitZ = new THREE.Vector3( 0, 0, 1 );
 
-const _v1 = new Vector3();
-const _v2 = new Vector3();
-const _v3 = new Vector3();
+const _v1 = new THREE.Vector3();
+const _v2 = new THREE.Vector3();
+const _v3 = new THREE.Vector3();
 
-class TransformControlsGizmo extends Object3D {
+class TransformControlsGizmo extends THREE.Object3D {
 
 	constructor() {
 
@@ -790,7 +768,7 @@ class TransformControlsGizmo extends Object3D {
 
 		// shared materials
 
-		const gizmoMaterial = new MeshBasicMaterial( {
+		const gizmoMaterial = new THREE.MeshBasicMaterial( {
 			depthTest: false,
 			depthWrite: false,
 			fog: false,
@@ -798,7 +776,7 @@ class TransformControlsGizmo extends Object3D {
 			transparent: true
 		} );
 
-		const gizmoLineMaterial = new LineBasicMaterial( {
+		const gizmoLineMaterial = new THREE.LineBasicMaterial( {
 			depthTest: false,
 			depthWrite: false,
 			fog: false,
@@ -850,21 +828,21 @@ class TransformControlsGizmo extends Object3D {
 
 		// reusable geometry
 
-		const arrowGeometry = new CylinderGeometry( 0, 0.04, 0.1, 12 );
+		const arrowGeometry = new THREE.CylinderGeometry( 0, 0.04, 0.1, 12 );
 		arrowGeometry.translate( 0, 0.05, 0 );
 
-		const scaleHandleGeometry = new BoxGeometry( 0.08, 0.08, 0.08 );
+		const scaleHandleGeometry = new THREE.BoxGeometry( 0.08, 0.08, 0.08 );
 		scaleHandleGeometry.translate( 0, 0.04, 0 );
 
-		const lineGeometry = new BufferGeometry();
-		lineGeometry.setAttribute( 'position', new Float32BufferAttribute( [ 0, 0, 0,	1, 0, 0 ], 3 ) );
+		const lineGeometry = new THREE.BufferGeometry();
+		lineGeometry.setAttribute( 'position', new THREE.Float32BufferAttribute( [ 0, 0, 0,	1, 0, 0 ], 3 ) );
 
-		const lineGeometry2 = new CylinderGeometry( 0.0075, 0.0075, 0.5, 3 );
+		const lineGeometry2 = new THREE.CylinderGeometry( 0.0075, 0.0075, 0.5, 3 );
 		lineGeometry2.translate( 0, 0.25, 0 );
 
 		function CircleGeometry( radius, arc ) {
 
-			const geometry = new TorusGeometry( radius, 0.0075, 3, 64, arc * Math.PI * 2 );
+			const geometry = new THREE.TorusGeometry( radius, 0.0075, 3, 64, arc * Math.PI * 2 );
 			geometry.rotateY( Math.PI / 2 );
 			geometry.rotateX( Math.PI / 2 );
 			return geometry;
@@ -875,9 +853,9 @@ class TransformControlsGizmo extends Object3D {
 
 		function TranslateHelperGeometry() {
 
-			const geometry = new BufferGeometry();
+			const geometry = new THREE.BufferGeometry();
 
-			geometry.setAttribute( 'position', new Float32BufferAttribute( [ 0, 0, 0, 1, 1, 1 ], 3 ) );
+			geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( [ 0, 0, 0, 1, 1, 1 ], 3 ) );
 
 			return geometry;
 
@@ -887,190 +865,190 @@ class TransformControlsGizmo extends Object3D {
 
 		const gizmoTranslate = {
 			X: [
-				[ new Mesh( arrowGeometry, matRed ), [ 0.5, 0, 0 ], [ 0, 0, - Math.PI / 2 ]],
-				[ new Mesh( arrowGeometry, matRed ), [ - 0.5, 0, 0 ], [ 0, 0, Math.PI / 2 ]],
-				[ new Mesh( lineGeometry2, matRed ), [ 0, 0, 0 ], [ 0, 0, - Math.PI / 2 ]]
+				[ new THREE.Mesh( arrowGeometry, matRed ), [ 0.5, 0, 0 ], [ 0, 0, - Math.PI / 2 ]],
+				[ new THREE.Mesh( arrowGeometry, matRed ), [ - 0.5, 0, 0 ], [ 0, 0, Math.PI / 2 ]],
+				[ new THREE.Mesh( lineGeometry2, matRed ), [ 0, 0, 0 ], [ 0, 0, - Math.PI / 2 ]]
 			],
 			Y: [
-				[ new Mesh( arrowGeometry, matGreen ), [ 0, 0.5, 0 ]],
-				[ new Mesh( arrowGeometry, matGreen ), [ 0, - 0.5, 0 ], [ Math.PI, 0, 0 ]],
-				[ new Mesh( lineGeometry2, matGreen ) ]
+				[ new THREE.Mesh( arrowGeometry, matGreen ), [ 0, 0.5, 0 ]],
+				[ new THREE.Mesh( arrowGeometry, matGreen ), [ 0, - 0.5, 0 ], [ Math.PI, 0, 0 ]],
+				[ new THREE.Mesh( lineGeometry2, matGreen ) ]
 			],
 			Z: [
-				[ new Mesh( arrowGeometry, matBlue ), [ 0, 0, 0.5 ], [ Math.PI / 2, 0, 0 ]],
-				[ new Mesh( arrowGeometry, matBlue ), [ 0, 0, - 0.5 ], [ - Math.PI / 2, 0, 0 ]],
-				[ new Mesh( lineGeometry2, matBlue ), null, [ Math.PI / 2, 0, 0 ]]
+				[ new THREE.Mesh( arrowGeometry, matBlue ), [ 0, 0, 0.5 ], [ Math.PI / 2, 0, 0 ]],
+				[ new THREE.Mesh( arrowGeometry, matBlue ), [ 0, 0, - 0.5 ], [ - Math.PI / 2, 0, 0 ]],
+				[ new THREE.Mesh( lineGeometry2, matBlue ), null, [ Math.PI / 2, 0, 0 ]]
 			],
 			XYZ: [
-				[ new Mesh( new OctahedronGeometry( 0.1, 0 ), matWhiteTransparent.clone() ), [ 0, 0, 0 ]]
+				[ new THREE.Mesh( new THREE.OctahedronGeometry( 0.1, 0 ), matWhiteTransparent.clone() ), [ 0, 0, 0 ]]
 			],
 			XY: [
-				[ new Mesh( new BoxGeometry( 0.15, 0.15, 0.01 ), matBlueTransparent.clone() ), [ 0.15, 0.15, 0 ]]
+				[ new THREE.Mesh( new THREE.BoxGeometry( 0.15, 0.15, 0.01 ), matBlueTransparent.clone() ), [ 0.15, 0.15, 0 ]]
 			],
 			YZ: [
-				[ new Mesh( new BoxGeometry( 0.15, 0.15, 0.01 ), matRedTransparent.clone() ), [ 0, 0.15, 0.15 ], [ 0, Math.PI / 2, 0 ]]
+				[ new THREE.Mesh( new THREE.BoxGeometry( 0.15, 0.15, 0.01 ), matRedTransparent.clone() ), [ 0, 0.15, 0.15 ], [ 0, Math.PI / 2, 0 ]]
 			],
 			XZ: [
-				[ new Mesh( new BoxGeometry( 0.15, 0.15, 0.01 ), matGreenTransparent.clone() ), [ 0.15, 0, 0.15 ], [ - Math.PI / 2, 0, 0 ]]
+				[ new THREE.Mesh( new THREE.BoxGeometry( 0.15, 0.15, 0.01 ), matGreenTransparent.clone() ), [ 0.15, 0, 0.15 ], [ - Math.PI / 2, 0, 0 ]]
 			]
 		};
 
 		const pickerTranslate = {
 			X: [
-				[ new Mesh( new CylinderGeometry( 0.2, 0, 0.6, 4 ), matInvisible ), [ 0.3, 0, 0 ], [ 0, 0, - Math.PI / 2 ]],
-				[ new Mesh( new CylinderGeometry( 0.2, 0, 0.6, 4 ), matInvisible ), [ - 0.3, 0, 0 ], [ 0, 0, Math.PI / 2 ]]
+				[ new THREE.Mesh( new THREE.CylinderGeometry( 0.2, 0, 0.6, 4 ), matInvisible ), [ 0.3, 0, 0 ], [ 0, 0, - Math.PI / 2 ]],
+				[ new THREE.Mesh( new THREE.CylinderGeometry( 0.2, 0, 0.6, 4 ), matInvisible ), [ - 0.3, 0, 0 ], [ 0, 0, Math.PI / 2 ]]
 			],
 			Y: [
-				[ new Mesh( new CylinderGeometry( 0.2, 0, 0.6, 4 ), matInvisible ), [ 0, 0.3, 0 ]],
-				[ new Mesh( new CylinderGeometry( 0.2, 0, 0.6, 4 ), matInvisible ), [ 0, - 0.3, 0 ], [ 0, 0, Math.PI ]]
+				[ new THREE.Mesh( new THREE.CylinderGeometry( 0.2, 0, 0.6, 4 ), matInvisible ), [ 0, 0.3, 0 ]],
+				[ new THREE.Mesh( new THREE.CylinderGeometry( 0.2, 0, 0.6, 4 ), matInvisible ), [ 0, - 0.3, 0 ], [ 0, 0, Math.PI ]]
 			],
 			Z: [
-				[ new Mesh( new CylinderGeometry( 0.2, 0, 0.6, 4 ), matInvisible ), [ 0, 0, 0.3 ], [ Math.PI / 2, 0, 0 ]],
-				[ new Mesh( new CylinderGeometry( 0.2, 0, 0.6, 4 ), matInvisible ), [ 0, 0, - 0.3 ], [ - Math.PI / 2, 0, 0 ]]
+				[ new THREE.Mesh( new THREE.CylinderGeometry( 0.2, 0, 0.6, 4 ), matInvisible ), [ 0, 0, 0.3 ], [ Math.PI / 2, 0, 0 ]],
+				[ new THREE.Mesh( new THREE.CylinderGeometry( 0.2, 0, 0.6, 4 ), matInvisible ), [ 0, 0, - 0.3 ], [ - Math.PI / 2, 0, 0 ]]
 			],
 			XYZ: [
-				[ new Mesh( new OctahedronGeometry( 0.2, 0 ), matInvisible ) ]
+				[ new THREE.Mesh( new THREE.OctahedronGeometry( 0.2, 0 ), matInvisible ) ]
 			],
 			XY: [
-				[ new Mesh( new BoxGeometry( 0.2, 0.2, 0.01 ), matInvisible ), [ 0.15, 0.15, 0 ]]
+				[ new THREE.Mesh( new THREE.BoxGeometry( 0.2, 0.2, 0.01 ), matInvisible ), [ 0.15, 0.15, 0 ]]
 			],
 			YZ: [
-				[ new Mesh( new BoxGeometry( 0.2, 0.2, 0.01 ), matInvisible ), [ 0, 0.15, 0.15 ], [ 0, Math.PI / 2, 0 ]]
+				[ new THREE.Mesh( new THREE.BoxGeometry( 0.2, 0.2, 0.01 ), matInvisible ), [ 0, 0.15, 0.15 ], [ 0, Math.PI / 2, 0 ]]
 			],
 			XZ: [
-				[ new Mesh( new BoxGeometry( 0.2, 0.2, 0.01 ), matInvisible ), [ 0.15, 0, 0.15 ], [ - Math.PI / 2, 0, 0 ]]
+				[ new THREE.Mesh( new THREE.BoxGeometry( 0.2, 0.2, 0.01 ), matInvisible ), [ 0.15, 0, 0.15 ], [ - Math.PI / 2, 0, 0 ]]
 			]
 		};
 
 		const helperTranslate = {
 			START: [
-				[ new Mesh( new OctahedronGeometry( 0.01, 2 ), matHelper ), null, null, null, 'helper' ]
+				[ new THREE.Mesh( new THREE.OctahedronGeometry( 0.01, 2 ), matHelper ), null, null, null, 'helper' ]
 			],
 			END: [
-				[ new Mesh( new OctahedronGeometry( 0.01, 2 ), matHelper ), null, null, null, 'helper' ]
+				[ new THREE.Mesh( new THREE.OctahedronGeometry( 0.01, 2 ), matHelper ), null, null, null, 'helper' ]
 			],
 			DELTA: [
-				[ new Line( TranslateHelperGeometry(), matHelper ), null, null, null, 'helper' ]
+				[ new THREE.Line( TranslateHelperGeometry(), matHelper ), null, null, null, 'helper' ]
 			],
 			X: [
-				[ new Line( lineGeometry, matHelper.clone() ), [ - 1e3, 0, 0 ], null, [ 1e6, 1, 1 ], 'helper' ]
+				[ new THREE.Line( lineGeometry, matHelper.clone() ), [ - 1e3, 0, 0 ], null, [ 1e6, 1, 1 ], 'helper' ]
 			],
 			Y: [
-				[ new Line( lineGeometry, matHelper.clone() ), [ 0, - 1e3, 0 ], [ 0, 0, Math.PI / 2 ], [ 1e6, 1, 1 ], 'helper' ]
+				[ new THREE.Line( lineGeometry, matHelper.clone() ), [ 0, - 1e3, 0 ], [ 0, 0, Math.PI / 2 ], [ 1e6, 1, 1 ], 'helper' ]
 			],
 			Z: [
-				[ new Line( lineGeometry, matHelper.clone() ), [ 0, 0, - 1e3 ], [ 0, - Math.PI / 2, 0 ], [ 1e6, 1, 1 ], 'helper' ]
+				[ new THREE.Line( lineGeometry, matHelper.clone() ), [ 0, 0, - 1e3 ], [ 0, - Math.PI / 2, 0 ], [ 1e6, 1, 1 ], 'helper' ]
 			]
 		};
 
 		const gizmoRotate = {
 			XYZE: [
-				[ new Mesh( CircleGeometry( 0.5, 1 ), matGray ), null, [ 0, Math.PI / 2, 0 ]]
+				[ new THREE.Mesh( CircleGeometry( 0.5, 1 ), matGray ), null, [ 0, Math.PI / 2, 0 ]]
 			],
 			X: [
-				[ new Mesh( CircleGeometry( 0.5, 0.5 ), matRed ) ]
+				[ new THREE.Mesh( CircleGeometry( 0.5, 0.5 ), matRed ) ]
 			],
 			Y: [
-				[ new Mesh( CircleGeometry( 0.5, 0.5 ), matGreen ), null, [ 0, 0, - Math.PI / 2 ]]
+				[ new THREE.Mesh( CircleGeometry( 0.5, 0.5 ), matGreen ), null, [ 0, 0, - Math.PI / 2 ]]
 			],
 			Z: [
-				[ new Mesh( CircleGeometry( 0.5, 0.5 ), matBlue ), null, [ 0, Math.PI / 2, 0 ]]
+				[ new THREE.Mesh( CircleGeometry( 0.5, 0.5 ), matBlue ), null, [ 0, Math.PI / 2, 0 ]]
 			],
 			E: [
-				[ new Mesh( CircleGeometry( 0.75, 1 ), matYellowTransparent ), null, [ 0, Math.PI / 2, 0 ]]
+				[ new THREE.Mesh( CircleGeometry( 0.75, 1 ), matYellowTransparent ), null, [ 0, Math.PI / 2, 0 ]]
 			]
 		};
 
 		const helperRotate = {
 			AXIS: [
-				[ new Line( lineGeometry, matHelper.clone() ), [ - 1e3, 0, 0 ], null, [ 1e6, 1, 1 ], 'helper' ]
+				[ new THREE.Line( lineGeometry, matHelper.clone() ), [ - 1e3, 0, 0 ], null, [ 1e6, 1, 1 ], 'helper' ]
 			]
 		};
 
 		const pickerRotate = {
 			XYZE: [
-				[ new Mesh( new SphereGeometry( 0.25, 10, 8 ), matInvisible ) ]
+				[ new THREE.Mesh( new THREE.SphereGeometry( 0.25, 10, 8 ), matInvisible ) ]
 			],
 			X: [
-				[ new Mesh( new TorusGeometry( 0.5, 0.1, 4, 24 ), matInvisible ), [ 0, 0, 0 ], [ 0, - Math.PI / 2, - Math.PI / 2 ]],
+				[ new THREE.Mesh( new THREE.TorusGeometry( 0.5, 0.1, 4, 24 ), matInvisible ), [ 0, 0, 0 ], [ 0, - Math.PI / 2, - Math.PI / 2 ]],
 			],
 			Y: [
-				[ new Mesh( new TorusGeometry( 0.5, 0.1, 4, 24 ), matInvisible ), [ 0, 0, 0 ], [ Math.PI / 2, 0, 0 ]],
+				[ new THREE.Mesh( new THREE.TorusGeometry( 0.5, 0.1, 4, 24 ), matInvisible ), [ 0, 0, 0 ], [ Math.PI / 2, 0, 0 ]],
 			],
 			Z: [
-				[ new Mesh( new TorusGeometry( 0.5, 0.1, 4, 24 ), matInvisible ), [ 0, 0, 0 ], [ 0, 0, - Math.PI / 2 ]],
+				[ new THREE.Mesh( new THREE.TorusGeometry( 0.5, 0.1, 4, 24 ), matInvisible ), [ 0, 0, 0 ], [ 0, 0, - Math.PI / 2 ]],
 			],
 			E: [
-				[ new Mesh( new TorusGeometry( 0.75, 0.1, 2, 24 ), matInvisible ) ]
+				[ new THREE.Mesh( new THREE.TorusGeometry( 0.75, 0.1, 2, 24 ), matInvisible ) ]
 			]
 		};
 
 		const gizmoScale = {
 			X: [
-				[ new Mesh( scaleHandleGeometry, matRed ), [ 0.5, 0, 0 ], [ 0, 0, - Math.PI / 2 ]],
-				[ new Mesh( lineGeometry2, matRed ), [ 0, 0, 0 ], [ 0, 0, - Math.PI / 2 ]],
-				[ new Mesh( scaleHandleGeometry, matRed ), [ - 0.5, 0, 0 ], [ 0, 0, Math.PI / 2 ]],
+				[ new THREE.Mesh( scaleHandleGeometry, matRed ), [ 0.5, 0, 0 ], [ 0, 0, - Math.PI / 2 ]],
+				[ new THREE.Mesh( lineGeometry2, matRed ), [ 0, 0, 0 ], [ 0, 0, - Math.PI / 2 ]],
+				[ new THREE.Mesh( scaleHandleGeometry, matRed ), [ - 0.5, 0, 0 ], [ 0, 0, Math.PI / 2 ]],
 			],
 			Y: [
-				[ new Mesh( scaleHandleGeometry, matGreen ), [ 0, 0.5, 0 ]],
-				[ new Mesh( lineGeometry2, matGreen ) ],
-				[ new Mesh( scaleHandleGeometry, matGreen ), [ 0, - 0.5, 0 ], [ 0, 0, Math.PI ]],
+				[ new THREE.Mesh( scaleHandleGeometry, matGreen ), [ 0, 0.5, 0 ]],
+				[ new THREE.Mesh( lineGeometry2, matGreen ) ],
+				[ new THREE.Mesh( scaleHandleGeometry, matGreen ), [ 0, - 0.5, 0 ], [ 0, 0, Math.PI ]],
 			],
 			Z: [
-				[ new Mesh( scaleHandleGeometry, matBlue ), [ 0, 0, 0.5 ], [ Math.PI / 2, 0, 0 ]],
-				[ new Mesh( lineGeometry2, matBlue ), [ 0, 0, 0 ], [ Math.PI / 2, 0, 0 ]],
-				[ new Mesh( scaleHandleGeometry, matBlue ), [ 0, 0, - 0.5 ], [ - Math.PI / 2, 0, 0 ]]
+				[ new THREE.Mesh( scaleHandleGeometry, matBlue ), [ 0, 0, 0.5 ], [ Math.PI / 2, 0, 0 ]],
+				[ new THREE.Mesh( lineGeometry2, matBlue ), [ 0, 0, 0 ], [ Math.PI / 2, 0, 0 ]],
+				[ new THREE.Mesh( scaleHandleGeometry, matBlue ), [ 0, 0, - 0.5 ], [ - Math.PI / 2, 0, 0 ]]
 			],
 			XY: [
-				[ new Mesh( new BoxGeometry( 0.15, 0.15, 0.01 ), matBlueTransparent ), [ 0.15, 0.15, 0 ]]
+				[ new THREE.Mesh( new THREE.BoxGeometry( 0.15, 0.15, 0.01 ), matBlueTransparent ), [ 0.15, 0.15, 0 ]]
 			],
 			YZ: [
-				[ new Mesh( new BoxGeometry( 0.15, 0.15, 0.01 ), matRedTransparent ), [ 0, 0.15, 0.15 ], [ 0, Math.PI / 2, 0 ]]
+				[ new THREE.Mesh( new THREE.BoxGeometry( 0.15, 0.15, 0.01 ), matRedTransparent ), [ 0, 0.15, 0.15 ], [ 0, Math.PI / 2, 0 ]]
 			],
 			XZ: [
-				[ new Mesh( new BoxGeometry( 0.15, 0.15, 0.01 ), matGreenTransparent ), [ 0.15, 0, 0.15 ], [ - Math.PI / 2, 0, 0 ]]
+				[ new THREE.Mesh( new THREE.BoxGeometry( 0.15, 0.15, 0.01 ), matGreenTransparent ), [ 0.15, 0, 0.15 ], [ - Math.PI / 2, 0, 0 ]]
 			],
 			XYZ: [
-				[ new Mesh( new BoxGeometry( 0.1, 0.1, 0.1 ), matWhiteTransparent.clone() ) ],
+				[ new THREE.Mesh( new THREE.BoxGeometry( 0.1, 0.1, 0.1 ), matWhiteTransparent.clone() ) ],
 			]
 		};
 
 		const pickerScale = {
 			X: [
-				[ new Mesh( new CylinderGeometry( 0.2, 0, 0.6, 4 ), matInvisible ), [ 0.3, 0, 0 ], [ 0, 0, - Math.PI / 2 ]],
-				[ new Mesh( new CylinderGeometry( 0.2, 0, 0.6, 4 ), matInvisible ), [ - 0.3, 0, 0 ], [ 0, 0, Math.PI / 2 ]]
+				[ new THREE.Mesh( new THREE.CylinderGeometry( 0.2, 0, 0.6, 4 ), matInvisible ), [ 0.3, 0, 0 ], [ 0, 0, - Math.PI / 2 ]],
+				[ new THREE.Mesh( new THREE.CylinderGeometry( 0.2, 0, 0.6, 4 ), matInvisible ), [ - 0.3, 0, 0 ], [ 0, 0, Math.PI / 2 ]]
 			],
 			Y: [
-				[ new Mesh( new CylinderGeometry( 0.2, 0, 0.6, 4 ), matInvisible ), [ 0, 0.3, 0 ]],
-				[ new Mesh( new CylinderGeometry( 0.2, 0, 0.6, 4 ), matInvisible ), [ 0, - 0.3, 0 ], [ 0, 0, Math.PI ]]
+				[ new THREE.Mesh( new THREE.CylinderGeometry( 0.2, 0, 0.6, 4 ), matInvisible ), [ 0, 0.3, 0 ]],
+				[ new THREE.Mesh( new THREE.CylinderGeometry( 0.2, 0, 0.6, 4 ), matInvisible ), [ 0, - 0.3, 0 ], [ 0, 0, Math.PI ]]
 			],
 			Z: [
-				[ new Mesh( new CylinderGeometry( 0.2, 0, 0.6, 4 ), matInvisible ), [ 0, 0, 0.3 ], [ Math.PI / 2, 0, 0 ]],
-				[ new Mesh( new CylinderGeometry( 0.2, 0, 0.6, 4 ), matInvisible ), [ 0, 0, - 0.3 ], [ - Math.PI / 2, 0, 0 ]]
+				[ new THREE.Mesh( new THREE.CylinderGeometry( 0.2, 0, 0.6, 4 ), matInvisible ), [ 0, 0, 0.3 ], [ Math.PI / 2, 0, 0 ]],
+				[ new THREE.Mesh( new THREE.CylinderGeometry( 0.2, 0, 0.6, 4 ), matInvisible ), [ 0, 0, - 0.3 ], [ - Math.PI / 2, 0, 0 ]]
 			],
 			XY: [
-				[ new Mesh( new BoxGeometry( 0.2, 0.2, 0.01 ), matInvisible ), [ 0.15, 0.15, 0 ]],
+				[ new THREE.Mesh( new THREE.BoxGeometry( 0.2, 0.2, 0.01 ), matInvisible ), [ 0.15, 0.15, 0 ]],
 			],
 			YZ: [
-				[ new Mesh( new BoxGeometry( 0.2, 0.2, 0.01 ), matInvisible ), [ 0, 0.15, 0.15 ], [ 0, Math.PI / 2, 0 ]],
+				[ new THREE.Mesh( new THREE.BoxGeometry( 0.2, 0.2, 0.01 ), matInvisible ), [ 0, 0.15, 0.15 ], [ 0, Math.PI / 2, 0 ]],
 			],
 			XZ: [
-				[ new Mesh( new BoxGeometry( 0.2, 0.2, 0.01 ), matInvisible ), [ 0.15, 0, 0.15 ], [ - Math.PI / 2, 0, 0 ]],
+				[ new THREE.Mesh( new THREE.BoxGeometry( 0.2, 0.2, 0.01 ), matInvisible ), [ 0.15, 0, 0.15 ], [ - Math.PI / 2, 0, 0 ]],
 			],
 			XYZ: [
-				[ new Mesh( new BoxGeometry( 0.2, 0.2, 0.2 ), matInvisible ), [ 0, 0, 0 ]],
+				[ new THREE.Mesh( new THREE.BoxGeometry( 0.2, 0.2, 0.2 ), matInvisible ), [ 0, 0, 0 ]],
 			]
 		};
 
 		const helperScale = {
 			X: [
-				[ new Line( lineGeometry, matHelper.clone() ), [ - 1e3, 0, 0 ], null, [ 1e6, 1, 1 ], 'helper' ]
+				[ new THREE.Line( lineGeometry, matHelper.clone() ), [ - 1e3, 0, 0 ], null, [ 1e6, 1, 1 ], 'helper' ]
 			],
 			Y: [
-				[ new Line( lineGeometry, matHelper.clone() ), [ 0, - 1e3, 0 ], [ 0, 0, Math.PI / 2 ], [ 1e6, 1, 1 ], 'helper' ]
+				[ new THREE.Line( lineGeometry, matHelper.clone() ), [ 0, - 1e3, 0 ], [ 0, 0, Math.PI / 2 ], [ 1e6, 1, 1 ], 'helper' ]
 			],
 			Z: [
-				[ new Line( lineGeometry, matHelper.clone() ), [ 0, 0, - 1e3 ], [ 0, - Math.PI / 2, 0 ], [ 1e6, 1, 1 ], 'helper' ]
+				[ new THREE.Line( lineGeometry, matHelper.clone() ), [ 0, 0, - 1e3 ], [ 0, - Math.PI / 2, 0 ], [ 1e6, 1, 1 ], 'helper' ]
 			]
 		};
 
@@ -1078,7 +1056,7 @@ class TransformControlsGizmo extends Object3D {
 
 		function setupGizmo( gizmoMap ) {
 
-			const gizmo = new Object3D();
+			const gizmo = new THREE.Object3D();
 
 			for ( const name in gizmoMap ) {
 
@@ -1217,8 +1195,8 @@ class TransformControlsGizmo extends Object3D {
 
 					if ( this.axis === 'X' ) {
 
-						_tempQuaternion.setFromEuler( _tempEuler.set( 0, 0, 0 ) );
-						handle.quaternion.copy( quaternion ).multiply( _tempQuaternion );
+						_tempQuaternion_tcc.setFromEuler( _tempEuler.set( 0, 0, 0 ) );
+						handle.quaternion.copy( quaternion ).multiply( _tempQuaternion_tcc );
 
 						if ( Math.abs( _alignVector.copy( _unitX ).applyQuaternion( quaternion ).dot( this.eye ) ) > 0.9 ) {
 
@@ -1230,8 +1208,8 @@ class TransformControlsGizmo extends Object3D {
 
 					if ( this.axis === 'Y' ) {
 
-						_tempQuaternion.setFromEuler( _tempEuler.set( 0, 0, Math.PI / 2 ) );
-						handle.quaternion.copy( quaternion ).multiply( _tempQuaternion );
+						_tempQuaternion_tcc.setFromEuler( _tempEuler.set( 0, 0, Math.PI / 2 ) );
+						handle.quaternion.copy( quaternion ).multiply( _tempQuaternion_tcc );
 
 						if ( Math.abs( _alignVector.copy( _unitY ).applyQuaternion( quaternion ).dot( this.eye ) ) > 0.9 ) {
 
@@ -1243,8 +1221,8 @@ class TransformControlsGizmo extends Object3D {
 
 					if ( this.axis === 'Z' ) {
 
-						_tempQuaternion.setFromEuler( _tempEuler.set( 0, Math.PI / 2, 0 ) );
-						handle.quaternion.copy( quaternion ).multiply( _tempQuaternion );
+						_tempQuaternion_tcc.setFromEuler( _tempEuler.set( 0, Math.PI / 2, 0 ) );
+						handle.quaternion.copy( quaternion ).multiply( _tempQuaternion_tcc );
 
 						if ( Math.abs( _alignVector.copy( _unitZ ).applyQuaternion( quaternion ).dot( this.eye ) ) > 0.9 ) {
 
@@ -1256,10 +1234,10 @@ class TransformControlsGizmo extends Object3D {
 
 					if ( this.axis === 'XYZE' ) {
 
-						_tempQuaternion.setFromEuler( _tempEuler.set( 0, Math.PI / 2, 0 ) );
+						_tempQuaternion_tcc.setFromEuler( _tempEuler.set( 0, Math.PI / 2, 0 ) );
 						_alignVector.copy( this.rotationAxis );
 						handle.quaternion.setFromRotationMatrix( _lookAtMatrix.lookAt( _zeroVector, _alignVector, _unitY ) );
-						handle.quaternion.multiply( _tempQuaternion );
+						handle.quaternion.multiply( _tempQuaternion_tcc );
 						handle.visible = this.dragging;
 
 					}
@@ -1285,9 +1263,9 @@ class TransformControlsGizmo extends Object3D {
 
 					handle.position.copy( this.worldPositionStart );
 					handle.quaternion.copy( this.worldQuaternionStart );
-					_tempVector.set( 1e-10, 1e-10, 1e-10 ).add( this.worldPositionStart ).sub( this.worldPosition ).multiplyScalar( - 1 );
-					_tempVector.applyQuaternion( this.worldQuaternionStart.clone().invert() );
-					handle.scale.copy( _tempVector );
+					_tempVector_tcc.set( 1e-10, 1e-10, 1e-10 ).add( this.worldPositionStart ).sub( this.worldPosition ).multiplyScalar( - 1 );
+					_tempVector_tcc.applyQuaternion( this.worldQuaternionStart.clone().invert() );
+					handle.scale.copy( _tempVector_tcc );
 					handle.visible = this.dragging;
 
 				} else {
@@ -1399,7 +1377,7 @@ class TransformControlsGizmo extends Object3D {
 				// Align handles to current local or world rotation
 
 				_tempQuaternion2.copy( quaternion );
-				_alignVector.copy( this.eye ).applyQuaternion( _tempQuaternion.copy( quaternion ).invert() );
+				_alignVector.copy( this.eye ).applyQuaternion( _tempQuaternion_tcc.copy( quaternion ).invert() );
 
 				if ( handle.name.search( 'E' ) !== - 1 ) {
 
@@ -1409,25 +1387,25 @@ class TransformControlsGizmo extends Object3D {
 
 				if ( handle.name === 'X' ) {
 
-					_tempQuaternion.setFromAxisAngle( _unitX, Math.atan2( - _alignVector.y, _alignVector.z ) );
-					_tempQuaternion.multiplyQuaternions( _tempQuaternion2, _tempQuaternion );
-					handle.quaternion.copy( _tempQuaternion );
+					_tempQuaternion_tcc.setFromAxisAngle( _unitX, Math.atan2( - _alignVector.y, _alignVector.z ) );
+					_tempQuaternion_tcc.multiplyQuaternions( _tempQuaternion2, _tempQuaternion_tcc );
+					handle.quaternion.copy( _tempQuaternion_tcc );
 
 				}
 
 				if ( handle.name === 'Y' ) {
 
-					_tempQuaternion.setFromAxisAngle( _unitY, Math.atan2( _alignVector.x, _alignVector.z ) );
-					_tempQuaternion.multiplyQuaternions( _tempQuaternion2, _tempQuaternion );
-					handle.quaternion.copy( _tempQuaternion );
+					_tempQuaternion_tcc.setFromAxisAngle( _unitY, Math.atan2( _alignVector.x, _alignVector.z ) );
+					_tempQuaternion_tcc.multiplyQuaternions( _tempQuaternion2, _tempQuaternion_tcc );
+					handle.quaternion.copy( _tempQuaternion_tcc );
 
 				}
 
 				if ( handle.name === 'Z' ) {
 
-					_tempQuaternion.setFromAxisAngle( _unitZ, Math.atan2( _alignVector.y, _alignVector.x ) );
-					_tempQuaternion.multiplyQuaternions( _tempQuaternion2, _tempQuaternion );
-					handle.quaternion.copy( _tempQuaternion );
+					_tempQuaternion_tcc.setFromAxisAngle( _unitZ, Math.atan2( _alignVector.y, _alignVector.x ) );
+					_tempQuaternion_tcc.multiplyQuaternions( _tempQuaternion2, _tempQuaternion_tcc );
+					handle.quaternion.copy( _tempQuaternion_tcc );
 
 				}
 
@@ -1477,13 +1455,13 @@ class TransformControlsGizmo extends Object3D {
 
 //
 
-class TransformControlsPlane extends Mesh {
+class TransformControlsPlane extends THREE.Mesh {
 
 	constructor() {
 
 		super(
-			new PlaneGeometry( 100000, 100000, 2, 2 ),
-			new MeshBasicMaterial( { visible: false, wireframe: true, side: DoubleSide, transparent: true, opacity: 0.1, toneMapped: false } )
+			new THREE.PlaneGeometry( 100000, 100000, 2, 2 ),
+			new THREE.MeshBasicMaterial( { visible: false, wireframe: true, side: THREE.DoubleSide, transparent: true, opacity: 0.1, toneMapped: false } )
 		);
 
 		this.isTransformControlsPlane = true;
@@ -1558,7 +1536,7 @@ class TransformControlsPlane extends Mesh {
 
 		} else {
 
-			_tempMatrix.lookAt( _tempVector.set( 0, 0, 0 ), _dirVector, _alignVector );
+			_tempMatrix.lookAt( _tempVector_tcc.set( 0, 0, 0 ), _dirVector, _alignVector );
 
 			this.quaternion.setFromRotationMatrix( _tempMatrix );
 
@@ -1569,5 +1547,3 @@ class TransformControlsPlane extends Mesh {
 	}
 
 }
-
-export { TransformControls, TransformControlsGizmo, TransformControlsPlane };
