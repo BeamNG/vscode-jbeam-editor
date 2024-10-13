@@ -335,10 +335,13 @@ export function init() {
   // Disable camera controls while using transform control
   transformControl.addEventListener('dragging-changed', function(event) {
     orbitControls.enabled = !event.value;  // Disable camera controls when dragging
+    if(!event.value) {
+      onTransformChanged()
+    }
   });
 
   // Event listener for detecting transform events
-  transformControl.addEventListener('change', onTransformChange);
+  transformControl.addEventListener('change', onTransformChangeLive);
 
   // Enable the transform control based on node selection
   transformControl.addEventListener('objectChange', onObjectMoved);

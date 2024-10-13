@@ -631,7 +631,11 @@ function triggerDataChanged() {
   updateNodeViz(false)
 }
 
-function onTransformChange() {
+function onTransformChangeLive() {
+  // beware, this is called a LOT!
+}
+
+function onTransformChanged() {
   if (!selectedNodeIndices || selectedNodeIndices.length === 0) return;
 
   const newPosition = transformControl.object.position;
