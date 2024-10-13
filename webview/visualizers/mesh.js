@@ -259,7 +259,7 @@ function applyMeshTransformations() {
         // Find the loaded mesh in the scene
         const colladaNode = loadedMeshes.find(node => node.name === 'flexbody_' + flexbody.mesh);
         if (!colladaNode) {
-          console.warn(`Mesh ${flexbody.mesh} not found for transformation.`);
+          //console.warn(`Mesh ${flexbody.mesh} not found for transformation.`);
           continue;
         }
 

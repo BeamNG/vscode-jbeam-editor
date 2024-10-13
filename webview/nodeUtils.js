@@ -38,6 +38,8 @@ let nodesNearMirrorPlanes = new Set();
 
 let transformControl;
 let dummyTranformObj
+let lastNodeDataMessage
+let _dataChangeDispatchedInternally = false
 
 
 // Known key formatters with icons and special formatting
@@ -346,6 +348,7 @@ function visualizeMirrorPlanes() {
 // Gizmo things ...
 
 function setupGizmoForSelectedNodes() {
+  if(!selectedNodeIndices) return;
   if (selectedNodeIndices.length > 0) {
     // If we have more than one node selected, calculate the bounding box center
     if (selectedNodeIndices.length === 1) {
@@ -390,6 +393,244 @@ function setupGizmoForSelectedNodes() {
   }
 }
 
+
+/**
+ * Updates the visualization of nodes based on the provided data.
+ * @param {Boolean} moveCamera - Whether to move the camera to the center of the nodes.
+ */
+function updateNodeViz(moveCamera) {
+  // Dispose of existing points and mirror planes to prevent memory leaks
+  if (pointsObject) {
+    if (pointsObject.geometry) pointsObject.geometry.dispose();
+    if (pointsObject.material) pointsObject.material.dispose();
+    scene.remove(pointsObject);
+    pointsObject = null;
+  }
+
+  // Remove and dispose of existing mirror plane meshes
+  mirrorPlaneMeshes.forEach((mesh) => {
+    scene.remove(mesh);
+    mesh.geometry.dispose();
+    mesh.material.dispose();
+  });
+  mirrorPlaneMeshes = [];
+
+  nodeCounter = 0;
+  let vertexPositions = [];
+  pointsCache = [];
+  let sum = { x: 0, y: 0, z: 0 };
+  nodesMin = { x: Infinity, y: Infinity, z: Infinity };
+  nodesMax = { x: -Infinity, y: -Infinity, z: -Infinity };
+  nodesCenter = null;
+
+  for (let partName in jbeamData) {
+    if (currentPartName && partName !== currentPartName) continue;
+    let part = jbeamData[partName];
+    if (part.hasOwnProperty('nodes')) {
+      for (let nodeId in part.nodes) {
+        let node = part.nodes[nodeId];
+        // node.pos contains [x, y, z]
+        if (node.hasOwnProperty('pos')) {
+          const x = node.pos[0];
+          vertexPositions.push(x);
+          sum.x += x;
+          if (x < nodesMin.x) nodesMin.x = x;
+          else if (x > nodesMax.x) nodesMax.x = x;
+
+          const y = node.pos[1];
+          vertexPositions.push(y);
+          sum.y += y;
+          if (y < nodesMin.y) nodesMin.y = y;
+          else if (y > nodesMax.y) nodesMax.y = y;
+
+          const z = node.pos[2];
+          vertexPositions.push(z);
+          sum.z += z;
+          if (z < nodesMin.z) nodesMin.z = z;
+          else if (z > nodesMax.z) nodesMax.z = z;
+
+          nodeCounter++;
+          node.pos3d = new THREE.Vector3(x, y, z);
+          pointsCache.push(node);
+        }
+      }
+
+      if (nodeCounter > 0) {
+        nodesCenter = new THREE.Vector3(sum.x / nodeCounter, sum.y / nodeCounter, sum.z / nodeCounter);
+        part.__centerPosition = nodesCenter;
+      }
+
+      // Calculate mirror planes for the current part
+    }
+  }
+  mirrorPlanes = detectAllMirrorPlanes(pointsCache);
+
+  if (nodeCounter === 0) {
+    // Do not leak Infinity values
+    nodesMin = null;
+    nodesMax = null;
+  }
+
+  if (moveCamera) {
+    selectedNodeIndices = null;
+    for (let partName in jbeamData) {
+      if (currentPartName && partName !== currentPartName) continue;
+      let part = jbeamData[partName];
+      if (part.__centerPosition) {
+        moveCameraCenter(part.__centerPosition);
+        break;
+      }
+    }
+  }
+
+  // Prepare data for BufferGeometry
+  let vertexAlphas = [];
+  let vertexColors = [];
+  let vertexSizes = [];
+  for (let i = 0; i < pointsCache.length; i++) {
+    const node = pointsCache[i];
+    vertexAlphas.push(1);
+    vertexColors.push(normalMaxColor.r, normalMaxColor.g, normalMaxColor.b);
+    vertexSizes.push(normalSize);
+  }
+
+  // Create BufferGeometry
+  const nodesGeometry = new THREE.BufferGeometry();
+  nodesGeometry.setAttribute('position', new THREE.Float32BufferAttribute(vertexPositions, 3));
+  nodesGeometry.setAttribute('alpha', new THREE.Float32BufferAttribute(vertexAlphas, 1));
+  nodesGeometry.setAttribute('color', new THREE.Float32BufferAttribute(vertexColors, 3));
+  nodesGeometry.setAttribute('size', new THREE.Float32BufferAttribute(vertexSizes, 1));
+
+  nodesGeometry.computeBoundingBox();
+  nodesGeometry.computeBoundingSphere();
+
+  // Create ShaderMaterial
+  const nodesMaterial = new THREE.ShaderMaterial({
+    uniforms: {
+      scale: { value: window.innerHeight / 2 }, // Assuming perspective camera and square points
+      isOrthographic: { value: camera.isOrthographicCamera }, // Add this uniform
+    },
+    vertexShader: `
+      attribute float alpha;
+      attribute float size;
+
+      varying float vAlpha;
+      varying vec3 vColor;
+
+      uniform float scale;
+
+      void main() {
+        vAlpha = alpha;
+        vColor = color;
+        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+        if (isOrthographic) {
+          gl_PointSize = size * scale * 0.5; // Fixed size for orthographic
+        } else {
+          gl_PointSize = size * (scale / -mvPosition.z); // Perspective size adjustment
+        }
+        gl_Position = projectionMatrix * mvPosition;
+      }
+    `,
+    fragmentShader: `
+      varying float vAlpha;
+      varying vec3 vColor;
+      void main() {
+        float r = distance(gl_PointCoord, vec2(0.5, 0.5));
+        if (r > 0.5) {
+          discard;
+        }
+        gl_FragColor = vec4(vColor, vAlpha);
+      }
+    `,
+    vertexColors: true, // Enable vertex colors
+    transparent: true,
+    // blending: THREE.AdditiveBlending,
+    depthTest: true
+  });
+
+  // Create Points object
+  pointsObject = new THREE.Points(nodesGeometry, nodesMaterial);
+  pointsObject.name = 'pointsObject';
+  scene.add(pointsObject);
+
+  ctx.visualizersGroundplane.redrawGroundPlane(
+    nodesMin,
+    nodesMax,
+    selectedNodeIndices,
+    pointsCache,
+    jbeamData,
+    currentPartName,
+    nodeCounter
+  );
+
+  updateNodeLabels();
+}
+
+/**
+ * Handles double-click events to select nodes.
+ * @param {Event} event - The double-click event.
+ */
+function onMouseDoubleClick(event) {
+  const rect = renderer.domElement.getBoundingClientRect();
+  const mouse2D = new THREE.Vector2(
+    event.clientX - rect.left,
+    event.clientY - rect.top
+  );
+
+  if (!pointsCache) return;
+
+  let closestPointIdx = null;
+  let closestDistance = Infinity;
+
+  // Compare the nodes in screen space as the picking range is limited
+  for (let i = 0; i < pointsCache.length; i++) {
+    const point3D = pointsCache[i].pos3d.clone();
+    point3D.project(camera); // Project 3D point to NDC space
+
+    // Convert NDC to pixel coordinates
+    const point2D = new THREE.Vector2(
+      ((point3D.x + 1) / 2) * rect.width,
+      (-(point3D.y - 1) / 2) * rect.height
+    );
+
+    // Calculate distance in pixels
+    const distance = mouse2D.distanceTo(point2D);
+
+    if (distance < closestDistance) {
+      closestDistance = distance;
+      closestPointIdx = i;
+    }
+  }
+
+  const pixelThreshold = 10;
+  if (closestPointIdx !== null && closestDistance < pixelThreshold) {
+    focusNodes([closestPointIdx]);
+  }
+}
+
+/**
+ * Focuses on selected nodes and highlights mirrored nodes.
+ * @param {Array} nodesArrToFocus - Array of node indices to focus on.
+ * @param {Boolean} triggerEditor - Whether to trigger the text editor highlighting.
+ */
+function focusNodes(nodesArrToFocus, triggerEditor = true) {
+  selectedNodeIndices = nodesArrToFocus;
+  ctx.visualizersNode.redrawNodeFocus()
+  setupGizmoForSelectedNodes()
+  if (triggerEditor) {
+    highlightNodeinTextEditor();
+  }
+}
+
+function triggerDataChanged() {
+  lastNodeDataMessage.data = jbeamData
+  const event = new MessageEvent('message', { data: lastNodeDataMessage });
+  _dataChangeDispatchedInternally = true
+  window.dispatchEvent(event);
+  _dataChangeDispatchedInternally = false
+  updateNodeViz(false)
+}
+
 function onTransformChange() {
   if (!selectedNodeIndices || selectedNodeIndices.length === 0) return;
 
@@ -400,9 +641,7 @@ function onTransformChange() {
     const node = pointsCache[selectedNodeIndices[0]];
     node.pos = [newPosition.x, newPosition.y, newPosition.z];
     node.pos3d.set(newPosition.x, newPosition.y, newPosition.z);
-
-    // Redraw the scene with updated positions
-    redrawNodeFocus();
+    triggerDataChanged()
   } else {
     // Group transformation, apply scaling and rotation
     const matrix = transformControl.object.matrix;
@@ -420,9 +659,7 @@ function onTransformChange() {
     // After transforming the group, reset the transform control's matrix to identity
     transformControl.object.matrix.identity();
     transformControl.object.position.copy(newPosition);
-
-    // Redraw the scene with updated node positions
-    redrawNodeFocus();
+    triggerDataChanged()
   }
 }
 
