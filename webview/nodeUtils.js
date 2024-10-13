@@ -31,6 +31,7 @@ let wasWindowOutOfFocus = false; // To track if the user left the view
 
 // New Sets to track mirrored nodes and used mirror planes
 let mirroredNodeIndices = new Set();
+let mirroredNodePlaneMap = new Map(); // Stores the mirror plane index for each mirrored node
 let usedMirrorPlanes = new Set();
 
 // Set to track nodes near mirror planes (potential errors)
@@ -40,6 +41,7 @@ let transformControl;
 let dummyTranformObj
 let lastNodeDataMessage
 let _dataChangeDispatchedInternally = false
+let originalDragNDropGizmoMatrix
 
 
 // Known key formatters with icons and special formatting
@@ -631,39 +633,50 @@ function triggerDataChanged() {
   updateNodeViz(false)
 }
 
+// triggered while the gizmo is begin dragged
 function onTransformChangeLive() {
   // beware, this is called a LOT!
 }
 
+function onTransformStarted() {
+  originalDragNDropGizmoMatrix = dummyTranformObj.matrixWorld.clone();
+}
+
+// triggered once the gizmo drag is finished
 function onTransformChanged() {
   if (!selectedNodeIndices || selectedNodeIndices.length === 0) return;
 
-  const newPosition = transformControl.object.position;
+  // Calculate the delta matrix (current state relative to the original matrix)
+  const currentMatrix = dummyTranformObj.matrixWorld.clone();
+  const deltaMatrix = currentMatrix.clone().premultiply(originalDragNDropGizmoMatrix.clone().invert());  // Calculate delta
 
-  if (selectedNodeIndices.length === 1) {
-    // Single node, apply translation
-    const node = pointsCache[selectedNodeIndices[0]];
-    node.pos = [newPosition.x, newPosition.y, newPosition.z];
-    node.pos3d.set(newPosition.x, newPosition.y, newPosition.z);
-    triggerDataChanged()
-  } else {
-    // Group transformation, apply scaling and rotation
-    const matrix = transformControl.object.matrix;
+  // Apply the delta matrix to selected nodes
+  selectedNodeIndices.forEach((idx) => {
+    const node = pointsCache[idx];
+    const originalPos = new THREE.Vector3(node.pos[0], node.pos[1], node.pos[2]);
 
-    selectedNodeIndices.forEach((idx) => {
-      const node = pointsCache[idx];
-      const originalPos = new THREE.Vector3(node.pos[0], node.pos[1], node.pos[2]);
+    // Apply delta transformation to the node's position
+    const updatedPos = originalPos.applyMatrix4(deltaMatrix);
 
-      // Apply transformation matrix to each node
-      originalPos.applyMatrix4(matrix);
-      node.pos = [originalPos.x, originalPos.y, originalPos.z];
-      node.pos3d.set(originalPos.x, originalPos.y, originalPos.z);
-    });
+    // Update the selected node's position
+    node.pos = [updatedPos.x, updatedPos.y, updatedPos.z];
+    node.pos3d.set(updatedPos.x, updatedPos.y, updatedPos.z);
+  });
 
-    // After transforming the group, reset the transform control's matrix to identity
-    transformControl.object.matrix.identity();
-    transformControl.object.position.copy(newPosition);
-    triggerDataChanged()
-  }
+  // Apply the delta matrix to mirrored nodes
+  mirroredNodeIndices.forEach((mirroredIdx) => {
+    const mirroredNode = pointsCache[mirroredIdx];
+    const mirroredOriginalPos = new THREE.Vector3(mirroredNode.pos[0], mirroredNode.pos[1], mirroredNode.pos[2]);
+
+    // Apply delta transformation to the mirrored node's position
+    const mirroredUpdatedPos = mirroredOriginalPos.applyMatrix4(deltaMatrix);
+
+    // Update the mirrored node's position
+    mirroredNode.pos = [mirroredUpdatedPos.x, mirroredUpdatedPos.y, mirroredUpdatedPos.z];
+    mirroredNode.pos3d.set(mirroredUpdatedPos.x, mirroredUpdatedPos.y, mirroredUpdatedPos.z);
+  });
+
+  // Reset the matrix after applying the delta
+  transformControl.object.matrix.identity();
+  triggerDataChanged();
 }
-

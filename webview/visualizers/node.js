@@ -73,6 +73,7 @@ export function redrawNodeFocus() {
  */
 function highlightMirroredAndErrorNodes() {
   mirroredNodeIndices.clear();
+  mirroredNodePlaneMap.clear(); // Clear the map each time this runs
   usedMirrorPlanes.clear();
   nodesNearMirrorPlanes.clear();
 
@@ -85,15 +86,13 @@ function highlightMirroredAndErrorNodes() {
   const colorsAttribute = pointsObject.geometry.getAttribute('color');
   const sizesAttribute = pointsObject.geometry.getAttribute('size');
 
-
-
-  if(!uiSettings.symmetry) return
+  if (!uiSettings.symmetry) return;
 
   // Set to keep track of already highlighted nodes (to avoid duplicate processing)
   const highlightedIndices = new Set(selectedNodeIndices);
 
   // Loop over all selected nodes to check for mirrored pairs and errors
-  selectedNodeIndices.forEach(selectedIdx => {
+  selectedNodeIndices.forEach((selectedIdx) => {
     const selectedNode = pointsCache[selectedIdx];
 
     mirrorPlanes.forEach((plane, planeIdx) => {
@@ -115,6 +114,7 @@ function highlightMirroredAndErrorNodes() {
 
           highlightedIndices.add(j);
           mirroredNodeIndices.add(j);
+          mirroredNodePlaneMap.set(j, planeIdx); // Store the plane index used
           usedMirrorPlanes.add(planeIdx); // Store the plane index used
           hasValidMirror = true;
           break; // No need to keep checking for this node
@@ -337,6 +337,8 @@ export function init() {
     orbitControls.enabled = !event.value;  // Disable camera controls when dragging
     if(!event.value) {
       onTransformChanged()
+    } else {
+      onTransformStarted()
     }
   });
 
