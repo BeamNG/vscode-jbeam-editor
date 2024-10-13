@@ -6,6 +6,21 @@
 function focusNodes(nodesArrToFocus, triggerEditor = true) {
   selectedNodeIndices = nodesArrToFocus;
   redrawNodeFocus()
+
+  if (selectedNodeIndices.length > 0) {
+    const targetNode = pointsCache[selectedNodeIndices[0]];
+    const nodePosition = new THREE.Vector3(targetNode.pos[0], targetNode.pos[1], targetNode.pos[2]);
+
+    // Create a dummy object to represent the selected node(s) and attach the control
+    if(!dummyTranformObj) {
+      dummyTranformObj = new THREE.Object3D();
+    }
+    dummyTranformObj.position.copy(nodePosition);
+    transformControl.attach(dummyTranformObj);
+  } else {
+    transformControl.detach();  // Detach when no nodes are selected
+  }
+
   if (triggerEditor) {
     highlightNodeinTextEditor();
   }
@@ -533,6 +548,31 @@ function onMouseOut(event) {
   resetNodeFocus();
 }
 
+function setGizmoMode(mode) {
+  if (['translate', 'rotate', 'scale'].includes(mode)) {
+    transformControl.setMode(mode);
+  }
+}
+
+function onTransformChange() {
+  if (!selectedNodeIndices || selectedNodeIndices.length === 0) return;
+
+  const newPosition = transformControl.object.position;
+
+  // Update the position of the selected nodes
+  selectedNodeIndices.forEach((idx) => {
+    const node = pointsCache[idx];
+    node.pos = [newPosition.x, newPosition.y, newPosition.z];  // Update node position
+    node.posX = newPosition.x
+    node.posY = newPosition.y
+    node.posZ = newPosition.z
+    node.pos3d.set(newPosition.x, newPosition.y, newPosition.z);
+  });
+
+  // Redraw the scene with updated positions
+  redrawNodeFocus();
+}
+
 /**
  * Initializes event listeners.
  */
@@ -541,6 +581,16 @@ export function init() {
   window.addEventListener('dblclick', onMouseDoubleClick, false);
   window.addEventListener('mousemove', onMouseMove, false);
   window.addEventListener('mouseout', onMouseOut, false);
+
+  // Initialize the transform control for node manipulation
+  transformControl = new TransformControls(camera, renderer.domElement);
+  scene.add(transformControl);
+
+  // Event listener for detecting transform events
+  transformControl.addEventListener('change', onTransformChange);
+
+  // Enable the transform control based on node selection
+  transformControl.addEventListener('objectChange', onObjectMoved);
 }
 
 /**
@@ -566,6 +616,16 @@ export function dispose() {
   mirrorPlaneMeshes = [];
   mirroredNodeIndices.clear();
   usedMirrorPlanes.clear();
+
+  if(dummyTranformObj) {
+    scene.remove(dummyTranformObj);
+    dummyTranformObj.dispose();
+  }
+
+  if (transformControl) {
+    scene.remove(transformControl);
+    transformControl.dispose();
+  }
 }
 
 /**
@@ -574,3 +634,4 @@ export function dispose() {
 export function onConfigChanged() {
   // console.log('node.onConfigChanged', ctx.config)
 }
+

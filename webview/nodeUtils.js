@@ -36,6 +36,10 @@ let usedMirrorPlanes = new Set();
 // Set to track nodes near mirror planes (potential errors)
 let nodesNearMirrorPlanes = new Set();
 
+let transformControl;
+let dummyTranformObj
+
+
 // Known key formatters with icons and special formatting
 const nodePropertiesFormatters = {
   name: value => `📝 Selected Node`,
