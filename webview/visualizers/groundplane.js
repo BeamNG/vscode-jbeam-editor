@@ -6,12 +6,12 @@ export function redrawGroundPlane(nodesMin, nodesMax, selectedNodeIndices, point
     { type: 'text', position: new THREE.Vector3(0, 0, 0), font: 'bold 50px "Roboto Mono", monospace', color: '#444444', text: '(0,0,0)', textAlign: 'left', textBaseline: 'bottom' },
     { type: 'line3d', pos1: new THREE.Vector3(0, 0, -50), pos2: new THREE.Vector3(0, 0, 50), color: '#ff0000', dashSize:0.1, gapSize:0.1},
   ]
-  
+
   let env = {
     planeWidth: 10,
     planeHeight: 10,
   }
-  
+
   let freeBox = {x: 0, y: 0, z: 0}
   let freeBoxText = {x: 0, y: 0, z: 0}
   if(nodesMin && nodesMax) {
@@ -21,7 +21,7 @@ export function redrawGroundPlane(nodesMin, nodesMax, selectedNodeIndices, point
     const maxLength = Math.sqrt(nodesMax.x * nodesMax.x + nodesMax.y * nodesMax.y + nodesMax.z * nodesMax.z)
 
     let tmp = Math.max(minLength, maxLength) * 2 + 6
-    tmp = Math.round(tmp / 2) * 2 // nearestDivisibleByTwo 
+    tmp = Math.round(tmp / 2) * 2 // nearestDivisibleByTwo
     env.planeWidth =  tmp
     env.planeHeight = tmp
 
@@ -29,7 +29,7 @@ export function redrawGroundPlane(nodesMin, nodesMax, selectedNodeIndices, point
     freeBox = {x: Math.round(nodesMin.x) - 2, y: 0, z: Math.round(nodesMin.z) - 2}
     freeBoxText = {x: Math.round(nodesMin.x), y: 0, z: Math.round(nodesMin.z) - 2}
     //{ type: 'arrow', start: new THREE.Vector3(0, 0, 0), end: new THREE.Vector3(1, 1, 1), color: '#999999', width: 30, label: 'Hello world' },
-  
+
     items.push({ type: 'arrow', start: new THREE.Vector3(freeBox.x + 0.04, 0, freeBox.z + 0.04), end: new THREE.Vector3(freeBox.x + 0.96, 0, freeBox.z + 0.04), color: '#444444', width: 20, label: '1m', font: defaultfont })
     items.push({ type: 'arrow', start: new THREE.Vector3(freeBox.x + 0.04, 0, freeBox.z + 0.96), end: new THREE.Vector3(freeBox.x + 0.04, 0, freeBox.z + 0.04), color: '#444444', width: 20, label: '1m', font: defaultfont })
 
