@@ -85,6 +85,10 @@ export function redrawNodeFocus() {
  * Ensures valid mirrored nodes retain their highlighting and potential errors are marked red.
  */
 function highlightMirroredAndErrorNodes() {
+  mirroredNodeIndices.clear();
+  usedMirrorPlanes.clear();
+  nodesNearMirrorPlanes.clear();
+
   if (!mirrorPlanes || mirrorPlanes.length === 0 || !selectedNodeIndices || selectedNodeIndices.length === 0) return;
 
   const validMirrorTolerance = 0.01; // Tolerance for valid mirrored nodes
@@ -94,10 +98,7 @@ function highlightMirroredAndErrorNodes() {
   const colorsAttribute = pointsObject.geometry.getAttribute('color');
   const sizesAttribute = pointsObject.geometry.getAttribute('size');
 
-  // Reset mirrored nodes and error nodes
-  mirroredNodeIndices.clear();
-  usedMirrorPlanes.clear();
-  nodesNearMirrorPlanes.clear();
+
 
   if(!uiSettings.symmetry) return
 

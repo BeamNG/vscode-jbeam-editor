@@ -25,17 +25,18 @@ const statusBar = {
       const statusHeader = document.createElement('div');
       statusHeader.classList.add('status-header');
       statusHeader.innerText = consumerId;
-      statusHeader.title = consumerId
+      statusHeader.title = consumerId;
 
       // Create the collapsible content
       const statusContent = document.createElement('div');
       statusContent.classList.add('status-content');
       statusContent.innerHTML = text;
 
-      // Append elements
+      // Append elements to the status entry
       statusElement.appendChild(statusHeader);
       statusElement.appendChild(statusContent);
-      statusContainer.appendChild(statusElement);
+
+      // Store the status element in the statuses object
       this.statuses[consumerId] = statusElement;
 
       // Set the initial state
@@ -57,8 +58,28 @@ const statusBar = {
       statusContent.innerHTML = text;
     }
 
+    // Reorder statuses according to the consumerId order
+    this.reorderStatuses();
+
     // Show the status bar if there are any active statuses
     statusBarElement.style.display = 'block';
+  },
+
+  // Function to reorder the statuses by consumerId
+  reorderStatuses() {
+    const statusContainer = document.getElementById('status-container');
+    // Get all consumerIds, sort them alphabetically
+    const sortedConsumerIds = Object.keys(this.statuses).sort((a, b) => a.localeCompare(b));
+
+    // Clear the container first
+    statusContainer.innerHTML = '';
+
+    // Reinsert the statuses in sorted order
+    sortedConsumerIds.forEach(consumerId => {
+      if (this.statuses[consumerId]) {
+        statusContainer.appendChild(this.statuses[consumerId]);
+      }
+    });
   },
 
   // Remove a status entry for a consumer
@@ -70,6 +91,9 @@ const statusBar = {
       statusElement.remove();
       delete this.statuses[consumerId];
     }
+
+    // Reorder statuses after removal
+    this.reorderStatuses();
 
     // Hide the status bar if no statuses are left
     if (Object.keys(this.statuses).length === 0) {
@@ -89,7 +113,7 @@ const statusBar = {
 
     // Mark the collapsed state in uiSettings
     uiSettings.statusBarSettings[consumerId] = true;
-    saveUISettings()
+    saveUISettings();
   },
 
   // Expand the status (show content and rotated header)
@@ -104,7 +128,7 @@ const statusBar = {
 
     // Mark the expanded state in uiSettings
     uiSettings.statusBarSettings[consumerId] = false;
-    saveUISettings()
+    saveUISettings();
   },
 
   // Toggle the collapsed state of a status

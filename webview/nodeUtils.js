@@ -196,7 +196,7 @@ function updateNodeStatusbar() {
       const node = pointsCache[idx];
       statusText += `Node ${node.name} at (${node.pos[0].toFixed(2)}, ${node.pos[1].toFixed(2)}, ${node.pos[2].toFixed(2)})<br>`;
     });
-   statusBar.setStatus('symmetry', statusText);
+    statusBar.setStatus('symmetry', statusText);
   } else {
     statusBar.removeStatus('symmetry');
   }
