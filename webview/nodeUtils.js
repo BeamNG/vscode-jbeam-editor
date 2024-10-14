@@ -62,7 +62,7 @@ const nodePropertiesFormatters = {
 // Value formatters for each key
 const nodeValueFormatters = {
   name: value => `${value}`,
-  pos: value => `(${value[0].toFixed(2)}, ${value[1].toFixed(2)}, ${value[2].toFixed(2)})`,
+  pos: value => `${JSON.stringify(value)}`,
   nodeWeight: value => `${value} kg`,
   slotType: value => `${value}`,
   frictionCoef: value => `${value}`,
@@ -437,19 +437,19 @@ function updateNodeViz(moveCamera) {
           vertexPositions.push(x);
           sum.x += x;
           if (x < nodesMin.x) nodesMin.x = x;
-          else if (x > nodesMax.x) nodesMax.x = x;
+          if (x > nodesMax.x) nodesMax.x = x;
 
           const y = node.pos[1];
           vertexPositions.push(y);
           sum.y += y;
           if (y < nodesMin.y) nodesMin.y = y;
-          else if (y > nodesMax.y) nodesMax.y = y;
+          if (y > nodesMax.y) nodesMax.y = y;
 
           const z = node.pos[2];
           vertexPositions.push(z);
           sum.z += z;
           if (z < nodesMin.z) nodesMin.z = z;
-          else if (z > nodesMax.z) nodesMax.z = z;
+          if (z > nodesMax.z) nodesMax.z = z;
 
           nodeCounter++;
           node.pos3d = new THREE.Vector3(x, y, z);
@@ -625,12 +625,25 @@ function focusNodes(nodesArrToFocus, triggerEditor = true) {
 }
 
 function triggerDataChanged() {
-  lastNodeDataMessage.data = jbeamData
-  const event = new MessageEvent('message', { data: lastNodeDataMessage });
-  _dataChangeDispatchedInternally = true
-  window.dispatchEvent(event);
-  _dataChangeDispatchedInternally = false
-  updateNodeViz(false)
+  // collect all nodes that need to be updated
+  let nodes = []
+  if(selectedNodeIndices) {
+    selectedNodeIndices.forEach((idx) => {
+      nodes.push(pointsCache[idx])
+    })
+  }
+  if(mirroredNodeIndices) {
+    mirroredNodeIndices.forEach((idx) => {
+      nodes.push(pointsCache[idx])
+    })
+  }
+
+  // send them over to the other side in one go
+  ctx.vscode.postMessage({
+    command: 'updateJBeamNodesAST',
+    nodes: nodes,
+    uri: uri,
+  });
 }
 
 // triggered while the gizmo is begin dragged

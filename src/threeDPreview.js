@@ -6,6 +6,7 @@ const tableSchema = require('./json/tableSchema');
 const utilsExt = require('./utilsExt');
 const simConnection = require('./simConnection');
 const archivar = require('./archivar');
+const dataUpdater = require('./dataUpdater');
 
 let meshCache = {}
 let extensionContext // context from activate
@@ -188,6 +189,9 @@ function show3DSceneCommand() {
     message => {
       //console.log('ext.onDidReceiveMessage', message)
       switch (message.command) {
+        case 'updateJBeamNodesAST':
+          dataUpdater.updateJbeamNodeData(message)
+          break
         case 'selectLine':
           if(message.origin) {
             utilsExt.openFileInWorkspace(message.origin, message.range)
