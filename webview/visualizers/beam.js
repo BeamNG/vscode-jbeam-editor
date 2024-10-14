@@ -6,9 +6,16 @@ let jbeamData = null
 let currentPartName = null
 let beamCache // contains the high level object info
 let selectedBeamIndices = null // arry of selected beam or null for no selection
+let lastCusorPos = null
 
 // buffers for the 3d geometry
 let linesObject // the scene object
+
+// Helper function to check if the cursor is within a given range
+function cursorInRange(range) {
+  // only check the lines for now
+  return range[0] >= lastCusorPos[0] && range[0] <= lastCusorPos[2]
+}
 
 function updateBeamViz() {
   let vertexPositions = []
@@ -197,34 +204,22 @@ function focusBeams(beamsArrToFocus, triggerEditor = true) {
   }
 }
 
-function onCursorChangeEditor(message) {
+function onCursorChangeEditor() {
   if(!beamCache) return
-
-  if(currentPartName !== message.currentPartName) {
-    currentPartName = message.currentPartName
-    updateBeamViz()
-  }
-
   let beamsFound = []
-  // Helper function to check if the cursor is within a given range
-  const cursorInRange = (range) => {
-    // only check the lines for now
-    return range[0] >= message.range[0] && range[0] <= message.range[2]
-  };
 
-  for (let i = 0; i < beamCache.length; i++) {
-    if (cursorInRange(beamCache[i].__meta.range)) {
-      beamsFound.push(i)
+  if(lastCusorPos) {
+    for (let i = 0; i < beamCache.length; i++) {
+      if (cursorInRange(beamCache[i].__meta.range)) {
+        beamsFound.push(i)
+      }
     }
   }
-
-  //console.log(message.range, beamsFound, beamCache)
-
   focusBeams(beamsFound, false)
 }
 
 function onReceiveMessage(event) {
-  //console.log(">>> onReceiveMessage >>>", event)
+  //console.log(">>> BEAMS: onReceiveMessage >>>", event)
   const message = event.data;
   switch (message.command) {
     case 'jbeamData':
@@ -233,9 +228,15 @@ function onReceiveMessage(event) {
       currentPartName = null
       //console.log("GOT DATA: ", jbeamData)
       updateBeamViz()
+      onCursorChangeEditor()
       break;
     case 'cursorChanged':
-      onCursorChangeEditor(message)
+      if(currentPartName !== message.currentPartName) {
+        currentPartName = message.currentPartName
+        updateBeamViz()
+      }
+      lastCusorPos = message.range
+      onCursorChangeEditor()
       break
   }
 }
@@ -249,7 +250,6 @@ export function dispose() {
   window.removeEventListener('message', onReceiveMessage);
   window.removeEventListener('mousemove', onMouseMove);
   if(linesObject) {
-    if (linesObject.geometry) linesObject.geometry.dispose()
     if (linesObject.geometry) linesObject.geometry.dispose()
     scene.remove(linesObject)
   }
