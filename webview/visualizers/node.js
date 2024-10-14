@@ -281,7 +281,7 @@ function onReceiveMessage(event) {
       lastNodeDataMessage = message
       jbeamData = message.data;
       uri = message.uri;
-      selectedNodeIndices = null;
+      selectedNodeIndices = null; // TODO: presrve!
       currentPartName = message.currentPartName;
       currentSectionName = message.currentSectionName;
       updateNodeViz(!message.updatedOnly);
@@ -331,6 +331,8 @@ export function init() {
   // Initialize the transform control for node manipulation
   transformControl = new TransformControls(camera, renderer.domElement);
   scene.add(transformControl);
+
+  transformControl.setTranslationSnap(0.001); // 1mm snapping
 
   // Disable camera controls while using transform control
   transformControl.addEventListener('dragging-changed', function(event) {
