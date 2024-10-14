@@ -20,7 +20,7 @@ const sjsonParser = require('./json/sjsonParser');
  *        message.nodes - The array of nodes with updated position values.
  *        message.uri - The URI of the document being edited.
  */
-async function updateJbeamNodeData(message) {
+async function updateJbeamNodeData(message, updateDataCallback) {
   //console.log("updateNode from 3d", message.nodes);
 
   // Sort nodes to ensure replacements are done from bottom to top and right to left
@@ -72,7 +72,7 @@ async function updateJbeamNodeData(message) {
       }
 
       replaceValue(dataBundle.metaData[startIdx + 2], node.pos[0])
-      replaceValue(dataBundle.metaData[startIdx + 3], node.pos[2])
+      replaceValue(dataBundle.metaData[startIdx + 3], -node.pos[2])
       replaceValue(dataBundle.metaData[startIdx + 4], node.pos[1])
     }
   });
@@ -90,6 +90,8 @@ async function updateJbeamNodeData(message) {
       );
     }
   }
+  updateDataCallback(targetEditor)
+  return true
 }
 
 module.exports = {

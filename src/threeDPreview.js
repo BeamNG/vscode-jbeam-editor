@@ -190,7 +190,9 @@ function show3DSceneCommand() {
       //console.log('ext.onDidReceiveMessage', message)
       switch (message.command) {
         case 'updateJBeamNodesAST':
-          dataUpdater.updateJbeamNodeData(message)
+          dataUpdater.updateJbeamNodeData(message, (targetEditor)=> {
+            parseAndPostData(targetEditor)
+          })
           break
         case 'selectLine':
           if(message.origin) {
