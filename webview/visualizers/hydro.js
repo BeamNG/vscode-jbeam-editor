@@ -1,60 +1,43 @@
-const minColor = new THREE.Color(0.5, 0.5, 0.5)
+const normalMinColor = new THREE.Color(0.5, 0.5, 0.5)
+const normalMaxColor = new THREE.Color(0/255, 100/255, 255/255)
 const selectedColor = new THREE.Color(1, 0, 1)
-
-const beamTypesColors = {
-  ['|NORMAL']: new THREE.Color(0/255, 255/255, 0/255),
-  ['|HYDRO']: new THREE.Color(0/255, 100/255, 255/255),
-  ['|ANISOTROPIC']: new THREE.Color(255/255, 135/255, 63/255),
-  ['|BOUNDED']: new THREE.Color(255/255, 255/255, 0/255),
-  ['|LBEAM']: new THREE.Color(92/255, 92/255, 92/255),
-  ['|SUPPORT']: new THREE.Color(255/255, 0/255, 255/255),
-  ['|PRESSURED']: new THREE.Color(0/255, 255/255, 255/255),
-  ['|BROKEN']: new THREE.Color(255/255, 0/255, 0/255),
-}
 
 let jbeamData = null
 let currentPartName = null
-let beamCache // contains the high level object info
-let selectedBeamIndices = null // arry of selected beam or null for no selection
-let lastCusorPos = null
+let hydroCache // contains the high level object info
+let selectedHydroIndices = null // arry of selected hydro or null for no selection
 
 // buffers for the 3d geometry
 let linesObject // the scene object
 
-// Helper function to check if the cursor is within a given range
-function cursorInRange(range) {
-  // only check the lines for now
-  return range[0] >= lastCusorPos[0] && range[0] <= lastCusorPos[2]
-}
-
-function updateBeamViz() {
+function updateHydroViz() {
   let vertexPositions = []
-  beamCache = []
-  let beamNodesCounter = 0
+  hydroCache = []
+  let hydroNodesCounter = 0
   for (let partName in jbeamData) {
     if(currentPartName && partName !== currentPartName) continue
     let part = jbeamData[partName]
 
-    if(part.hasOwnProperty('beams')) {
-      for (let beamId in part.beams) {
-        let beam = part.beams[beamId];
-        //console.log(">beam>", beam, part.nodes[beam['id1:']])
+    if(part.hasOwnProperty('hydros')) {
+      for (let hydroId in part.hydros) {
+        let hydro = part.hydros[hydroId];
+        //console.log(">hydro>", hydro, part.nodes[hydro['id1:']])
         if (part.nodes) {
           let node1
-          if(part.nodes && beam['id1:'] in part.nodes) {
-            node1 = part.nodes[beam['id1:']]
+          if(part.nodes && hydro['id1:'] in part.nodes) {
+            node1 = part.nodes[hydro['id1:']]
           }
           let node2
-          if(part.nodes && beam['id2:'] in part.nodes) {
-            node2 = part.nodes[beam['id2:']]
+          if(part.nodes && hydro['id2:'] in part.nodes) {
+            node2 = part.nodes[hydro['id2:']]
           }
           if (node1 && node2) {
-            beam.node1 = node1
-            beam.node2 = node2
-            beam.nodePos1 = new THREE.Vector3(node1.pos[0], node1.pos[1], node1.pos[2])
-            beam.nodePos2 = new THREE.Vector3(node2.pos[0], node2.pos[1], node2.pos[2])
-            beamCache.push(beam)
-            beamNodesCounter+=2
+            hydro.node1 = node1
+            hydro.node2 = node2
+            hydro.nodePos1 = new THREE.Vector3(node1.pos[0], node1.pos[1], node1.pos[2])
+            hydro.nodePos2 = new THREE.Vector3(node2.pos[0], node2.pos[1], node2.pos[2])
+            hydroCache.push(hydro)
+            hydroNodesCounter+=2
             vertexPositions.push(node1.pos[0])
             vertexPositions.push(node1.pos[1])
             vertexPositions.push(node1.pos[2])
@@ -62,7 +45,7 @@ function updateBeamViz() {
             vertexPositions.push(node2.pos[1])
             vertexPositions.push(node2.pos[2])
           } else {
-            //console.log(`beam discarded: ${beam}`)
+            console.log(`hydro discarded: ${hydro}`)
           }
         }
       }
@@ -72,13 +55,12 @@ function updateBeamViz() {
   // Fill arrays with data for each node
   let vertexAlphas = []
   let vertexColors = []
-  for (let i = 0; i < beamCache.length; i++) {
-    const beam = beamCache[i]
-    let color = beamTypesColors[beam.beamType] || beamTypesColors['|NORMAL']
+  for (let i = 0; i < hydroCache.length; i++) {
+    const hydro = hydroCache[i]
     vertexAlphas.push(0.5)
     vertexAlphas.push(0.5)
-    vertexColors.push(color.r, color.g, color.b)
-    vertexColors.push(color.r, color.g, color.b)
+    vertexColors.push(normalMaxColor.r, normalMaxColor.g, normalMaxColor.b)
+    vertexColors.push(normalMaxColor.r, normalMaxColor.g, normalMaxColor.b)
   }
 
   let lineGeometry
@@ -126,7 +108,7 @@ function updateBeamViz() {
 
   if(!linesObject) {
     linesObject = new THREE.LineSegments(lineGeometry, lineMaterial);
-    linesObject.name = 'beamsLinesObject'
+    linesObject.name = 'hydrosLinesObject'
     scene.add(linesObject)
   }
 }
@@ -136,7 +118,7 @@ function onMouseMove(event) {
   const rect = renderer.domElement.getBoundingClientRect()
   mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
   mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
-  if(!beamCache) return
+  if(!hydroCache) return
 
   raycaster.setFromCamera(mouse, camera)
 
@@ -145,10 +127,9 @@ function onMouseMove(event) {
 
   let maxDistance = 1 // Maximum distance to affect the alpha
 
-  for (let i = 0; i < beamCache.length; i++) {
-    const beam = beamCache[i]
-    if(selectedBeamIndices && selectedBeamIndices.includes(i)) continue
-    const distance = Math.min(raycaster.ray.distanceToPoint(beamCache[i].nodePos1), raycaster.ray.distanceToPoint(beamCache[i].nodePos2))
+  for (let i = 0; i < hydroCache.length; i++) {
+    if(selectedHydroIndices && selectedHydroIndices.includes(i)) continue
+    const distance = Math.min(raycaster.ray.distanceToPoint(hydroCache[i].nodePos1), raycaster.ray.distanceToPoint(hydroCache[i].nodePos2))
 
     // Normalize the distance based on a predefined maximum distance
     let normalizedDistance = distance / maxDistance
@@ -158,9 +139,8 @@ function onMouseMove(event) {
     alphasAttribute.setX(i*2+0, 1.0 - (normalizedDistance * 0.6))
     alphasAttribute.setX(i*2+1, 1.0 - (normalizedDistance * 0.6))
 
-    let maxColor = beamTypesColors[beam.beamType] || beamTypesColors['|NORMAL']
     let dist = Math.min(distance, maxDistance * 0.75)
-    let color = getColorFromDistance(dist, maxDistance, minColor, maxColor)
+    let color = getColorFromDistance(dist, maxDistance, normalMinColor, normalMaxColor)
     colorsAttribute.setXYZ(i*2+0, color.r, color.g, color.b)
     colorsAttribute.setXYZ(i*2+1, color.r, color.g, color.b)
   }
@@ -168,90 +148,95 @@ function onMouseMove(event) {
   colorsAttribute.needsUpdate = true
 }
 
-function focusBeams(beamsArrToFocus, triggerEditor = true) {
-  if (!beamsArrToFocus || !linesObject || !linesObject.geometry) return
+function focusHydros(hydrosArrToFocus, triggerEditor = true) {
+  if (!hydrosArrToFocus || !linesObject || !linesObject.geometry) return
 
   let sumX = 0
   let sumY = 0
   let sumZ = 0
-  let beamCounter = 0
+  let hydroCounter = 0
 
   //console.log('hit node:', node)
-  selectedBeamIndices = beamsArrToFocus
+  selectedHydroIndices = hydrosArrToFocus
 
   // color the node properly
   const alphasAttribute = linesObject.geometry.getAttribute('alpha');
   const colorsAttribute = linesObject.geometry.getAttribute('color');
-  for (let i = 0; i < beamCache.length; i++) {
-    const beam = beamCache[i]
-    if(selectedBeamIndices.includes(i)) {
+  for (let i = 0; i < hydroCache.length; i++) {
+    const hydro = hydroCache[i]
+    if(selectedHydroIndices.includes(i)) {
       alphasAttribute.setX(i*2 + 0, 1)
       alphasAttribute.setX(i*2 + 1, 1)
       colorsAttribute.setXYZ(i*2 + 0, selectedColor.r, selectedColor.g, selectedColor.b)
       colorsAttribute.setXYZ(i*2 + 1, selectedColor.r, selectedColor.g, selectedColor.b)
-      sumX += beam.node1.pos[0]
-      sumY += beam.node1.pos[1]
-      sumZ += beam.node1.pos[2]
-      sumX += beam.node2.pos[0]
-      sumY += beam.node2.pos[1]
-      sumZ += beam.node2.pos[2]
-      beamCounter += 2 // because of 2 nodes
+      sumX += hydro.node1.pos[0]
+      sumY += hydro.node1.pos[1]
+      sumZ += hydro.node1.pos[2]
+      sumX += hydro.node2.pos[0]
+      sumY += hydro.node2.pos[1]
+      sumZ += hydro.node2.pos[2]
+      hydroCounter += 2 // because of 2 nodes
       continue
     }
-    let color = beamTypesColors[beam.beamType] || beamTypesColors['|NORMAL']
     alphasAttribute.setX(i*2 + 0, 0.1)
     alphasAttribute.setX(i*2 + 1, 0.1)
-    colorsAttribute.setXYZ(i*2 + 0, color.r, color.g, color.b);
-    colorsAttribute.setXYZ(i*2 + 1, color.r, color.g, color.b);
+    colorsAttribute.setXYZ(i*2 + 0, normalMaxColor.r, normalMaxColor.g, normalMaxColor.b);
+    colorsAttribute.setXYZ(i*2 + 1, normalMaxColor.r, normalMaxColor.g, normalMaxColor.b);
   }
   alphasAttribute.needsUpdate = true;
   colorsAttribute.needsUpdate = true;
 
-  if(selectedBeamIndices.length === 0) selectedBeamIndices = null
+  if(selectedHydroIndices.length === 0) selectedHydroIndices = null
   // TODO:
   //if(triggerEditor) {
   //  highlightNodeinTextEditor()
   //}
 
-  if(uiSettings.centerViewOnSelectedJBeam && beamCounter > 0) {
-    let beamCenterPos = new THREE.Vector3(sumX / beamCounter, sumY / beamCounter, sumZ / beamCounter)
-    moveCameraCenter(beamCenterPos)
+  if(centerViewOnSelectedJBeam && hydroCounter > 0) {
+    let hydroCenterPos = new THREE.Vector3(sumX / hydroCounter, sumY / hydroCounter, sumZ / hydroCounter)
+    moveCameraCenter(hydroCenterPos)
   }
 }
 
-function onCursorChangeEditor() {
-  if(!beamCache) return
-  let beamsFound = []
+function onCursorChangeEditor(message) {
+  if(!hydroCache) return
 
-  if(lastCusorPos) {
-    for (let i = 0; i < beamCache.length; i++) {
-      if (cursorInRange(beamCache[i].__meta.range)) {
-        beamsFound.push(i)
-      }
+  if(currentPartName !== message.currentPartName) {
+    currentPartName = message.currentPartName
+    updateHydroViz()
+  }
+
+  let hydrosFound = []
+  // Helper function to check if the cursor is within a given range
+  const cursorInRange = (range) => {
+    // only check the lines for now
+    return range[0] >= message.range[0] && range[0] <= message.range[2]
+  };
+
+  for (let i = 0; i < hydroCache.length; i++) {
+    if (cursorInRange(hydroCache[i].__meta.range)) {
+      hydrosFound.push(i)
     }
   }
-  focusBeams(beamsFound, false)
+
+  console.log(message.range, hydrosFound, hydroCache)
+
+  focusHydros(hydrosFound, false)
 }
 
 function onReceiveMessage(event) {
-  //console.log(">>> BEAMS: onReceiveMessage >>>", event)
+  //console.log(">>> onReceiveMessage >>>", event)
   const message = event.data;
   switch (message.command) {
     case 'jbeamData':
       jbeamData = message.data
-      selectedBeamIndices = null
+      selectedHydroIndices = null
       currentPartName = null
       //console.log("GOT DATA: ", jbeamData)
-      updateBeamViz()
-      onCursorChangeEditor()
+      updateHydroViz()
       break;
     case 'cursorChanged':
-      if(currentPartName !== message.currentPartName) {
-        currentPartName = message.currentPartName
-        updateBeamViz()
-      }
-      lastCusorPos = message.range
-      onCursorChangeEditor()
+      onCursorChangeEditor(message)
       break
   }
 }
@@ -266,10 +251,11 @@ export function dispose() {
   window.removeEventListener('mousemove', onMouseMove);
   if(linesObject) {
     if (linesObject.geometry) linesObject.geometry.dispose()
+    if (linesObject.geometry) linesObject.geometry.dispose()
     scene.remove(linesObject)
   }
 }
 
 export function onConfigChanged() {
-  //console.log('beam.onConfigChanged', ctx.config)
+  //console.log('hydro.onConfigChanged', ctx.config)
 }

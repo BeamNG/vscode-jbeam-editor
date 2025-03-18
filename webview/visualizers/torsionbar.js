@@ -1,5 +1,5 @@
-const normalMinColor = new THREE.Color(0.13, 0.87, 0.87)
-const normalMaxColor = new THREE.Color(0, 1, 1)
+const normalMinColor = new THREE.Color(0.5, 0.5, 0.5)
+const normalMaxColor = new THREE.Color(1, 0, 0)
 const selectedColor = new THREE.Color(1, 0, 1)
 
 let jbeamData = null
@@ -140,7 +140,7 @@ function updateTorbarViz() {
 
   if(!linesObject) {
     linesObject = new THREE.LineSegments(lineGeometry, lineMaterial);
-    linesObject.name = 'linesObject'
+    linesObject.name = 'torsionbarsLinesObject'
     scene.add(linesObject)
   }
 }
@@ -161,7 +161,7 @@ function onMouseMove(event) {
 
   for (let i = 0; i < torbarCache.length; i++) {
     if(selectedTorbarIndices && selectedTorbarIndices.includes(i)) continue
-    const distance = Math.min(raycaster.ray.distanceToPoint(torbarCache[i].nodePos1), raycaster.ray.distanceToPoint(torbarCache[i].nodePos2))
+    const distance = Math.min(raycaster.ray.distanceToPoint(torbarCache[i].nodePos1), raycaster.ray.distanceToPoint(torbarCache[i].nodePos4))
 
     // Normalize the distance based on a predefined maximum distance
     let normalizedDistance = distance / maxDistance
@@ -175,6 +175,7 @@ function onMouseMove(event) {
     alphasAttribute.setX(i*6+4, 1.0 - (normalizedDistance * 0.6))
     alphasAttribute.setX(i*6+5, 1.0 - (normalizedDistance * 0.6))
 
+    let dist = Math.min(distance, maxDistance * 0.75)
     let color = getColorFromDistance(distance, maxDistance, normalMinColor, normalMaxColor)
     colorsAttribute.setXYZ(i*6+0, color.r, color.g, color.b)
     colorsAttribute.setXYZ(i*6+1, color.r, color.g, color.b)

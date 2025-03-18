@@ -3,6 +3,7 @@ export function init() {
   ctx.visualizersBeam.init()
   ctx.visualizersTriangle.init()
   ctx.visualizersTorsionbar.init()
+  ctx.visualizersHydro.init()
   ctx.visualizersMesh.init()
 }
 
@@ -11,6 +12,7 @@ export function dispose() {
   ctx.visualizersBeam.dispose()
   ctx.visualizersTriangle.dispose()
   ctx.visualizersTorsionbar.dispose()
+  ctx.visualizersHydro.dispose()
   ctx.visualizersMesh.dispose()
 }
 
@@ -19,5 +21,6 @@ export function onConfigChanged() {
   ctx.visualizersBeam.onConfigChanged()
   ctx.visualizersTriangle.onConfigChanged()
   ctx.visualizersTorsionbar.onConfigChanged()
+  ctx.visualizersHydro.onConfigChanged()
   ctx.visualizersMesh.onConfigChanged()
 }
