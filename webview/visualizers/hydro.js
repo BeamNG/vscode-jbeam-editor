@@ -1,6 +1,4 @@
-const normalMinColor = new THREE.Color(0.5, 0.5, 0.5)
-const normalMaxColor = new THREE.Color(0/255, 100/255, 255/255)
-const selectedColor = new THREE.Color(1, 0, 1)
+const jbeamColor = jbeamColors.hydros['GENERIC']
 
 let jbeamData = null
 let currentPartName = null
@@ -59,8 +57,8 @@ function updateHydroViz() {
     const hydro = hydroCache[i]
     vertexAlphas.push(0.5)
     vertexAlphas.push(0.5)
-    vertexColors.push(normalMaxColor.r, normalMaxColor.g, normalMaxColor.b)
-    vertexColors.push(normalMaxColor.r, normalMaxColor.g, normalMaxColor.b)
+    vertexColors.push(jbeamColor.r, jbeamColor.g, jbeamColor.b)
+    vertexColors.push(jbeamColor.r, jbeamColor.g, jbeamColor.b)
   }
 
   let lineGeometry
@@ -140,7 +138,7 @@ function onMouseMove(event) {
     alphasAttribute.setX(i*2+1, 1.0 - (normalizedDistance * 0.6))
 
     let dist = Math.min(distance, maxDistance * 0.75)
-    let color = getColorFromDistance(dist, maxDistance, normalMinColor, normalMaxColor)
+    let color = getColorFromDistance(dist, maxDistance, jbeamMinColor, jbeamColor)
     colorsAttribute.setXYZ(i*2+0, color.r, color.g, color.b)
     colorsAttribute.setXYZ(i*2+1, color.r, color.g, color.b)
   }
@@ -167,8 +165,8 @@ function focusHydros(hydrosArrToFocus, triggerEditor = true) {
     if(selectedHydroIndices.includes(i)) {
       alphasAttribute.setX(i*2 + 0, 1)
       alphasAttribute.setX(i*2 + 1, 1)
-      colorsAttribute.setXYZ(i*2 + 0, selectedColor.r, selectedColor.g, selectedColor.b)
-      colorsAttribute.setXYZ(i*2 + 1, selectedColor.r, selectedColor.g, selectedColor.b)
+      colorsAttribute.setXYZ(i*2 + 0, jbeamSelectedColor.r, jbeamSelectedColor.g, jbeamSelectedColor.b)
+      colorsAttribute.setXYZ(i*2 + 1, jbeamSelectedColor.r, jbeamSelectedColor.g, jbeamSelectedColor.b)
       sumX += hydro.node1.pos[0]
       sumY += hydro.node1.pos[1]
       sumZ += hydro.node1.pos[2]
@@ -180,8 +178,8 @@ function focusHydros(hydrosArrToFocus, triggerEditor = true) {
     }
     alphasAttribute.setX(i*2 + 0, 0.1)
     alphasAttribute.setX(i*2 + 1, 0.1)
-    colorsAttribute.setXYZ(i*2 + 0, normalMaxColor.r, normalMaxColor.g, normalMaxColor.b);
-    colorsAttribute.setXYZ(i*2 + 1, normalMaxColor.r, normalMaxColor.g, normalMaxColor.b);
+    colorsAttribute.setXYZ(i*2 + 0, jbeamColor.r, jbeamColor.g, jbeamColor.b);
+    colorsAttribute.setXYZ(i*2 + 1, jbeamColor.r, jbeamColor.g, jbeamColor.b);
   }
   alphasAttribute.needsUpdate = true;
   colorsAttribute.needsUpdate = true;

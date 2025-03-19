@@ -1,6 +1,3 @@
-const minColor = new THREE.Color(0.5, 0.5, 0.5)
-const selectedColor = new THREE.Color(1, 0, 1)
-
 const beamTypesColors = {
   ['|NORMAL']: new THREE.Color(0/255, 255/255, 0/255),
   ['|HYDRO']: new THREE.Color(0/255, 100/255, 255/255),
@@ -160,7 +157,7 @@ function onMouseMove(event) {
 
     let maxColor = beamTypesColors[beam.beamType] || beamTypesColors['|NORMAL']
     let dist = Math.min(distance, maxDistance * 0.75)
-    let color = getColorFromDistance(dist, maxDistance, minColor, maxColor)
+    let color = getColorFromDistance(dist, maxDistance, jbeamMinColor, maxColor)
     colorsAttribute.setXYZ(i*2+0, color.r, color.g, color.b)
     colorsAttribute.setXYZ(i*2+1, color.r, color.g, color.b)
   }
@@ -187,8 +184,8 @@ function focusBeams(beamsArrToFocus, triggerEditor = true) {
     if(selectedBeamIndices.includes(i)) {
       alphasAttribute.setX(i*2 + 0, 1)
       alphasAttribute.setX(i*2 + 1, 1)
-      colorsAttribute.setXYZ(i*2 + 0, selectedColor.r, selectedColor.g, selectedColor.b)
-      colorsAttribute.setXYZ(i*2 + 1, selectedColor.r, selectedColor.g, selectedColor.b)
+      colorsAttribute.setXYZ(i*2 + 0, jbeamSelectedColor.r, jbeamSelectedColor.g, jbeamSelectedColor.b)
+      colorsAttribute.setXYZ(i*2 + 1, jbeamSelectedColor.r, jbeamSelectedColor.g, jbeamSelectedColor.b)
       sumX += beam.node1.pos[0]
       sumY += beam.node1.pos[1]
       sumZ += beam.node1.pos[2]

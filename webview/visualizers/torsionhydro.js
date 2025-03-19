@@ -1,6 +1,4 @@
-const normalMinColor = new THREE.Color(0.5, 0.5, 0.5)
-const normalMaxColor = new THREE.Color(1, 0.6, 0.6)
-const selectedColor = new THREE.Color(1, 0, 1)
+const jbeamColor = jbeamColors.torsionhydros['ALL']
 
 let jbeamData = null
 let currentPartName = null
@@ -79,6 +77,7 @@ function updateTorhydroViz() {
   // Fill arrays with data for each node
   let vertexAlphas = []
   let vertexColors = []
+
   for (let i = 0; i < torhydroCache.length; i++) {
     const torhydro = torhydroCache[i]
     vertexAlphas.push(0.5)
@@ -87,12 +86,12 @@ function updateTorhydroViz() {
     vertexAlphas.push(0.5)
     vertexAlphas.push(0.5)
     vertexAlphas.push(0.5)
-    vertexColors.push(normalMaxColor.r, normalMaxColor.g, normalMaxColor.b)
-    vertexColors.push(normalMaxColor.r, normalMaxColor.g, normalMaxColor.b)
-    vertexColors.push(normalMaxColor.r, normalMaxColor.g, normalMaxColor.b)
-    vertexColors.push(normalMaxColor.r, normalMaxColor.g, normalMaxColor.b)
-    vertexColors.push(normalMaxColor.r, normalMaxColor.g, normalMaxColor.b)
-    vertexColors.push(normalMaxColor.r, normalMaxColor.g, normalMaxColor.b)
+    vertexColors.push(jbeamColor.r, jbeamColor.g, jbeamColor.b)
+    vertexColors.push(jbeamColor.r, jbeamColor.g, jbeamColor.b)
+    vertexColors.push(jbeamColor.r, jbeamColor.g, jbeamColor.b)
+    vertexColors.push(jbeamColor.r, jbeamColor.g, jbeamColor.b)
+    vertexColors.push(jbeamColor.r, jbeamColor.g, jbeamColor.b)
+    vertexColors.push(jbeamColor.r, jbeamColor.g, jbeamColor.b)
   }
 
   let lineGeometry
@@ -176,7 +175,7 @@ function onMouseMove(event) {
     alphasAttribute.setX(i*6+5, 1.0 - (normalizedDistance * 0.6))
 
     let dist = Math.min(distance, maxDistance * 0.75)
-    let color = getColorFromDistance(distance, maxDistance, normalMinColor, normalMaxColor)
+    let color = getColorFromDistance(distance, maxDistance, jbeamMinColor, jbeamColor)
     colorsAttribute.setXYZ(i*6+0, color.r, color.g, color.b)
     colorsAttribute.setXYZ(i*6+1, color.r, color.g, color.b)
     colorsAttribute.setXYZ(i*6+2, color.r, color.g, color.b)
@@ -211,12 +210,12 @@ function focusTorhydros(torhydrosArrToFocus, triggerEditor = true) {
       alphasAttribute.setX(i*6 + 3, 1)
       alphasAttribute.setX(i*6 + 4, 1)
       alphasAttribute.setX(i*6 + 5, 1)
-      colorsAttribute.setXYZ(i*6 + 0, selectedColor.r, selectedColor.g, selectedColor.b)
-      colorsAttribute.setXYZ(i*6 + 1, selectedColor.r, selectedColor.g, selectedColor.b)
-      colorsAttribute.setXYZ(i*6 + 2, selectedColor.r, selectedColor.g, selectedColor.b)
-      colorsAttribute.setXYZ(i*6 + 3, selectedColor.r, selectedColor.g, selectedColor.b)
-      colorsAttribute.setXYZ(i*6 + 4, selectedColor.r, selectedColor.g, selectedColor.b)
-      colorsAttribute.setXYZ(i*6 + 5, selectedColor.r, selectedColor.g, selectedColor.b)
+      colorsAttribute.setXYZ(i*6 + 0, jbeamSelectedColor.r, jbeamSelectedColor.g, jbeamSelectedColor.b)
+      colorsAttribute.setXYZ(i*6 + 1, jbeamSelectedColor.r, jbeamSelectedColor.g, jbeamSelectedColor.b)
+      colorsAttribute.setXYZ(i*6 + 2, jbeamSelectedColor.r, jbeamSelectedColor.g, jbeamSelectedColor.b)
+      colorsAttribute.setXYZ(i*6 + 3, jbeamSelectedColor.r, jbeamSelectedColor.g, jbeamSelectedColor.b)
+      colorsAttribute.setXYZ(i*6 + 4, jbeamSelectedColor.r, jbeamSelectedColor.g, jbeamSelectedColor.b)
+      colorsAttribute.setXYZ(i*6 + 5, jbeamSelectedColor.r, jbeamSelectedColor.g, jbeamSelectedColor.b)
       sumX += torhydro.node1.pos[0]
       sumY += torhydro.node1.pos[1]
       sumZ += torhydro.node1.pos[2]
@@ -238,12 +237,12 @@ function focusTorhydros(torhydrosArrToFocus, triggerEditor = true) {
     alphasAttribute.setX(i*6 + 3, 0.1)
     alphasAttribute.setX(i*6 + 4, 0.1)
     alphasAttribute.setX(i*6 + 5, 0.1)
-    colorsAttribute.setXYZ(i*6 + 0, normalMaxColor.r, normalMaxColor.g, normalMaxColor.b);
-    colorsAttribute.setXYZ(i*6 + 1, normalMaxColor.r, normalMaxColor.g, normalMaxColor.b);
-    colorsAttribute.setXYZ(i*6 + 2, normalMaxColor.r, normalMaxColor.g, normalMaxColor.b);
-    colorsAttribute.setXYZ(i*6 + 3, normalMaxColor.r, normalMaxColor.g, normalMaxColor.b);
-    colorsAttribute.setXYZ(i*6 + 4, normalMaxColor.r, normalMaxColor.g, normalMaxColor.b);
-    colorsAttribute.setXYZ(i*6 + 5, normalMaxColor.r, normalMaxColor.g, normalMaxColor.b);
+    colorsAttribute.setXYZ(i*6 + 0, jbeamColor.r, jbeamColor.g, jbeamColor.b);
+    colorsAttribute.setXYZ(i*6 + 1, jbeamColor.r, jbeamColor.g, jbeamColor.b);
+    colorsAttribute.setXYZ(i*6 + 2, jbeamColor.r, jbeamColor.g, jbeamColor.b);
+    colorsAttribute.setXYZ(i*6 + 3, jbeamColor.r, jbeamColor.g, jbeamColor.b);
+    colorsAttribute.setXYZ(i*6 + 4, jbeamColor.r, jbeamColor.g, jbeamColor.b);
+    colorsAttribute.setXYZ(i*6 + 5, jbeamColor.r, jbeamColor.g, jbeamColor.b);
   }
   alphasAttribute.needsUpdate = true;
   colorsAttribute.needsUpdate = true;

@@ -8,6 +8,7 @@ let uiSettings = {
   symmetry: true,
   mirrorplanes: true,
   statusBarSettings: {},
+  showJBeamLegend: true,
 }
 
 function loadUISettings() {

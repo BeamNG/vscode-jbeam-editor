@@ -1,3 +1,5 @@
+const jbeamColor = jbeamColors.nodes['ALL']
+
 export function redrawNodeFocus() {
   if (!selectedNodeIndices || !pointsObject) return;
   let sumX = 0;
@@ -14,7 +16,7 @@ export function redrawNodeFocus() {
   for (let i = 0; i < pointsCache.length; i++) {
     alphasAttribute.setX(i, 0.4);
     sizesAttribute.setX(i, normalSize);
-    colorsAttribute.setXYZ(i, normalMaxColor.r, normalMaxColor.g, normalMaxColor.b);
+    colorsAttribute.setXYZ(i, jbeamColor.r, jbeamColor.g, jbeamColor.b);
   }
 
   // Highlight selected nodes
@@ -201,11 +203,11 @@ function resetNodeFocus() {
   const sizesAttribute = pointsObject.geometry.getAttribute('size');
 
   for (let i = 0; i < pointsCache.length; i++) {
-    let node = pointsCache[i];
-    if (selectedNodeIndices && selectedNodeIndices.includes(i)) continue;
-    alphasAttribute.setX(i, 0.3);
-    sizesAttribute.setX(i, normalSize);
-    colorsAttribute.setXYZ(i, normalMaxColor.r, normalMaxColor.g, normalMaxColor.b);
+    let node = pointsCache[i]
+    if(selectedNodeIndices && selectedNodeIndices.includes(i)) continue
+    alphasAttribute.setX(i, 0.3)
+    sizesAttribute.setX(i, normalSize)
+    colorsAttribute.setXYZ(i, jbeamColor.r, jbeamColor.g, jbeamColor.b);
   }
   alphasAttribute.needsUpdate = true;
   colorsAttribute.needsUpdate = true;
@@ -258,7 +260,7 @@ function onMouseMove(event) {
     // sizesAttribute.setX(i, Math.max(minSize, Math.min(size, maxSize))); // Clamp size between minSize and maxSize
 
     // Adjust color based on distance
-    const color = getColorFromDistance(distance, maxDistance, normalMinColor, normalMaxColor);
+    const color = getColorFromDistance(distance, maxDistance, jbeamMinColor, jbeamColor);
     colorsAttribute.setXYZ(i, color.r, color.g, color.b);
   });
 

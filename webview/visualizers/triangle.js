@@ -1,3 +1,5 @@
+const jbeamColor = jbeamColors.triangles['ALL']
+
 let jbeamData = null
 let uri
 let currentPartName = null
@@ -46,7 +48,7 @@ function updateTriViz() {
   }
 
   for (let i = 0; i < triVertices.length; i++) {
-    vertexColors.push(0, 0, 0.65);
+    vertexColors.push(jbeamColor.r, jbeamColor.g, jbeamColor.b);
     vertexAlphas.push(isInSection ? 0.4 : 0.05)
     vertexHighlight.push(0)
   }
@@ -160,9 +162,9 @@ function focusTris(trisArrToFocus) {
         highlightAttribute.setX(i*3  , 0.01)
         highlightAttribute.setX(i*3+1, 0.01)
         highlightAttribute.setX(i*3+2, 0.01)
-        colorsAttribute.setXYZ(i*3  , 1, 0, 1)
-        colorsAttribute.setXYZ(i*3+1, 1, 0, 1)
-        colorsAttribute.setXYZ(i*3+2, 1, 0, 1)
+        colorsAttribute.setXYZ(i*3  , jbeamSelectedColor.r, jbeamSelectedColor.g, jbeamSelectedColor.b)
+        colorsAttribute.setXYZ(i*3+1, jbeamSelectedColor.r, jbeamSelectedColor.g, jbeamSelectedColor.b)
+        colorsAttribute.setXYZ(i*3+2, jbeamSelectedColor.r, jbeamSelectedColor.g, jbeamSelectedColor.b)
         sumX += tri.node1.pos[0]
         sumX += tri.node2.pos[0]
         sumX += tri.node3.pos[0]
@@ -181,9 +183,9 @@ function focusTris(trisArrToFocus) {
       highlightAttribute.setX(i*3  , 0)
       highlightAttribute.setX(i*3+1, 0)
       highlightAttribute.setX(i*3+2, 0)
-      colorsAttribute.setXYZ(i*3  , 0, 0, 0.65)
-      colorsAttribute.setXYZ(i*3+1, 0, 0, 0.65)
-      colorsAttribute.setXYZ(i*3+2, 0, 0, 0.65)
+      colorsAttribute.setXYZ(i*3  , jbeamColor.r, jbeamColor.g, jbeamColor.b)
+      colorsAttribute.setXYZ(i*3+1, jbeamColor.r, jbeamColor.g, jbeamColor.b)
+      colorsAttribute.setXYZ(i*3+2, jbeamColor.r, jbeamColor.g, jbeamColor.b)
     }
 
     alphasAttribute.needsUpdate = true;

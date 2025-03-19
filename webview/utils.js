@@ -31,6 +31,36 @@ const faceColors = {
   Back: 0x00ffff     // Cyan
 }
 
+const jbeamSelectedColor = new THREE.Color(1, 0, 1)
+const jbeamMinColor = new THREE.Color(0.5, 0.5, 0.5)
+const jbeamColors = {
+  nodes: {
+    ['ALL']: new THREE.Color(1, 0.65, 0),
+  },
+  beams: {
+    ['|NORMAL']: new THREE.Color(0/255, 255/255, 0/255),
+    ['|HYDRO']: new THREE.Color(0/255, 100/255, 255/255),
+    ['|ANISOTROPIC']: new THREE.Color(255/255, 135/255, 63/255),
+    ['|BOUNDED']: new THREE.Color(255/255, 255/255, 0/255),
+    ['|LBEAM']: new THREE.Color(92/255, 92/255, 92/255),
+    ['|SUPPORT']: new THREE.Color(255/255, 0/255, 255/255),
+    ['|PRESSURED']: new THREE.Color(0/255, 255/255, 255/255),
+    //['|BROKEN']: new THREE.Color(255/255, 0/255, 0/255),
+  },
+  triangles: {
+    ['ALL']: new THREE.Color(0, 0, 0.65),
+  },
+  hydros: {
+    ['ALL']: new THREE.Color(0/255, 100/255, 255/255),
+  },
+  torsionbars: {
+    ['ALL']: new THREE.Color(1, 0, 0),
+  },
+  torsionhydros: {
+    ['ALL']: new THREE.Color(1, 0.6, 0.6),
+  }
+}
+
 function interpolateColor(color1, color2, factor) {
   return color1.lerp(color2, factor)
 }
