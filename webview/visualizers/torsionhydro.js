@@ -253,7 +253,7 @@ function focusTorhydros(torhydrosArrToFocus, triggerEditor = true) {
   //  highlightNodeinTextEditor()
   //}
 
-  if(centerViewOnSelectedJBeam && torhydroCounter > 0) {
+  if(uiSettings.centerViewOnSelectedJBeam && torhydroCounter > 0) {
     let torhydroCenterPos = new THREE.Vector3(sumX / torhydroCounter, sumY / torhydroCounter, sumZ / torhydroCounter)
     moveCameraCenter(torhydroCenterPos)
   }

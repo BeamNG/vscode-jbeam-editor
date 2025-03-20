@@ -1,4 +1,4 @@
-const jbeamColor = jbeamColors.hydros['GENERIC']
+const jbeamColor = jbeamColors.hydros['ALL']
 
 let jbeamData = null
 let currentPartName = null
@@ -190,7 +190,7 @@ function focusHydros(hydrosArrToFocus, triggerEditor = true) {
   //  highlightNodeinTextEditor()
   //}
 
-  if(centerViewOnSelectedJBeam && hydroCounter > 0) {
+  if(uiSettings.centerViewOnSelectedJBeam && hydroCounter > 0) {
     let hydroCenterPos = new THREE.Vector3(sumX / hydroCounter, sumY / hydroCounter, sumZ / hydroCounter)
     moveCameraCenter(hydroCenterPos)
   }
