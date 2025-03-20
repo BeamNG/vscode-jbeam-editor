@@ -350,8 +350,7 @@ function visualizeMirrorPlanes() {
 // Gizmo things ...
 
 function setupGizmoForSelectedNodes() {
-  if(!selectedNodeIndices) return;
-  if (selectedNodeIndices.length > 0) {
+  if (selectedNodeIndices && selectedNodeIndices.length > 0) {
     // If we have more than one node selected, calculate the bounding box center
     if (selectedNodeIndices.length === 1) {
       // Single node selected, allow translation
@@ -398,9 +397,9 @@ function setupGizmoForSelectedNodes() {
 
 /**
  * Updates the visualization of nodes based on the provided data.
- * @param {Boolean} moveCamera - Whether to move the camera to the center of the nodes.
+ * @param {Boolean} newNodePositionsOnly - True if the node positions have only been updated
  */
-function updateNodeViz(moveCamera) {
+function updateNodeViz(newNodePositionsOnly) {
   // Dispose of existing points and mirror planes to prevent memory leaks
   if (pointsObject) {
     if (pointsObject.geometry) pointsObject.geometry.dispose();
@@ -471,18 +470,6 @@ function updateNodeViz(moveCamera) {
     // Do not leak Infinity values
     nodesMin = null;
     nodesMax = null;
-  }
-
-  if (moveCamera) {
-    selectedNodeIndices = null;
-    for (let partName in jbeamData) {
-      if (currentPartName && partName !== currentPartName) continue;
-      let part = jbeamData[partName];
-      if (part.__centerPosition) {
-        moveCameraCenter(part.__centerPosition);
-        break;
-      }
-    }
   }
 
   // Prepare data for BufferGeometry
@@ -566,6 +553,21 @@ function updateNodeViz(moveCamera) {
   );
 
   updateNodeLabels();
+
+  if (newNodePositionsOnly) {
+    ctx.visualizersNode.redrawNodeFocus()
+  }
+  else {
+    selectedNodeIndices = null;
+    for (let partName in jbeamData) {
+      if (currentPartName && partName !== currentPartName) continue;
+      let part = jbeamData[partName];
+      if (part.__centerPosition) {
+        moveCameraCenter(part.__centerPosition);
+        break;
+      }
+    }
+  }
 }
 
 /**

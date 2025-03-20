@@ -174,7 +174,7 @@ function onCursorChangeEditor(message) {
   if (currentPartName !== message.currentPartName) {
     currentPartName = message.currentPartName;
     selectedNodeIndices = null;
-    updateNodeViz(true);
+    updateNodeViz(false);
   }
 
   let nodesFound = [];
@@ -283,10 +283,9 @@ function onReceiveMessage(event) {
       lastNodeDataMessage = message
       jbeamData = message.data;
       uri = message.uri;
-      selectedNodeIndices = null; // TODO: presrve!
       currentPartName = message.currentPartName;
       currentSectionName = message.currentSectionName;
-      updateNodeViz(!message.updatedOnly);
+      updateNodeViz(message.updatedOnly);
       break;
     case 'cursorChanged':
       onCursorChangeEditor(message);

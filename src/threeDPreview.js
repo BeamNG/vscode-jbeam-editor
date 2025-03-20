@@ -191,7 +191,7 @@ function show3DSceneCommand() {
       switch (message.command) {
         case 'updateJBeamNodesAST':
           dataUpdater.updateJbeamNodeData(message, (targetEditor)=> {
-            parseAndPostData(targetEditor)
+            parseAndPostData(targetEditor, true)
           })
           break
         case 'selectLine':
@@ -369,7 +369,7 @@ function show3DSceneCommand() {
   vscode.workspace.onDidChangeTextDocument(event => {
     if (event.document.languageId !== 'jbeam') return;
     if (vscode.window.activeTextEditor && webPanel && webPanel.visible && event.document === vscode.window.activeTextEditor.document) {
-      parseAndPostData(vscode.window.activeTextEditor, true);
+      parseAndPostData(vscode.window.activeTextEditor);
     }
   });
   vscode.window.onDidChangeTextEditorSelection(event => {
