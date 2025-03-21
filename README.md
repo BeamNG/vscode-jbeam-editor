@@ -61,6 +61,10 @@ This is a lightweight visualizer and tool for working with the physics definitio
 
   ![](assets/meshMultiselect.gif)
 
+* Gizmo node translation support
+
+  ![](assets/nodeTranslation.gif)
+
 * Flexmesh translation / rotation support
 
   ![](assets/flexmeshRotation.gif)
