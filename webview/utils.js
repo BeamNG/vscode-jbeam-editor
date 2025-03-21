@@ -437,7 +437,7 @@ class Tooltip {
     this.scene = scene;
     this.camera = camera;
     this.fontSize = 40
-    this.fontStr = `bold ${this.fontSize}px "Roboto Mono", monospace`
+    this.fontStr = `bold ${this.fontSize}px "Cascadia Code", monospace`
     this.createTooltipMesh();
     this.scale = 0.002
   }
