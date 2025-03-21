@@ -129,7 +129,7 @@ function createJBeamLegendPane() {
   pane.style.backgroundColor = 'rgba(35, 35, 35, 0.9)';
   pane.style.borderRadius = '4px';
   pane.style.color = '#f0f0f0';
-  pane.style.fontFamily = 'sans-serif';
+  pane.style.fontFamily = 'Cascadia Code';
   pane.style.fontSize = '12px';
   pane.style.padding = '8px';
   pane.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.3)';
