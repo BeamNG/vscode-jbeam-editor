@@ -67,7 +67,7 @@ function tryLoad3dMesh(meshName, onDone) {
   meshName = meshName.trim()
   const uri = meshFilenameLookupLibrary[meshName]
   if(!uri) {
-    console.error(`Mesh not found: '${meshName}'`, meshFilenameLookupLibrary)
+    console.error(`Mesh not found:`, meshName, meshFilenameLookupLibrary)
     meshesMissingCurrentRun = true
     return
   }
