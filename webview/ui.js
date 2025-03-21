@@ -34,7 +34,7 @@ function applySetting(settingKey) {
       visualizeMirrorPlanes()
       break;
     case 'symmetry':
-      ctx.visualizersNode.onNodeSelectionUpdated()
+      ctx.visualizersNode.updateNodeSelection()
       break
     case 'showJBeamLegend':
       updateJBeamLegendVisibility(uiSettings.showJBeamLegend);

@@ -159,7 +159,7 @@ function visualizeNodes(mouseEvent) {
  * Updates the visualization and UI elements based on node selection.
  * Call this whenever selection changes.
  */
-export function onNodeSelectionUpdated() {
+export function updateNodeSelection() {
   if (!selectedNodeIndices || !pointsObject) return;
 
   // Calculate mirror nodes when selection changes

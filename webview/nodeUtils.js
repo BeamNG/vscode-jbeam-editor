@@ -555,7 +555,7 @@ function updateNodeViz(newNodePositionsOnly) {
   updateNodeLabels();
 
   if (newNodePositionsOnly) {
-    ctx.visualizersNode.onNodeSelectionUpdated()
+    ctx.visualizersNode.updateNodeSelection()
   }
   else {
     selectedNodeIndices = null;
@@ -619,7 +619,7 @@ function onMouseDoubleClick(event) {
  */
 function focusNodes(nodesArrToFocus, triggerEditor = true) {
   selectedNodeIndices = nodesArrToFocus;
-  ctx.visualizersNode.onNodeSelectionUpdated()
+  ctx.visualizersNode.updateNodeSelection()
   setupGizmoForSelectedNodes()
   if (triggerEditor) {
     highlightNodeinTextEditor();
