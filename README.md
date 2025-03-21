@@ -61,7 +61,7 @@ This is a lightweight visualizer and tool for working with the physics definitio
 
   ![](assets/meshMultiselect.gif)
 
-* Gizmo node translation support
+* Node translation gizmo support
 
   ![](assets/nodeTranslation.gif)
 
@@ -165,7 +165,7 @@ If all worked, it should show up like this now:
 
 ### 0.4.0
 * Features:
-  * Gizmo node translation support - now you can translate nodes with a gizmo
+  * Node translation gizmo support - now you can translate nodes with a gizmo
 
     ![](assets/nodeTranslation.gif)
 
