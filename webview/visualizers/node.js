@@ -1,138 +1,58 @@
 const jbeamColor = jbeamColors.nodes['ALL']
 
-export function redrawNodeFocus() {
-  if (!selectedNodeIndices || !pointsObject) return;
-  let sumX = 0;
-  let sumY = 0;
-  let sumZ = 0;
-  let ncount = 0;
-
-  // Access geometry attributes
-  const alphasAttribute = pointsObject.geometry.getAttribute('alpha');
-  const colorsAttribute = pointsObject.geometry.getAttribute('color');
-  const sizesAttribute = pointsObject.geometry.getAttribute('size');
-
-  // Reset all nodes to default appearance
-  for (let i = 0; i < pointsCache.length; i++) {
-    alphasAttribute.setX(i, 0.4);
-    sizesAttribute.setX(i, normalSize);
-    colorsAttribute.setXYZ(i, jbeamColor.r, jbeamColor.g, jbeamColor.b);
-  }
-
-  // Highlight selected nodes
-  selectedNodeIndices.forEach((idx) => {
-    const node = pointsCache[idx];
-    alphasAttribute.setX(idx, 1);
-    sizesAttribute.setX(idx, selectedSize);
-    colorsAttribute.setXYZ(idx, selectedColor.r, selectedColor.g, selectedColor.b);
-    sumX += node.pos[0];
-    sumY += node.pos[1];
-    sumZ += node.pos[2];
-    ncount++;
-  });
-
-  // Update geometry attributes
-  alphasAttribute.needsUpdate = true;
-  colorsAttribute.needsUpdate = true;
-  sizesAttribute.needsUpdate = true;
-
-  ctx.vscode.postMessage({
-    command: 'selectNodes',
-    nodes: selectedNodeIndices.map((nodeId) => pointsCache[nodeId].name),
-    uri: uri,
-  });
-
-  if (selectedNodeIndices.length === 0) selectedNodeIndices = null;
-
-  if (uiSettings.centerViewOnSelectedJBeam && ncount > 0) {
-    nodesCenterPos = new THREE.Vector3(sumX / ncount, sumY / ncount, sumZ / ncount);
-    moveCameraCenter(nodesCenterPos);
-  }
-
-  ctx.visualizersGroundplane.redrawGroundPlane(
-    nodesMin,
-    nodesMax,
-    selectedNodeIndices,
-    pointsCache,
-    jbeamData,
-    currentPartName,
-    nodeCounter
-  );
-
-  // Visualize the mirror planes
-  visualizeMirrorPlanes();
-
-  // Detect and highlight nodes near mirror planes (errors)
-  highlightMirroredAndErrorNodes();
-
-  updateNodeLabels();
-  updateNodeStatusbar()
-}
-
 /**
- * Highlights mirrored nodes based on the detected mirror planes and highlights errors.
- * Ensures valid mirrored nodes retain their highlighting and potential errors are marked red.
+ * Calculates and updates mirrored nodes and error nodes based on selected nodes.
+ * This should be called when node selection changes, not during every visualization update.
  */
-function highlightMirroredAndErrorNodes() {
+function updateMirroredNodesCalculation() {
+  // Reset mirror-related collections
   mirroredNodeIndices.clear();
-  mirroredNodePlaneMap.clear(); // Clear the map each time this runs
+  mirroredNodePlaneMap.clear();
   usedMirrorPlanes.clear();
   nodesNearMirrorPlanes.clear();
 
-  if (!mirrorPlanes || mirrorPlanes.length === 0 || !selectedNodeIndices || selectedNodeIndices.length === 0) return;
+  // Skip if symmetry is disabled or no mirror planes/selected nodes
+  if (!uiSettings.symmetry || !mirrorPlanes || !mirrorPlanes.length || !selectedNodeIndices || !selectedNodeIndices.length) {
+    return;
+  }
 
-  const validMirrorTolerance = 0.01; // Tolerance for valid mirrored nodes
-  const errorTolerance = 0.05; // 5 centimeters for potential error detection
-
-  const alphasAttribute = pointsObject.geometry.getAttribute('alpha');
-  const colorsAttribute = pointsObject.geometry.getAttribute('color');
-  const sizesAttribute = pointsObject.geometry.getAttribute('size');
-
-  if (!uiSettings.symmetry) return;
-
-  // Set to keep track of already highlighted nodes (to avoid duplicate processing)
+  const validMirrorTolerance = 0.01;
+  const errorTolerance = 0.05;
   const highlightedIndices = new Set(selectedNodeIndices);
 
-  // Loop over all selected nodes to check for mirrored pairs and errors
+  // Check each selected node for mirror pairs
   selectedNodeIndices.forEach((selectedIdx) => {
     const selectedNode = pointsCache[selectedIdx];
 
     mirrorPlanes.forEach((plane, planeIdx) => {
       const mirroredPos = mirrorPointAcrossPlane(selectedNode.pos, plane.normal, plane.point);
-
       let hasValidMirror = false;
 
-      // Check for valid mirrored nodes
+      // Find valid mirrored nodes
       for (let j = 0; j < pointsCache.length; j++) {
-        if (highlightedIndices.has(j)) continue; // Skip already highlighted nodes
+        if (highlightedIndices.has(j)) continue;
+
         const nodeB = pointsCache[j];
         const distance = distanceBetweenPoints(mirroredPos, nodeB.pos);
 
         if (distance < validMirrorTolerance) {
-          // Highlight mirrored node (valid)
-          alphasAttribute.setX(j, 0.8);
-          sizesAttribute.setX(j, selectedSize);
-          colorsAttribute.setXYZ(j, mirroredColor.r, mirroredColor.g, mirroredColor.b); // Green color
-
           highlightedIndices.add(j);
           mirroredNodeIndices.add(j);
-          mirroredNodePlaneMap.set(j, planeIdx); // Store the plane index used
-          usedMirrorPlanes.add(planeIdx); // Store the plane index used
+          mirroredNodePlaneMap.set(j, planeIdx);
+          usedMirrorPlanes.add(planeIdx);
           hasValidMirror = true;
-          break; // No need to keep checking for this node
+          break;
         }
       }
 
-      // If no valid mirror found, check for potential matching node based on mirrored position
+      // Check for potential error nodes if no valid mirror found
       if (!hasValidMirror) {
-        const mirroredPos = mirrorPointAcrossPlane(selectedNode.pos, plane.normal, plane.point);
-
         let closestNodeIdx = null;
         let closestDistance = Infinity;
 
         // Find the closest node to the mirrored position
         for (let k = 0; k < pointsCache.length; k++) {
-          if (highlightedIndices.has(k)) continue; // Skip already highlighted nodes
+          if (highlightedIndices.has(k)) continue;
 
           const node = pointsCache[k];
           const distanceToMirroredPos = distanceBetweenPoints(node.pos, mirroredPos);
@@ -143,23 +63,148 @@ function highlightMirroredAndErrorNodes() {
           }
         }
 
-        // If a node is found near the mirrored position, highlight it as an error
+        // Store error node if found
         if (closestNodeIdx !== null) {
-          // Highlight the node as an error (red)
-          alphasAttribute.setX(closestNodeIdx, 1.0);
-          sizesAttribute.setX(closestNodeIdx, selectedSize);
-          colorsAttribute.setXYZ(closestNodeIdx, errorColor.r, errorColor.g, errorColor.b); // Red color
-
           nodesNearMirrorPlanes.add(closestNodeIdx);
         }
       }
     });
   });
 
-  // Update geometry attributes to reflect changes
+  // Update mirror plane visualization
+  visualizeMirrorPlanes();
+}
+
+/**
+ * Unified function to visualize nodes with consistent appearance based on selection,
+ * mouse position, and mirror planes.
+ *
+ * @param {Event|null} mouseEvent - Optional mouse event for proximity-based highlighting
+ */
+function visualizeNodes(mouseEvent) {
+  if (!pointsCache || !pointsObject || !pointsObject.geometry) return;
+
+  // Access geometry attributes
+  const alphasAttribute = pointsObject.geometry.getAttribute('alpha');
+  const colorsAttribute = pointsObject.geometry.getAttribute('color');
+  const sizesAttribute = pointsObject.geometry.getAttribute('size');
+
+  // Reset all nodes to default appearance
+  for (let i = 0; i < pointsCache.length; i++) {
+    alphasAttribute.setX(i, 0.3);
+    sizesAttribute.setX(i, normalSize);
+    colorsAttribute.setXYZ(i, jbeamColor.r, jbeamColor.g, jbeamColor.b);
+  }
+
+  // Apply appearance for selected nodes
+  if (selectedNodeIndices && selectedNodeIndices.length > 0) {
+    selectedNodeIndices.forEach((idx) => {
+      alphasAttribute.setX(idx, 1);
+      sizesAttribute.setX(idx, selectedSize);
+      colorsAttribute.setXYZ(idx, selectedColor.r, selectedColor.g, selectedColor.b);
+    });
+  }
+
+  // Apply appearance for mirrored nodes
+  mirroredNodeIndices.forEach((idx) => {
+    alphasAttribute.setX(idx, 0.8);
+    sizesAttribute.setX(idx, selectedSize);
+    colorsAttribute.setXYZ(idx, mirroredColor.r, mirroredColor.g, mirroredColor.b);
+  });
+
+  // Apply appearance for error nodes
+  nodesNearMirrorPlanes.forEach((idx) => {
+    alphasAttribute.setX(idx, 1.0);
+    sizesAttribute.setX(idx, selectedSize);
+    colorsAttribute.setXYZ(idx, errorColor.r, errorColor.g, errorColor.b);
+  });
+
+  // Apply proximity-based highlighting for mouse interaction
+  if (mouseEvent) {
+    // Update mouse position and raycaster
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((mouseEvent.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((mouseEvent.clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+
+    // Apply proximity-based highlighting
+    const alphaDecay = 0.01;
+    const maxDistance = 1;
+
+    pointsCache.forEach((point, i) => {
+      // Skip nodes that already have special highlighting
+      if ((selectedNodeIndices && selectedNodeIndices.includes(i)) ||
+          mirroredNodeIndices.has(i) ||
+          nodesNearMirrorPlanes.has(i)) return;
+
+      const distance = raycaster.ray.distanceToPoint(point.pos3d);
+      const normalizedDistance = THREE.MathUtils.clamp(distance / maxDistance, 0, 1);
+
+      // Set alpha based on distance from mouse
+      alphasAttribute.setX(i, 1.0 - (normalizedDistance * alphaDecay));
+
+      // Adjust color based on distance
+      const color = getColorFromDistance(distance, maxDistance, jbeamMinColor, jbeamColor);
+      colorsAttribute.setXYZ(i, color.r, color.g, color.b);
+    });
+  }
+
+  // Update all attributes
   alphasAttribute.needsUpdate = true;
   colorsAttribute.needsUpdate = true;
   sizesAttribute.needsUpdate = true;
+}
+
+/**
+ * Updates the visualization and UI elements based on node selection.
+ * Call this whenever selection changes.
+ */
+export function onNodeSelectionUpdated() {
+  if (!selectedNodeIndices || !pointsObject) return;
+
+  // Calculate mirror nodes when selection changes
+  updateMirroredNodesCalculation();
+
+  // Update UI elements
+  ctx.vscode.postMessage({
+    command: 'selectNodes',
+    nodes: selectedNodeIndices.map((nodeId) => pointsCache[nodeId].name),
+    uri: uri,
+  });
+
+  // Update view center if enabled
+  if (uiSettings.centerViewOnSelectedJBeam && selectedNodeIndices.length > 0) {
+    let sumX = 0, sumY = 0, sumZ = 0;
+    selectedNodeIndices.forEach((idx) => {
+      const node = pointsCache[idx];
+      sumX += node.pos[0];
+      sumY += node.pos[1];
+      sumZ += node.pos[2];
+    });
+    nodesCenterPos = new THREE.Vector3(
+      sumX / selectedNodeIndices.length,
+      sumY / selectedNodeIndices.length,
+      sumZ / selectedNodeIndices.length
+    );
+    moveCameraCenter(nodesCenterPos);
+  }
+
+  // Update supporting visualizations
+  ctx.visualizersGroundplane.redrawGroundPlane(
+    nodesMin,
+    nodesMax,
+    selectedNodeIndices,
+    pointsCache,
+    jbeamData,
+    currentPartName,
+    nodeCounter
+  );
+
+  updateNodeLabels();
+  updateNodeStatusbar();
+
+  // Draw the nodes with updated information
+  visualizeNodes(null);
 }
 
 /**
@@ -194,27 +239,6 @@ function onCursorChangeEditor(message) {
 }
 
 /**
- * Resets node focus by reverting nodes to their default appearance.
- */
-function resetNodeFocus() {
-  if (!pointsObject || !pointsObject.geometry) return;
-  const alphasAttribute = pointsObject.geometry.getAttribute('alpha');
-  const colorsAttribute = pointsObject.geometry.getAttribute('color');
-  const sizesAttribute = pointsObject.geometry.getAttribute('size');
-
-  for (let i = 0; i < pointsCache.length; i++) {
-    let node = pointsCache[i]
-    if(selectedNodeIndices && selectedNodeIndices.includes(i)) continue
-    alphasAttribute.setX(i, 0.3)
-    sizesAttribute.setX(i, normalSize)
-    colorsAttribute.setXYZ(i, jbeamColor.r, jbeamColor.g, jbeamColor.b);
-  }
-  alphasAttribute.needsUpdate = true;
-  colorsAttribute.needsUpdate = true;
-  sizesAttribute.needsUpdate = true;
-}
-
-/**
  * Handles mouse move events for interactive node highlighting.
  * @param {Event} event - The mouse move event.
  */
@@ -229,45 +253,8 @@ function onMouseMove(event) {
   // Early exit if pointsCache is not available
   if (!pointsCache || !pointsObject || !pointsObject.geometry) return;
 
-  // Update mouse position based on event
-  const rect = renderer.domElement.getBoundingClientRect();
-  mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-  mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-  // Update raycaster with new mouse position
-  raycaster.setFromCamera(mouse, camera);
-
-  // Define interaction parameters
-  const alphaDecay = 0.01;
-  const maxDistance = 1;
-  // const minSize = 0.05; // Minimum size for nodes
-  // const maxSize = 0.2;  // Maximum size for nodes
-
-  // Get attributes for batch updates
-  const alphasAttribute = pointsObject.geometry.getAttribute('alpha');
-  const colorsAttribute = pointsObject.geometry.getAttribute('color');
-  const sizesAttribute = pointsObject.geometry.getAttribute('size');
-
-  pointsCache.forEach((point, i) => {
-    if (selectedNodeIndices && selectedNodeIndices.includes(i)) return;
-
-    const distance = raycaster.ray.distanceToPoint(point.pos3d);
-    const normalizedDistance = THREE.MathUtils.clamp(distance / maxDistance, 0, 1);
-
-    // Calculate alpha and size based on distance
-    alphasAttribute.setX(i, 1.0 - (normalizedDistance * alphaDecay));
-    // let size = (1.0 - (normalizedDistance * 0.7)) * 0.05;
-    // sizesAttribute.setX(i, Math.max(minSize, Math.min(size, maxSize))); // Clamp size between minSize and maxSize
-
-    // Adjust color based on distance
-    const color = getColorFromDistance(distance, maxDistance, jbeamMinColor, jbeamColor);
-    colorsAttribute.setXYZ(i, color.r, color.g, color.b);
-  });
-
-  // Flag attributes as needing an update
-  alphasAttribute.needsUpdate = true;
-  colorsAttribute.needsUpdate = true;
-  // sizesAttribute.needsUpdate = true;
+  // Only update visualization based on mouse position, don't recalculate mirrored nodes
+  visualizeNodes(event);
 }
 
 /**
@@ -307,7 +294,7 @@ function onMouseOut(event) {
     });
   }
   wasWindowOutOfFocus = true;
-  resetNodeFocus();
+  visualizeNodes(null);
 }
 
 function setGizmoMode(mode) {
@@ -393,4 +380,3 @@ export function dispose() {
 export function onConfigChanged() {
   // console.log('node.onConfigChanged', ctx.config)
 }
-
