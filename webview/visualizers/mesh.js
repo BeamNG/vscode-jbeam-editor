@@ -303,9 +303,14 @@ function loadMeshShallow(uri, namespace) {
         if (node instanceof THREE.Object3D) {
           if(node.name) {
             //console.log("NODE?", node.name, node)
-            if(!meshFolderCache[namespace]) meshFolderCache[namespace] = {}
-            meshFolderCache[namespace][node.name.trim()] = uri
-            //console.log(">> ASSIGN", namespace, node.name.trim(), uri)
+            if (namespace === '__proto__' || namespace === 'constructor' || namespace === 'prototype') {
+              console.warn('Invalid namespace:', namespace)
+            }
+            else {
+              if(!meshFolderCache[namespace]) meshFolderCache[namespace] = {}
+              meshFolderCache[namespace][node.name.trim()] = uri
+              //console.log(">> ASSIGN", namespace, node.name.trim(), uri)
+            }
           }
         }
       });
