@@ -159,8 +159,12 @@ If all worked, it should show up like this now:
 
 ## Release Notes
 
-### 0.4
+### 0.4.0
 * Features:
+  * Gizmo node translation support - now you can translate nodes with a gizmo
+
+    ![](assets/nodeTranslation.gif)
+
   * Flexmesh translation / rotation support - now fits the visualization in the simulation
 
     ![](assets/flexmeshRotation.gif)
@@ -176,6 +180,12 @@ If all worked, it should show up like this now:
 
     ![](assets/symmetryDetection.gif)
 
+  * JBeam legend pane - shows a legend of the JBeam types and colors
+
+    ![](assets/jbeamLegend.png)
+
+  * Hydro and torsion hydro visualization
+  * Font changed to Cascadia Code for better readability
 
 ### 0.3.92
 * Bugfixes:
