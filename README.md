@@ -165,7 +165,7 @@ If all worked, it should show up like this now:
 
 ### 0.4.1
 * Features:
-  * Added command and status bar button to toggle connection with BeamNG
+  * Added status bar button to toggle connecting with BeamNG
 
 ### 0.4.0
 * Features:
