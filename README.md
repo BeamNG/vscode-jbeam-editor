@@ -163,6 +163,10 @@ If all worked, it should show up like this now:
 
 ## Release Notes
 
+### 0.4.1
+* Features:
+  * Added command and status bar button to toggle connection with BeamNG
+
 ### 0.4.0
 * Features:
   * Node translation gizmo support - now you can translate nodes with a gizmo
