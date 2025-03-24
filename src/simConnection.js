@@ -2,7 +2,7 @@
   Module: `simConnection.js`
 
   Description:
-  This module provides functionality for connecting to the BeamNG.drive game via TCP and interacting with the simulation.
+  This module provides functionality for connecting to BeamNG via TCP and interacting with the simulation.
 
   Exports:
   - `selectNodes(nodes)`: Selects nodes in the simulation.
@@ -10,6 +10,7 @@
   - `sendPing()`: Sends a ping request to the simulation.
   - `activate(context)`: Initializes and activates the connection to the simulation.
   - `deactivate()`: Deactivates the connection to the simulation.
+  - `toggleConnection()`: Toggles the connection to the simulation.
 
   Usage Example:
   ```javascript
@@ -31,7 +32,7 @@
   simConnection.deactivate();
   ```
 
-Notes: This module allows interaction with BeamNG.drive simulation from within Visual Studio Code.
+Notes: This module allows interaction with BeamNG from within Visual Studio Code.
 */
 
 const vscode = require('vscode')
@@ -52,6 +53,8 @@ let siminfo
 let simPlayerVehicleInfo
 let extensionContext
 let statusBarItem
+let connectionEnabled = false
+let reconnectTimer = null
 
 function sendData(data) {
   if (!client) return;
@@ -76,9 +79,6 @@ function sendData(data) {
   client.write(buffer);
 }
 
-
-
-
 function onData(msg) {
   const syncing = extensionContext?.globalState.get('syncing', false) ?? false
 
@@ -87,8 +87,8 @@ function onData(msg) {
     console.log('Got simulation base info: ', siminfo, syncing)
 
     if(statusBarItem) {
-      statusBarItem.text = `Connected to BeamNG ${siminfo?.versiond ?? ''}`
-      statusBarItem.tooltip = JSON.stringify(siminfo, null, 2)
+      statusBarItem.text = `BeamNG Connection: Connected ${siminfo?.versiond ?? ''}`
+      statusBarItem.tooltip = 'Sim Info:\n' + JSON.stringify(siminfo, null, 2) + '\nClick to disable connection to BeamNG'
     }
 
     if(syncing) {
@@ -154,7 +154,6 @@ function sendPing() {
   sendData({cmd:'ping'})
 }
 
-
 function selectNodes(nodes) {
   sendData({cmd:'selectNodes', nodes: nodes})
 }
@@ -214,18 +213,68 @@ function tryToWakeUpBeamNG() {
   setTimeout(connectToServer, 500)
 }
 
-function attemptReconnect() {
+function startConnection() {
+  if (connectionEnabled) return;
+  connectionEnabled = true;
+  extensionContext.globalState.update('connectionEnabled', connectionEnabled);
+
+  if (statusBarItem) {
+    statusBarItem.text = 'BeamNG Connection: Connecting...';
+    statusBarItem.tooltip = 'Click to disable connection to BeamNG';
+  }
+
+  clearTimeout(reconnectTimer);
+  tryToWakeUpBeamNG();
+}
+
+function stopConnection() {
+  if (!connectionEnabled) return;
+  connectionEnabled = false;
+  extensionContext.globalState.update('connectionEnabled', connectionEnabled);
+
+  clearTimeout(reconnectTimer);
+
   if (client) {
     client.destroy();
     client = null;
-    siminfo = null
-    simPlayerVehicleInfo = null
-    if(statusBarItem) {
-      statusBarItem.text = 'Connecting to BeamNG ...';
+  }
+
+  siminfo = null;
+  simPlayerVehicleInfo = null;
+
+  if (statusBarItem) {
+    statusBarItem.text = 'BeamNG Connection: Disabled';
+    statusBarItem.tooltip = 'Click to enable connection to BeamNG';
+  }
+}
+
+function toggleConnection() {
+  let enableConnection = !connectionEnabled;
+
+  if (enableConnection) {
+    startConnection();
+  } else {
+    stopConnection();
+  }
+
+  return connectionEnabled;
+}
+
+function attemptReconnect() {
+  if (!connectionEnabled) return;
+
+  if (client) {
+    client.destroy();
+    client = null;
+    siminfo = null;
+    simPlayerVehicleInfo = null;
+    if (statusBarItem) {
+      statusBarItem.text = 'BeamNG Connection: Connecting...';
     }
   }
+
   //console.log('attemptReconnect in ', reconnectInterval)
-  setTimeout(tryToWakeUpBeamNG, reconnectInterval);
+  reconnectTimer = setTimeout(tryToWakeUpBeamNG, reconnectInterval);
   // Increase the reconnect interval for the next attempt
   reconnectInterval = Math.min(reconnectInterval * 2, maxReconnectInterval);
 }
@@ -240,24 +289,40 @@ function sync() {
   sendData({cmd:'getPlayerVehicleInfo'})
 }
 
-
 function activate(context) {
-  statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100)
-  if(statusBarItem) {
-    statusBarItem.text = 'Connecting to BeamNG ...'
-    statusBarItem.tooltip = ''
-    statusBarItem.show()
+  extensionContext = context;
+
+  // Load saved connection state (default to true if not set)
+  let enableConnection = context.globalState.get('connectionEnabled', true);
+
+  statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+  if (statusBarItem) {
+    // Make the status bar item clickable to toggle connection
+    statusBarItem.command = 'jbeam-editor.toggleConnectionWithSim';
+    statusBarItem.show();
+
+    if (!enableConnection) {
+      statusBarItem.text = 'BeamNG Connection: Disabled';
+      statusBarItem.tooltip = 'Click to enable connection to BeamNG';
+    }
   }
 
-  extensionContext = context
-  //console.log('simConnection activated ...')
-  tryToWakeUpBeamNG()
+  if (enableConnection) {
+    startConnection();
+  }
 }
 
 function deactivate() {
   //console.log('simConnection deactivated ...')
-  if(statusBarItem) {
-    statusBarItem.dispose()
+  clearTimeout(reconnectTimer);
+
+  if (client) {
+    client.destroy();
+    client = null;
+  }
+
+  if (statusBarItem) {
+    statusBarItem.dispose();
   }
 }
 
@@ -266,5 +331,6 @@ module.exports = {
   sync,
   sendPing,
   activate,
-  deactivate
+  deactivate,
+  toggleConnection
 }

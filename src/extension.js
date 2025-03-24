@@ -34,6 +34,10 @@ const partconfigValidationCompletion = require('./partconfig/validationCompletio
 // so apparently, on changing the workspace kills the extension
 
 function activate(context) {
+  context.subscriptions.push(vscode.commands.registerCommand('jbeam-editor.toggleConnectionWithSim', function () {
+    simConnection.toggleConnection();
+  }))
+
   context.subscriptions.push(vscode.commands.registerCommand('jbeam-editor.syncWithSim', function () {
     simConnection.sync()
   }))
