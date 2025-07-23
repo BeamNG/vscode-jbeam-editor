@@ -87,7 +87,7 @@ function onData(msg) {
     console.log('Got simulation base info: ', siminfo, syncing)
 
     if(statusBarItem) {
-      statusBarItem.text = `BeamNG Connection: Connected ${siminfo?.versiond ?? ''}`
+      statusBarItem.text = `BeamNG: Connected ${siminfo?.versiond ?? ''}`
       statusBarItem.tooltip = 'Sim Info:\n' + JSON.stringify(siminfo, null, 2) + '\nClick to disable connection to BeamNG'
     }
 
@@ -219,7 +219,7 @@ function startConnection() {
   extensionContext.globalState.update('connectionEnabled', connectionEnabled);
 
   if (statusBarItem) {
-    statusBarItem.text = 'BeamNG Connection: Connecting...';
+    statusBarItem.text = 'BeamNG: Connecting...';
     statusBarItem.tooltip = 'Click to disable connection to BeamNG';
   }
 
@@ -243,7 +243,7 @@ function stopConnection() {
   simPlayerVehicleInfo = null;
 
   if (statusBarItem) {
-    statusBarItem.text = 'BeamNG Connection: Disabled';
+    statusBarItem.text = 'BeamNG: Disconnected';
     statusBarItem.tooltip = 'Click to enable connection to BeamNG';
   }
 }
@@ -269,7 +269,7 @@ function attemptReconnect() {
     siminfo = null;
     simPlayerVehicleInfo = null;
     if (statusBarItem) {
-      statusBarItem.text = 'BeamNG Connection: Connecting...';
+      statusBarItem.text = 'BeamNG: Connecting...';
     }
   }
 
@@ -302,7 +302,7 @@ function activate(context) {
     statusBarItem.show();
 
     if (!enableConnection) {
-      statusBarItem.text = 'BeamNG Connection: Disabled';
+      statusBarItem.text = 'BeamNG: Disconnected';
       statusBarItem.tooltip = 'Click to enable connection to BeamNG';
     }
   }
