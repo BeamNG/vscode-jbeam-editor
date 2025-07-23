@@ -497,7 +497,6 @@ function updateNodeViz(newNodePositionsOnly) {
   const nodesMaterial = new THREE.ShaderMaterial({
     uniforms: {
       scale: { value: window.innerHeight / 2 }, // Assuming perspective camera and square points
-      isOrthographic: { value: camera.isOrthographicCamera }, // Add this uniform
     },
     vertexShader: `
       attribute float alpha;

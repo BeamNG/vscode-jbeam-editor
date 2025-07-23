@@ -466,12 +466,13 @@ class Tooltip {
 
           float scale;
           if (isOrthographic) {
+            // For orthographic camera, use a fixed scale based on the orthographic size
             scale = 0.4 / (sqrt(projectionMatrix[0].x * projectionMatrix[1].y));
           }
           else {
-            //float distance = length(billBoardMatrix[3].xyz - cameraPosition);
-            //scale = distance * 0.15;
-            scale = 0.75;
+            // For perspective camera, calculate scale based on distance to camera
+            float distance = length(modelViewMatrix[3].xyz);
+            scale = distance * 0.35;
           }
           vec4 scaledPosition = vec4(position * scale, 1.0);
 
