@@ -163,6 +163,11 @@ If all worked, it should show up like this now:
 
 ## Release Notes
 
+### 0.4.2
+* Features:
+  * Tweaked node visualization tooltip size
+  * Tweaked BeamNG connection status bar message
+
 ### 0.4.1
 * Features:
   * Added status bar button to toggle connecting with BeamNG
