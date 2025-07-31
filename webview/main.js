@@ -241,6 +241,15 @@ function onReceiveMessage(event) {
       console.log("Config changed: ", ctx.config)
       onConfigChanged()
       break
+    case 'jbeamData':
+      lastNodeDataMessage = message
+      jbeamData = message.data;
+      uri = message.uri;
+      currentPartName = message.currentPartName;
+      currentSectionName = message.currentSectionName;
+      break
   }
+
+  ctx.visualizersMain.onReceiveMessage(event)
 }
 window.addEventListener('message', onReceiveMessage);

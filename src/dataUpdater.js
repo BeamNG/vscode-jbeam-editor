@@ -72,8 +72,8 @@ async function updateJbeamNodeData(message, updateDataCallback) {
       }
 
       replaceValue(dataBundle.metaData[startIdx + 2], node.pos[0])
-      replaceValue(dataBundle.metaData[startIdx + 3], -node.pos[2])
-      replaceValue(dataBundle.metaData[startIdx + 4], node.pos[1])
+      replaceValue(dataBundle.metaData[startIdx + 3], node.pos[1])
+      replaceValue(dataBundle.metaData[startIdx + 4], node.pos[2])
     }
   });
 

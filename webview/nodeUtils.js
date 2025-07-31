@@ -246,7 +246,7 @@ function updateNodeLabels() {
       if (selected) size = 1.75;
       else if (mirrored) size = 1.25; // Slightly different size for mirrored nodes
       else if (error) size = 1.5; // Different size for error nodes
-      tooltips.push({ pos3d: node.pos3d, name: text, size: size });
+      tooltips.push({ rpos3d: node.rpos3d, name: text, size: size });
     }
   }
   // if(tooltips.length === 0) return
@@ -355,13 +355,12 @@ function setupGizmoForSelectedNodes() {
     if (selectedNodeIndices.length === 1) {
       // Single node selected, allow translation
       const targetNode = pointsCache[selectedNodeIndices[0]];
-      const nodePosition = new THREE.Vector3(targetNode.pos[0], targetNode.pos[1], targetNode.pos[2]);
 
       if (!dummyTranformObj) {
         dummyTranformObj = new THREE.Object3D();
         scene.add(dummyTranformObj);
       }
-      dummyTranformObj.position.copy(nodePosition);
+      dummyTranformObj.position.copy(targetNode.rpos3d);
       transformControl.attach(dummyTranformObj);
 
       // Enable translation mode for single node
@@ -371,9 +370,9 @@ function setupGizmoForSelectedNodes() {
       let sumX = 0, sumY = 0, sumZ = 0;
       selectedNodeIndices.forEach((idx) => {
         const node = pointsCache[idx];
-        sumX += node.pos[0];
-        sumY += node.pos[1];
-        sumZ += node.pos[2];
+        sumX += node.rpos3d.x;
+        sumY += node.rpos3d.y;
+        sumZ += node.rpos3d.z;
       });
 
       const groupCenter = new THREE.Vector3(
@@ -432,26 +431,26 @@ function updateNodeViz(newNodePositionsOnly) {
         let node = part.nodes[nodeId];
         // node.pos contains [x, y, z]
         if (node.hasOwnProperty('pos')) {
-          const x = node.pos[0];
+          // [node.posX, node.posZ, -node.posY]
+
+          node.pos3d = new THREE.Vector3(node.pos[0], node.pos[1], node.pos[2])
+          node.rpos3d = new THREE.Vector3(node.pos[0], node.pos[2], -node.pos[1])
+
+          const x = node.pos[0], y = node.pos[2], z = -node.pos[1];
           vertexPositions.push(x);
-          sum.x += x;
+          vertexPositions.push(y);
+          vertexPositions.push(z);
+
+          sum.x += x, sum.y += y, sum.z += z;
+
           if (x < nodesMin.x) nodesMin.x = x;
           if (x > nodesMax.x) nodesMax.x = x;
-
-          const y = node.pos[1];
-          vertexPositions.push(y);
-          sum.y += y;
           if (y < nodesMin.y) nodesMin.y = y;
           if (y > nodesMax.y) nodesMax.y = y;
-
-          const z = node.pos[2];
-          vertexPositions.push(z);
-          sum.z += z;
           if (z < nodesMin.z) nodesMin.z = z;
           if (z > nodesMax.z) nodesMax.z = z;
 
           nodeCounter++;
-          node.pos3d = new THREE.Vector3(x, y, z);
           pointsCache.push(node);
         }
       }
@@ -587,7 +586,7 @@ function onMouseDoubleClick(event) {
 
   // Compare the nodes in screen space as the picking range is limited
   for (let i = 0; i < pointsCache.length; i++) {
-    const point3D = pointsCache[i].pos3d.clone();
+    const point3D = pointsCache[i].rpos3d.clone();
     point3D.project(camera); // Project 3D point to NDC space
 
     // Convert NDC to pixel coordinates
@@ -667,27 +666,29 @@ function onTransformChanged() {
   // Apply the delta matrix to selected nodes
   selectedNodeIndices.forEach((idx) => {
     const node = pointsCache[idx];
-    const originalPos = new THREE.Vector3(node.pos[0], node.pos[1], node.pos[2]);
+    const originalPos = node.rpos3d.clone();
 
     // Apply delta transformation to the node's position
     const updatedPos = originalPos.applyMatrix4(deltaMatrix);
 
     // Update the selected node's position
-    node.pos = [updatedPos.x, updatedPos.y, updatedPos.z];
-    node.pos3d.set(updatedPos.x, updatedPos.y, updatedPos.z);
+    node.pos = [updatedPos.x, -updatedPos.z, updatedPos.y];
+    node.pos3d.set(updatedPos.x, -updatedPos.z, updatedPos.y);
+    node.rpos3d.set(updatedPos.x, updatedPos.y, updatedPos.z);
   });
 
   // Apply the delta matrix to mirrored nodes
   mirroredNodeIndices.forEach((mirroredIdx) => {
     const mirroredNode = pointsCache[mirroredIdx];
-    const mirroredOriginalPos = new THREE.Vector3(mirroredNode.pos[0], mirroredNode.pos[1], mirroredNode.pos[2]);
+    const mirroredOriginalPos = mirroredNode.rpos3d.clone();
 
     // Apply delta transformation to the mirrored node's position
     const mirroredUpdatedPos = mirroredOriginalPos.applyMatrix4(deltaMatrix);
 
     // Update the mirrored node's position
-    mirroredNode.pos = [mirroredUpdatedPos.x, mirroredUpdatedPos.y, mirroredUpdatedPos.z];
-    mirroredNode.pos3d.set(mirroredUpdatedPos.x, mirroredUpdatedPos.y, mirroredUpdatedPos.z);
+    mirroredNode.pos = [mirroredUpdatedPos.x, -mirroredUpdatedPos.z, mirroredUpdatedPos.y];
+    mirroredNode.pos3d.set(mirroredUpdatedPos.x, -mirroredUpdatedPos.z, mirroredUpdatedPos.y);
+    mirroredNode.rpos3d.set(mirroredUpdatedPos.x, mirroredUpdatedPos.y, mirroredUpdatedPos.z);
   });
 
   // Reset the matrix after applying the delta

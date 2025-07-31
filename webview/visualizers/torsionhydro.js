@@ -1,7 +1,5 @@
 const jbeamColor = jbeamColors.torsionhydros['ALL']
 
-let jbeamData = null
-let currentPartName = null
 let torhydroCache // contains the high level object info
 let selectedTorhydroIndices = null // arry of selected torsion bar or null for no selection
 
@@ -42,8 +40,8 @@ function updateTorhydroViz() {
             torhydro.node2 = node2
             torhydro.node3 = node3
             torhydro.node4 = node4
-            torhydro.nodePos1 = new THREE.Vector3(node1.pos[0], node1.pos[1], node1.pos[2])
-            torhydro.nodePos2 = new THREE.Vector3(node2.pos[0], node2.pos[1], node2.pos[2])
+            torhydro.nodeRPos1 = new THREE.Vector3(node1.pos[0], node1.pos[1], node1.pos[2])
+            torhydro.nodeRPos2 = new THREE.Vector3(node2.pos[0], node2.pos[1], node2.pos[2])
             torhydro.nodePos3 = new THREE.Vector3(node3.pos[0], node3.pos[1], node3.pos[2])
             torhydro.nodePos4 = new THREE.Vector3(node4.pos[0], node4.pos[1], node4.pos[2])
             torhydroCache.push(torhydro)
@@ -160,7 +158,7 @@ function onMouseMove(event) {
 
   for (let i = 0; i < torhydroCache.length; i++) {
     if(selectedTorhydroIndices && selectedTorhydroIndices.includes(i)) continue
-    const distance = Math.min(raycaster.ray.distanceToPoint(torhydroCache[i].nodePos1), raycaster.ray.distanceToPoint(torhydroCache[i].nodePos4))
+    const distance = Math.min(raycaster.ray.distanceToPoint(torhydroCache[i].nodeRPos1), raycaster.ray.distanceToPoint(torhydroCache[i].nodePos4))
 
     // Normalize the distance based on a predefined maximum distance
     let normalizedDistance = distance / maxDistance
@@ -285,14 +283,12 @@ function onCursorChangeEditor(message) {
   focusTorhydros(torhydrosFound, false)
 }
 
-function onReceiveMessage(event) {
+export function onReceiveMessage(event) {
   //console.log(">>> onReceiveMessage >>>", event)
   const message = event.data;
   switch (message.command) {
     case 'jbeamData':
-      jbeamData = message.data
       selectedTorhydroIndices = null
-      currentPartName = null
       //console.log("GOT DATA: ", jbeamData)
       updateTorhydroViz()
       break;

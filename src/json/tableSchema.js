@@ -267,7 +267,7 @@ function processPart(part, diagnostics) {
       let node = part.nodes[nodeId];
       if(node.hasOwnProperty('posX')) {
         try {
-          node.pos = [node.posX, node.posZ, -node.posY] // FLIP!
+          node.pos = [node.posX, node.posY, node.posZ]
         } catch (e) {
           diagnostics.push(['error', e.message, node.__meta.range])
         }

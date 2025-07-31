@@ -18,6 +18,16 @@ export function dispose() {
   ctx.visualizersMesh.dispose()
 }
 
+export function onReceiveMessage(event) {
+  ctx.visualizersNode.onReceiveMessage(event)
+  ctx.visualizersBeam.onReceiveMessage(event)
+  ctx.visualizersTriangle.onReceiveMessage(event)
+  ctx.visualizersTorsionbar.onReceiveMessage(event)
+  ctx.visualizersTorsionhydro.onReceiveMessage(event)
+  ctx.visualizersHydro.onReceiveMessage(event)
+  ctx.visualizersMesh.onReceiveMessage(event)
+}
+
 export function onConfigChanged() {
   ctx.visualizersNode.onConfigChanged()
   ctx.visualizersBeam.onConfigChanged()

@@ -9,10 +9,8 @@ const beamTypesColors = {
   ['|BROKEN']: new THREE.Color(255/255, 0/255, 0/255),
 }
 
-let jbeamData = null
-let currentPartName = null
 let beamCache // contains the high level object info
-let selectedBeamIndices = null // arry of selected beam or null for no selection
+let selectedBeamIndices = null // array of selected beam or null for no selection
 let lastCusorPos = null
 
 // buffers for the 3d geometry
@@ -48,16 +46,16 @@ function updateBeamViz() {
           if (node1 && node2) {
             beam.node1 = node1
             beam.node2 = node2
-            beam.nodePos1 = new THREE.Vector3(node1.pos[0], node1.pos[1], node1.pos[2])
-            beam.nodePos2 = new THREE.Vector3(node2.pos[0], node2.pos[1], node2.pos[2])
+            beam.nodeRPos1 = node1.rpos3d
+            beam.nodeRPos2 = node2.rpos3d
             beamCache.push(beam)
             beamNodesCounter+=2
-            vertexPositions.push(node1.pos[0])
-            vertexPositions.push(node1.pos[1])
-            vertexPositions.push(node1.pos[2])
-            vertexPositions.push(node2.pos[0])
-            vertexPositions.push(node2.pos[1])
-            vertexPositions.push(node2.pos[2])
+            vertexPositions.push(node1.rpos3d.x)
+            vertexPositions.push(node1.rpos3d.y)
+            vertexPositions.push(node1.rpos3d.z)
+            vertexPositions.push(node2.rpos3d.x)
+            vertexPositions.push(node2.rpos3d.y)
+            vertexPositions.push(node2.rpos3d.z)
           } else {
             //console.log(`beam discarded: ${beam}`)
           }
@@ -145,7 +143,7 @@ function onMouseMove(event) {
   for (let i = 0; i < beamCache.length; i++) {
     const beam = beamCache[i]
     if(selectedBeamIndices && selectedBeamIndices.includes(i)) continue
-    const distance = Math.min(raycaster.ray.distanceToPoint(beamCache[i].nodePos1), raycaster.ray.distanceToPoint(beamCache[i].nodePos2))
+    const distance = Math.min(raycaster.ray.distanceToPoint(beamCache[i].nodeRPos1), raycaster.ray.distanceToPoint(beamCache[i].nodeRPos2))
 
     // Normalize the distance based on a predefined maximum distance
     let normalizedDistance = distance / maxDistance
@@ -230,14 +228,12 @@ function onCursorChangeEditor() {
   focusBeams(beamsFound, false)
 }
 
-function onReceiveMessage(event) {
+export function onReceiveMessage(event) {
   //console.log(">>> BEAMS: onReceiveMessage >>>", event)
   const message = event.data;
   switch (message.command) {
     case 'jbeamData':
-      jbeamData = message.data
       selectedBeamIndices = null
-      currentPartName = null
       //console.log("GOT DATA: ", jbeamData)
       updateBeamViz()
       onCursorChangeEditor()
@@ -254,12 +250,12 @@ function onReceiveMessage(event) {
 }
 
 export function init() {
-  window.addEventListener('message', onReceiveMessage);
+  //window.addEventListener('message', onReceiveMessage);
   window.addEventListener('mousemove', onMouseMove, false);
 }
 
 export function dispose() {
-  window.removeEventListener('message', onReceiveMessage);
+  //window.removeEventListener('message', onReceiveMessage);
   window.removeEventListener('mousemove', onMouseMove);
   if(linesObject) {
     if (linesObject.geometry) linesObject.geometry.dispose()

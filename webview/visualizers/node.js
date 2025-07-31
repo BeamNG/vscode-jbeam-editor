@@ -137,7 +137,7 @@ function visualizeNodes(mouseEvent) {
           mirroredNodeIndices.has(i) ||
           nodesNearMirrorPlanes.has(i)) return;
 
-      const distance = raycaster.ray.distanceToPoint(point.pos3d);
+      const distance = raycaster.ray.distanceToPoint(point.rpos3d);
       const normalizedDistance = THREE.MathUtils.clamp(distance / maxDistance, 0, 1);
 
       // Set alpha based on distance from mouse
@@ -261,23 +261,16 @@ function onMouseMove(event) {
  * Handles incoming messages from the editor or other sources.
  * @param {Event} event - The message event.
  */
-function onReceiveMessage(event) {
+export function onReceiveMessage(event) {
   if(_dataChangeDispatchedInternally) return;
   //console.log('onReceiveMessage: ', event)
   const message = event.data;
   switch (message.command) {
     case 'jbeamData':
-      lastNodeDataMessage = message
-      jbeamData = message.data;
-      uri = message.uri;
-      currentPartName = message.currentPartName;
-      currentSectionName = message.currentSectionName;
       updateNodeViz(message.updatedOnly);
       break;
     case 'cursorChanged':
       onCursorChangeEditor(message);
-
-
       break;
   }
 }

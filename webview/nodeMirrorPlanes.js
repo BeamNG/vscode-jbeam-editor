@@ -51,9 +51,9 @@ function computeCentroid(points) {
   const N = points.length;
 
   points.forEach((node) => {
-    centroid.x += node.pos[0];
-    centroid.y += node.pos[1];
-    centroid.z += node.pos[2];
+    centroid.x += node.rpos3d.x;
+    centroid.y += node.rpos3d.y;
+    centroid.z += node.rpos3d.z;
   });
 
   centroid.x /= N;
@@ -71,9 +71,9 @@ function computeCentroid(points) {
  */
 function centerPoints(points, centroid) {
   return points.map((node) => [
-    node.pos[0] - centroid.x,
-    node.pos[1] - centroid.y,
-    node.pos[2] - centroid.z,
+    node.rpos3d.x - centroid.x,
+    node.rpos3d.y - centroid.y,
+    node.rpos3d.z - centroid.z,
   ]);
 }
 

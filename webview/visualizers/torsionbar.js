@@ -1,7 +1,5 @@
 const jbeamColor = jbeamColors.torsionbars['ALL']
 
-let jbeamData = null
-let currentPartName = null
 let torbarCache // contains the high level object info
 let selectedTorbarIndices = null // arry of selected torsion bar or null for no selection
 
@@ -42,8 +40,8 @@ function updateTorbarViz() {
             torbar.node2 = node2
             torbar.node3 = node3
             torbar.node4 = node4
-            torbar.nodePos1 = new THREE.Vector3(node1.pos[0], node1.pos[1], node1.pos[2])
-            torbar.nodePos2 = new THREE.Vector3(node2.pos[0], node2.pos[1], node2.pos[2])
+            torbar.nodeRPos1 = new THREE.Vector3(node1.pos[0], node1.pos[1], node1.pos[2])
+            torbar.nodeRPos2 = new THREE.Vector3(node2.pos[0], node2.pos[1], node2.pos[2])
             torbar.nodePos3 = new THREE.Vector3(node3.pos[0], node3.pos[1], node3.pos[2])
             torbar.nodePos4 = new THREE.Vector3(node4.pos[0], node4.pos[1], node4.pos[2])
             torbarCache.push(torbar)
@@ -159,7 +157,7 @@ function onMouseMove(event) {
 
   for (let i = 0; i < torbarCache.length; i++) {
     if(selectedTorbarIndices && selectedTorbarIndices.includes(i)) continue
-    const distance = Math.min(raycaster.ray.distanceToPoint(torbarCache[i].nodePos1), raycaster.ray.distanceToPoint(torbarCache[i].nodePos4))
+    const distance = Math.min(raycaster.ray.distanceToPoint(torbarCache[i].nodeRPos1), raycaster.ray.distanceToPoint(torbarCache[i].nodePos4))
 
     // Normalize the distance based on a predefined maximum distance
     let normalizedDistance = distance / maxDistance
@@ -284,14 +282,12 @@ function onCursorChangeEditor(message) {
   focusTorbars(torbarsFound, false)
 }
 
-function onReceiveMessage(event) {
+export function onReceiveMessage(event) {
   //console.log(">>> onReceiveMessage >>>", event)
   const message = event.data;
   switch (message.command) {
     case 'jbeamData':
-      jbeamData = message.data
       selectedTorbarIndices = null
-      currentPartName = null
       //console.log("GOT DATA: ", jbeamData)
       updateTorbarViz()
       break;

@@ -1,7 +1,5 @@
 const jbeamColor = jbeamColors.hydros['ALL']
 
-let jbeamData = null
-let currentPartName = null
 let hydroCache // contains the high level object info
 let selectedHydroIndices = null // arry of selected hydro or null for no selection
 
@@ -32,8 +30,8 @@ function updateHydroViz() {
           if (node1 && node2) {
             hydro.node1 = node1
             hydro.node2 = node2
-            hydro.nodePos1 = new THREE.Vector3(node1.pos[0], node1.pos[1], node1.pos[2])
-            hydro.nodePos2 = new THREE.Vector3(node2.pos[0], node2.pos[1], node2.pos[2])
+            hydro.nodeRPos1 = new THREE.Vector3(node1.pos[0], node1.pos[1], node1.pos[2])
+            hydro.nodeRPos2 = new THREE.Vector3(node2.pos[0], node2.pos[1], node2.pos[2])
             hydroCache.push(hydro)
             hydroNodesCounter+=2
             vertexPositions.push(node1.pos[0])
@@ -127,7 +125,7 @@ function onMouseMove(event) {
 
   for (let i = 0; i < hydroCache.length; i++) {
     if(selectedHydroIndices && selectedHydroIndices.includes(i)) continue
-    const distance = Math.min(raycaster.ray.distanceToPoint(hydroCache[i].nodePos1), raycaster.ray.distanceToPoint(hydroCache[i].nodePos2))
+    const distance = Math.min(raycaster.ray.distanceToPoint(hydroCache[i].nodeRPos1), raycaster.ray.distanceToPoint(hydroCache[i].nodeRPos2))
 
     // Normalize the distance based on a predefined maximum distance
     let normalizedDistance = distance / maxDistance
@@ -222,14 +220,12 @@ function onCursorChangeEditor(message) {
   focusHydros(hydrosFound, false)
 }
 
-function onReceiveMessage(event) {
+export function onReceiveMessage(event) {
   //console.log(">>> onReceiveMessage >>>", event)
   const message = event.data;
   switch (message.command) {
     case 'jbeamData':
-      jbeamData = message.data
       selectedHydroIndices = null
-      currentPartName = null
       //console.log("GOT DATA: ", jbeamData)
       updateHydroViz()
       break;
@@ -240,7 +236,7 @@ function onReceiveMessage(event) {
 }
 
 export function init() {
-  window.addEventListener('message', onReceiveMessage);
+  //window.addEventListener('message', onReceiveMessage);
   window.addEventListener('mousemove', onMouseMove, false);
 }
 

@@ -518,7 +518,7 @@ class Tooltip {
     this.mesh.geometry = new THREE.PlaneGeometry(this.sizeX, this.sizeY);
     this.mesh.geometry.translate(this.sizeX * 0.5, this.sizeY * 0.5, 0)
 
-    this.mesh.position.copy(data.pos3d)
+    this.mesh.position.copy(data.rpos3d)
     this.mesh.visible = true;
   }
 

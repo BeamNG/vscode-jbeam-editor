@@ -1,9 +1,6 @@
 const jbeamColor = jbeamColors.triangles['ALL']
 
-let jbeamData = null
 let uri
-let currentPartName = null
-let currentSectionName = null
 let isInSection = false
 
 let vertexAlphas = []
@@ -231,13 +228,11 @@ function onCursorChangeEditor(message) {
   focusTris(trisFound)
 }
 
-function onReceiveMessage(event) {
+export function onReceiveMessage(event) {
   const message = event.data;
   switch (message.command) {
     case 'jbeamData':
-      jbeamData = message.data
       uri = message.uri
-      currentPartName = null
       selectedTriIndices = null
       updateTriViz()
       break;

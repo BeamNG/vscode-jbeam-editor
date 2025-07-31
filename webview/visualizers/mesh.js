@@ -1,6 +1,3 @@
-let jbeamData = null
-let currentPartName = null
-let currentSectionName = null
 let isInSection = false
 let uri = null
 let daeFindfilesDone = false
@@ -34,12 +31,10 @@ export function startLoadingMeshes() {
 }
 
 function onReceiveData(message) {
-  jbeamData = message.data
   uri = message.uri
   meshFolderCache = message.meshCache
   meshLoadingEnabled = message.meshLoadingEnabled
   selectedMeshIndices = null
-  currentPartName = null
   //console.log("meshVisuals.onReceiveData", message);
 
   // trigger loading dae
@@ -396,7 +391,7 @@ function onCursorChangeEditor(message) {
   updateMeshViz()
 }
 
-function onReceiveMessage(event) {
+export function onReceiveMessage(event) {
   //console.log(">>> meshVisuals.onReceiveMessage >>>", event)
   const message = event.data;
   switch (message.command) {
