@@ -182,12 +182,12 @@ function focusBeams(beamsArrToFocus, triggerEditor = true) {
       alphasAttribute.setX(i*2 + 1, 1)
       colorsAttribute.setXYZ(i*2 + 0, jbeamSelectedColor.r, jbeamSelectedColor.g, jbeamSelectedColor.b)
       colorsAttribute.setXYZ(i*2 + 1, jbeamSelectedColor.r, jbeamSelectedColor.g, jbeamSelectedColor.b)
-      sumX += beam.node1.pos[0]
-      sumY += beam.node1.pos[1]
-      sumZ += beam.node1.pos[2]
-      sumX += beam.node2.pos[0]
-      sumY += beam.node2.pos[1]
-      sumZ += beam.node2.pos[2]
+      sumX += beam.node1.rpos3d.x
+      sumY += beam.node1.rpos3d.y
+      sumZ += beam.node1.rpos3d.z
+      sumX += beam.node2.rpos3d.x
+      sumY += beam.node2.rpos3d.y
+      sumZ += beam.node2.rpos3d.z
       beamCounter += 2 // because of 2 nodes
       continue
     }

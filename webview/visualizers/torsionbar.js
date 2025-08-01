@@ -42,24 +42,24 @@ function updateTorbarViz() {
             torbar.node4 = node4
             torbarCache.push(torbar)
             torbarNodesCounter+=4
-            vertexPositions.push(node1.pos[0])
-            vertexPositions.push(node1.pos[1])
-            vertexPositions.push(node1.pos[2])
-            vertexPositions.push(node2.pos[0])
-            vertexPositions.push(node2.pos[1])
-            vertexPositions.push(node2.pos[2])
-            vertexPositions.push(node2.pos[0])
-            vertexPositions.push(node2.pos[1])
-            vertexPositions.push(node2.pos[2])
-            vertexPositions.push(node3.pos[0])
-            vertexPositions.push(node3.pos[1])
-            vertexPositions.push(node3.pos[2])
-            vertexPositions.push(node3.pos[0])
-            vertexPositions.push(node3.pos[1])
-            vertexPositions.push(node3.pos[2])
-            vertexPositions.push(node4.pos[0])
-            vertexPositions.push(node4.pos[1])
-            vertexPositions.push(node4.pos[2])
+            vertexPositions.push(node1.rpos3d.x)
+            vertexPositions.push(node1.rpos3d.y)
+            vertexPositions.push(node1.rpos3d.z)
+            vertexPositions.push(node2.rpos3d.x)
+            vertexPositions.push(node2.rpos3d.y)
+            vertexPositions.push(node2.rpos3d.z)
+            vertexPositions.push(node2.rpos3d.x)
+            vertexPositions.push(node2.rpos3d.y)
+            vertexPositions.push(node2.rpos3d.z)
+            vertexPositions.push(node3.rpos3d.x)
+            vertexPositions.push(node3.rpos3d.y)
+            vertexPositions.push(node3.rpos3d.z)
+            vertexPositions.push(node3.rpos3d.x)
+            vertexPositions.push(node3.rpos3d.y)
+            vertexPositions.push(node3.rpos3d.z)
+            vertexPositions.push(node4.rpos3d.x)
+            vertexPositions.push(node4.rpos3d.y)
+            vertexPositions.push(node4.rpos3d.z)
           } else {
             console.log(`torsion bar discarded: ${torbar}`)
           }
@@ -209,18 +209,18 @@ function focusTorbars(torbarsArrToFocus, triggerEditor = true) {
       colorsAttribute.setXYZ(i*6 + 3, jbeamSelectedColor.r, jbeamSelectedColor.g, jbeamSelectedColor.b)
       colorsAttribute.setXYZ(i*6 + 4, jbeamSelectedColor.r, jbeamSelectedColor.g, jbeamSelectedColor.b)
       colorsAttribute.setXYZ(i*6 + 5, jbeamSelectedColor.r, jbeamSelectedColor.g, jbeamSelectedColor.b)
-      sumX += torbar.node1.pos[0]
-      sumY += torbar.node1.pos[1]
-      sumZ += torbar.node1.pos[2]
-      sumX += torbar.node2.pos[0]
-      sumY += torbar.node2.pos[1]
-      sumZ += torbar.node2.pos[2]
-      sumX += torbar.node3.pos[0]
-      sumY += torbar.node3.pos[1]
-      sumZ += torbar.node3.pos[2]
-      sumX += torbar.node4.pos[0]
-      sumY += torbar.node4.pos[1]
-      sumZ += torbar.node4.pos[2]
+      sumX += torbar.node1.rpos3d.x
+      sumY += torbar.node1.rpos3d.y
+      sumZ += torbar.node1.rpos3d.z
+      sumX += torbar.node2.rpos3d.x
+      sumY += torbar.node2.rpos3d.y
+      sumZ += torbar.node2.rpos3d.z
+      sumX += torbar.node3.rpos3d.x
+      sumY += torbar.node3.rpos3d.y
+      sumZ += torbar.node3.rpos3d.z
+      sumX += torbar.node4.rpos3d.x
+      sumY += torbar.node4.rpos3d.y
+      sumZ += torbar.node4.rpos3d.z
       torbarCounter += 4 // because of 4 nodes
       continue
     }

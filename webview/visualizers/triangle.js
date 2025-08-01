@@ -30,9 +30,9 @@ function updateTriViz() {
           let node1 = part.nodes[triangle['id1:']];
           let node2 = part.nodes[triangle['id2:']];
           let node3 = part.nodes[triangle['id3:']];
-          triVertices.push(node1.pos[0], node1.pos[1], node1.pos[2]);
-          triVertices.push(node2.pos[0], node2.pos[1], node2.pos[2]);
-          triVertices.push(node3.pos[0], node3.pos[1], node3.pos[2]);
+          triVertices.push(node1.rpos3d.x, node1.rpos3d.y, node1.rpos3d.z);
+          triVertices.push(node2.rpos3d.x, node2.rpos3d.y, node2.rpos3d.z);
+          triVertices.push(node3.rpos3d.x, node3.rpos3d.y, node3.rpos3d.z);
           triIndices.push(triIndexCounter++, triIndexCounter++, triIndexCounter++);
 
           triangle.node1 = node1
@@ -162,15 +162,15 @@ function focusTris(trisArrToFocus) {
         colorsAttribute.setXYZ(i*3  , jbeamSelectedColor.r, jbeamSelectedColor.g, jbeamSelectedColor.b)
         colorsAttribute.setXYZ(i*3+1, jbeamSelectedColor.r, jbeamSelectedColor.g, jbeamSelectedColor.b)
         colorsAttribute.setXYZ(i*3+2, jbeamSelectedColor.r, jbeamSelectedColor.g, jbeamSelectedColor.b)
-        sumX += tri.node1.pos[0]
-        sumX += tri.node2.pos[0]
-        sumX += tri.node3.pos[0]
-        sumY += tri.node1.pos[1]
-        sumY += tri.node2.pos[1]
-        sumY += tri.node3.pos[1]
-        sumZ += tri.node1.pos[2]
-        sumZ += tri.node2.pos[2]
-        sumZ += tri.node3.pos[2]
+        sumX += tri.node1.rpos3d.x
+        sumX += tri.node2.rpos3d.x
+        sumX += tri.node3.rpos3d.x
+        sumY += tri.node1.rpos3d.y
+        sumY += tri.node2.rpos3d.y
+        sumY += tri.node3.rpos3d.y
+        sumZ += tri.node1.rpos3d.z
+        sumZ += tri.node2.rpos3d.z
+        sumZ += tri.node3.rpos3d.z
         tcount+=3
         continue
       }

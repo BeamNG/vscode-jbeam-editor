@@ -177,9 +177,9 @@ export function updateNodeSelection() {
     let sumX = 0, sumY = 0, sumZ = 0;
     selectedNodeIndices.forEach((idx) => {
       const node = pointsCache[idx];
-      sumX += node.pos[0];
-      sumY += node.pos[1];
-      sumZ += node.pos[2];
+      sumX += node.rpos3d.x;
+      sumY += node.rpos3d.y;
+      sumZ += node.rpos3d.z;
     });
     nodesCenterPos = new THREE.Vector3(
       sumX / selectedNodeIndices.length,

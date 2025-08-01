@@ -42,24 +42,24 @@ function updateTorhydroViz() {
             torhydro.node4 = node4
             torhydroCache.push(torhydro)
             torhydroNodesCounter+=4
-            vertexPositions.push(node1.pos[0])
-            vertexPositions.push(node1.pos[1])
-            vertexPositions.push(node1.pos[2])
-            vertexPositions.push(node2.pos[0])
-            vertexPositions.push(node2.pos[1])
-            vertexPositions.push(node2.pos[2])
-            vertexPositions.push(node2.pos[0])
-            vertexPositions.push(node2.pos[1])
-            vertexPositions.push(node2.pos[2])
-            vertexPositions.push(node3.pos[0])
-            vertexPositions.push(node3.pos[1])
-            vertexPositions.push(node3.pos[2])
-            vertexPositions.push(node3.pos[0])
-            vertexPositions.push(node3.pos[1])
-            vertexPositions.push(node3.pos[2])
-            vertexPositions.push(node4.pos[0])
-            vertexPositions.push(node4.pos[1])
-            vertexPositions.push(node4.pos[2])
+            vertexPositions.push(node1.rpos3d.x)
+            vertexPositions.push(node1.rpos3d.y)
+            vertexPositions.push(node1.rpos3d.z)
+            vertexPositions.push(node2.rpos3d.x)
+            vertexPositions.push(node2.rpos3d.y)
+            vertexPositions.push(node2.rpos3d.z)
+            vertexPositions.push(node2.rpos3d.x)
+            vertexPositions.push(node2.rpos3d.y)
+            vertexPositions.push(node2.rpos3d.z)
+            vertexPositions.push(node3.rpos3d.x)
+            vertexPositions.push(node3.rpos3d.y)
+            vertexPositions.push(node3.rpos3d.z)
+            vertexPositions.push(node3.rpos3d.x)
+            vertexPositions.push(node3.rpos3d.y)
+            vertexPositions.push(node3.rpos3d.z)
+            vertexPositions.push(node4.rpos3d.x)
+            vertexPositions.push(node4.rpos3d.y)
+            vertexPositions.push(node4.rpos3d.z)
           } else {
             console.log(`torsion bar discarded: ${torhydro}`)
           }
@@ -210,18 +210,18 @@ function focusTorhydros(torhydrosArrToFocus, triggerEditor = true) {
       colorsAttribute.setXYZ(i*6 + 3, jbeamSelectedColor.r, jbeamSelectedColor.g, jbeamSelectedColor.b)
       colorsAttribute.setXYZ(i*6 + 4, jbeamSelectedColor.r, jbeamSelectedColor.g, jbeamSelectedColor.b)
       colorsAttribute.setXYZ(i*6 + 5, jbeamSelectedColor.r, jbeamSelectedColor.g, jbeamSelectedColor.b)
-      sumX += torhydro.node1.pos[0]
-      sumY += torhydro.node1.pos[1]
-      sumZ += torhydro.node1.pos[2]
-      sumX += torhydro.node2.pos[0]
-      sumY += torhydro.node2.pos[1]
-      sumZ += torhydro.node2.pos[2]
-      sumX += torhydro.node3.pos[0]
-      sumY += torhydro.node3.pos[1]
-      sumZ += torhydro.node3.pos[2]
-      sumX += torhydro.node4.pos[0]
-      sumY += torhydro.node4.pos[1]
-      sumZ += torhydro.node4.pos[2]
+      sumX += torhydro.node1.rpos3d.x
+      sumY += torhydro.node1.rpos3d.y
+      sumZ += torhydro.node1.rpos3d.z
+      sumX += torhydro.node2.rpos3d.x
+      sumY += torhydro.node2.rpos3d.y
+      sumZ += torhydro.node2.rpos3d.z
+      sumX += torhydro.node3.rpos3d.x
+      sumY += torhydro.node3.rpos3d.y
+      sumZ += torhydro.node3.rpos3d.z
+      sumX += torhydro.node4.rpos3d.x
+      sumY += torhydro.node4.rpos3d.y
+      sumZ += torhydro.node4.rpos3d.z
       torhydroCounter += 4 // because of 4 nodes
       continue
     }

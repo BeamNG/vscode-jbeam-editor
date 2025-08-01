@@ -436,7 +436,7 @@ function updateNodeViz(newNodePositionsOnly) {
           node.pos3d = new THREE.Vector3(node.pos[0], node.pos[1], node.pos[2])
           node.rpos3d = new THREE.Vector3(node.pos[0], node.pos[2], -node.pos[1])
 
-          const x = node.pos[0], y = node.pos[2], z = -node.pos[1];
+          const x = node.rpos3d.x, y = node.rpos3d.y, z = node.rpos3d.z;
           vertexPositions.push(x);
           vertexPositions.push(y);
           vertexPositions.push(z);
