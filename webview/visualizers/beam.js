@@ -46,8 +46,6 @@ function updateBeamViz() {
           if (node1 && node2) {
             beam.node1 = node1
             beam.node2 = node2
-            beam.nodeRPos1 = node1.rpos3d
-            beam.nodeRPos2 = node2.rpos3d
             beamCache.push(beam)
             beamNodesCounter+=2
             vertexPositions.push(node1.rpos3d.x)
@@ -143,7 +141,7 @@ function onMouseMove(event) {
   for (let i = 0; i < beamCache.length; i++) {
     const beam = beamCache[i]
     if(selectedBeamIndices && selectedBeamIndices.includes(i)) continue
-    const distance = Math.min(raycaster.ray.distanceToPoint(beamCache[i].nodeRPos1), raycaster.ray.distanceToPoint(beamCache[i].nodeRPos2))
+    const distance = Math.min(raycaster.ray.distanceToPoint(beamCache[i].node1.pos3d), raycaster.ray.distanceToPoint(beamCache[i].node2.pos3d))
 
     // Normalize the distance based on a predefined maximum distance
     let normalizedDistance = distance / maxDistance

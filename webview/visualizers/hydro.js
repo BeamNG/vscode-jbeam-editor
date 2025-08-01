@@ -30,8 +30,6 @@ function updateHydroViz() {
           if (node1 && node2) {
             hydro.node1 = node1
             hydro.node2 = node2
-            hydro.nodeRPos1 = new THREE.Vector3(node1.pos[0], node1.pos[1], node1.pos[2])
-            hydro.nodeRPos2 = new THREE.Vector3(node2.pos[0], node2.pos[1], node2.pos[2])
             hydroCache.push(hydro)
             hydroNodesCounter+=2
             vertexPositions.push(node1.pos[0])
@@ -125,7 +123,7 @@ function onMouseMove(event) {
 
   for (let i = 0; i < hydroCache.length; i++) {
     if(selectedHydroIndices && selectedHydroIndices.includes(i)) continue
-    const distance = Math.min(raycaster.ray.distanceToPoint(hydroCache[i].nodeRPos1), raycaster.ray.distanceToPoint(hydroCache[i].nodeRPos2))
+    const distance = Math.min(raycaster.ray.distanceToPoint(hydroCache[i].node1.pos3d), raycaster.ray.distanceToPoint(hydroCache[i].node2.pos3d))
 
     // Normalize the distance based on a predefined maximum distance
     let normalizedDistance = distance / maxDistance
