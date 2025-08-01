@@ -71,9 +71,9 @@ async function updateJbeamNodeData(message, updateDataCallback) {
         editBuilder.replace(vscodeRange, newValue.toString());
       }
 
-      replaceValue(dataBundle.metaData[startIdx + 2], node.pos[0])
-      replaceValue(dataBundle.metaData[startIdx + 3], node.pos[1])
-      replaceValue(dataBundle.metaData[startIdx + 4], node.pos[2])
+      replaceValue(dataBundle.metaData[startIdx + 2], node.pos[0].toFixed(3))
+      replaceValue(dataBundle.metaData[startIdx + 3], node.pos[1].toFixed(3))
+      replaceValue(dataBundle.metaData[startIdx + 4], node.pos[2].toFixed(3))
     }
   });
 
