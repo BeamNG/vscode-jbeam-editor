@@ -163,6 +163,13 @@ If all worked, it should show up like this now:
 
 ## Release Notes
 
+### 0.4.3
+* Bugfixes:
+  * Tweaked tooltip size
+  * Fixed node positions displayed in wrong coordinate system
+  * Fixed visualization status bar being larger than it should be, which was preventing a large portion of the UI from being interactable
+  * Rounding node position to 3 decimal places after moving nodes
+
 ### 0.4.2
 * Features:
   * Tweaked node visualization tooltip size
