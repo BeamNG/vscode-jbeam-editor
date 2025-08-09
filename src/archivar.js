@@ -162,7 +162,7 @@ function onFileChanged(changeType, filename) {
   }, debounceTime));
 }
 
-function loadJbeamFiles() {
+function loadJbeamFiles(context) {
   statusBar.text = `Parsing jbeam files ...`
   statusBar.show()
 
@@ -193,14 +193,16 @@ function loadJbeamFiles() {
     //}
   })
 
-  // now watch for changes
-  const isLinux = os.platform() === 'linux';
-  const watchOptions = isLinux ? {} : { recursive: true };
-  fs.watch(rootPath, watchOptions, onFileChanged)
+  // now watch for changes (use VSCode watcher for reliability)
+  const watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(rootPath, '**/*.jbeam'))
+  watcher.onDidCreate(uri => onFileChangedDebounced(uri.fsPath))
+  watcher.onDidChange(uri => onFileChangedDebounced(uri.fsPath))
+  watcher.onDidDelete(uri => onFileChangedDebounced(uri.fsPath))
+  if (context && context.subscriptions) context.subscriptions.push(watcher)
 }
 
 function activate(context) {
-  loadJbeamFiles()
+  loadJbeamFiles(context)
 }
 
 function deactivate() {
