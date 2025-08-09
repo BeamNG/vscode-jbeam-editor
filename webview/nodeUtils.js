@@ -538,9 +538,9 @@ function updateNodeViz(newNodePositionsOnly) {
   // Create Points object
   pointsObject = new THREE.Points(nodesGeometry, nodesMaterial);
   pointsObject.name = 'pointsObject';
-  scene.add(pointsObject);
+  if (scene) scene.add(pointsObject);
 
-  ctx.visualizersGroundplane.redrawGroundPlane(
+  if (scene && ctx && ctx.visualizersGroundplane) ctx.visualizersGroundplane.redrawGroundPlane(
     nodesMin,
     nodesMax,
     selectedNodeIndices,

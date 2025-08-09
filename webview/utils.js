@@ -79,6 +79,7 @@ function roundNumber(num) {
 
 let gridXY
 function updateGrid(scene, env) {
+  if (!scene) return
   let size = Math.round(env?.planeWidth);
   let divisions = size;
   //console.log('updateGrid', size, divisions)
@@ -305,6 +306,7 @@ let groundPlaneTexture = null
 let groundPlaneMaterial = null
 
 function updateProjectionPlane(scene, items, _env = {}) {
+  if (!scene) return
   const env = {
     planeOrigin: {x: 0, y: 0, z: 0},
     planeWidth: 10, // Width of the plane in 3D units

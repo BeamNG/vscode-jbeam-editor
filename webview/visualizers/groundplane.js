@@ -103,6 +103,8 @@ export function redrawGroundPlane(nodesMin, nodesMax, selectedNodeIndices, point
     }
   }
 
-  updateGrid(scene, env)
-  updateProjectionPlane(scene, items, env);
+  if (scene) {
+    updateGrid(scene, env)
+    updateProjectionPlane(scene, items, env);
+  }
 }
