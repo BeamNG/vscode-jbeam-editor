@@ -136,7 +136,10 @@ function show3DSceneCommand() {
   )
   webPanel.webview.html = getWebviewContent(webPanel);
   // Handle the webview being disposed (closed by the user)
+  const panelDisposables = []
   webPanel.onDidDispose(() => {
+    // Dispose all listeners created for this panel
+    for (const d of panelDisposables) try { d.dispose() } catch (_) {}
     allWebPanels = allWebPanels.filter(panel => panel !== webPanel);
     webPanel = null
   }, null, extensionContext.subscriptions)
@@ -185,7 +188,7 @@ function show3DSceneCommand() {
 
   let openedFromTextEditor = vscode.window.activeTextEditor
 
-  webPanel.webview.onDidReceiveMessage(
+  const onMessageDisposable = webPanel.webview.onDidReceiveMessage(
     message => {
       //console.log('ext.onDidReceiveMessage', message)
       switch (message.command) {
@@ -236,6 +239,7 @@ function show3DSceneCommand() {
     undefined,
     extensionContext.subscriptions
   );
+  panelDisposables.push(onMessageDisposable)
 
   // we can only load additional files if those files are part of the workspace
   // otherwise the security sandbox will not allow this
@@ -359,20 +363,22 @@ function show3DSceneCommand() {
     }
   }
   // Listen for when the active editor changes
-  vscode.window.onDidChangeActiveTextEditor(editor => {
+  const onActiveEditorChanged = vscode.window.onDidChangeActiveTextEditor(editor => {
     if (editor) {
       if (editor.document.languageId !== 'jbeam') return;
       parseAndPostData(editor);
     }
   })
+  panelDisposables.push(onActiveEditorChanged)
   // Listen for changes in the document of the active editor
-  vscode.workspace.onDidChangeTextDocument(event => {
+  const onTextDocumentChanged = vscode.workspace.onDidChangeTextDocument(event => {
     if (event.document.languageId !== 'jbeam') return;
     if (vscode.window.activeTextEditor && webPanel && webPanel.visible && event.document === vscode.window.activeTextEditor.document) {
       parseAndPostData(vscode.window.activeTextEditor);
     }
   });
-  vscode.window.onDidChangeTextEditorSelection(event => {
+  panelDisposables.push(onTextDocumentChanged)
+  const onSelectionChanged = vscode.window.onDidChangeTextEditorSelection(event => {
     if (event.textEditor.document.languageId !== 'jbeam') return;
     if(!webPanel || !webPanel.visible) return
     if (!vscode.window.activeTextEditor || event.textEditor !== vscode.window.activeTextEditor) return
@@ -396,14 +402,16 @@ function show3DSceneCommand() {
       range: range
     });
   })
+  panelDisposables.push(onSelectionChanged)
 
   // Listen for document closures
-  vscode.workspace.onDidCloseTextDocument(document => {
+  const onDocumentClosed = vscode.workspace.onDidCloseTextDocument(document => {
     const uri = document.uri.toString()
     if(docCache[uri]) {
       delete docCache[uri]
     }
   })
+  panelDisposables.push(onDocumentClosed)
 }
 
 let show3DSceneCommandDisposable
