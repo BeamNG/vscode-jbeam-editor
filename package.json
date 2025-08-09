@@ -133,6 +133,14 @@
       {
         "title": "BeamNG JBeam Editor",
         "properties": {
+          "jbeam-editor.sceneView.nodeLabelScale": {
+            "type": "number",
+            "default": 0.7,
+            "minimum": 0.1,
+            "maximum": 3,
+            "description": "Scale factor for node label size in the 3D view (1.0 = original size)",
+            "order": 6
+          },
           "jbeam-editor.hover.enabled": {
             "type": "boolean",
             "default": true,

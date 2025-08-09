@@ -436,67 +436,61 @@ class Tooltip {
   constructor(scene, camera) {
     this.scene = scene;
     this.camera = camera;
-    this.fontSize = 40
+    this.fontSize = 30
     this.fontStr = `bold ${this.fontSize}px "Cascadia Code", monospace`
-    this.createTooltipMesh();
-    this.scale = 0.002
+    this.createTooltipSprite();
   }
 
-  createTooltipMesh() {
+  createTooltipSprite() {
     const texture = new THREE.Texture(this.createTextCanvas());
     texture.needsUpdate = true;
 
-    const material = new THREE.ShaderMaterial({
-      uniforms: {
-        map: { value: texture },
-      },
-      vertexShader: `
-        varying vec2 vUv;
-        void main() {
-          vUv = uv;
-
-          float upwardTranslation = 0.01;
-
-          mat4 billBoardMatrix = mat4(
-              vec4(1.0, 0.0, 0.0, 0.0),
-              vec4(0.0, 1.0, 0.0, 0.0),
-              vec4(0.0, 0.0, 1.0, 0.0),
-              vec4(modelViewMatrix[3].x, modelViewMatrix[3].y + upwardTranslation, modelViewMatrix[3].z, 1.0)
-          );
-
-          float scale;
-          if (isOrthographic) {
-            // For orthographic camera, use a fixed scale based on the orthographic size
-            scale = 0.4 / (sqrt(projectionMatrix[0].x * projectionMatrix[1].y));
-          }
-          else {
-            // For perspective camera, calculate scale based on distance to camera
-            float distance = length(modelViewMatrix[3].xyz);
-            scale = distance * 0.35;
-          }
-          vec4 scaledPosition = vec4(position * scale, 1.0);
-
-          // Calculate final position
-          gl_Position = projectionMatrix * billBoardMatrix * scaledPosition;
-        }
-      `,
-      fragmentShader: `
-        uniform sampler2D map;
-        varying vec2 vUv;
-
-        void main() {
-          gl_FragColor = texture2D(map, vUv);
-        }
-      `,
+    const material = new THREE.SpriteMaterial({
+      map: texture,
       transparent: true,
       depthTest: false,
-      side: THREE.DoubleSide,
     });
 
-    const geometry = new THREE.PlaneGeometry(1, 1);
-    this.mesh = new THREE.Mesh(geometry, material);
+    this.mesh = new THREE.Sprite(material);
     this.mesh.visible = false;
-
+    // Recompute scale per render so it stays constant in screen pixels
+    const self = this
+    const tmp = new THREE.Vector3()
+    const sz = new THREE.Vector2()
+    this.mesh.onBeforeRender = function(renderer, scene, camera) {
+      if (!self.pixelWidthRaw || !self.pixelHeightRaw) return
+      const labelScale = (ctx && ctx.config && ctx.config.sceneView && typeof ctx.config.sceneView.nodeLabelScale === 'number')
+        ? ctx.config.sceneView.nodeLabelScale : 0.7
+      renderer.getSize(sz, false)
+      const pixelRatio = renderer.getPixelRatio ? renderer.getPixelRatio() : window.devicePixelRatio || 1
+      const vpW = sz.x * pixelRatio
+      const vpH = sz.y * pixelRatio
+      // distance in camera space
+      tmp.copy(self.mesh.position).applyMatrix4(camera.matrixWorldInverse)
+      // compute screen-up vector in world space
+      const upWorld = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion)
+      let offsetWorld = 0
+      if (camera.isPerspectiveCamera) {
+        const vFOV = (camera.fov / camera.zoom) * Math.PI / 180.0
+        const distance = Math.abs(tmp.z)
+        const worldPerPixel = 2 * Math.tan(vFOV / 2) * distance / vpH
+        const worldH = self.pixelHeightRaw * labelScale * worldPerPixel
+        self.mesh.scale.set(self.pixelWidthRaw * labelScale * worldPerPixel, worldH, 1)
+        const paddingPx = 6
+        offsetWorld = (worldH * 0.5) + paddingPx * worldPerPixel
+      } else if (camera.isOrthographicCamera) {
+        const worldPerPixelY = (camera.top - camera.bottom) / (vpH * camera.zoom)
+        const worldPerPixelX = (camera.right - camera.left) / (vpW * camera.zoom)
+        const worldH = self.pixelHeightRaw * labelScale * worldPerPixelY
+        self.mesh.scale.set(self.pixelWidthRaw * labelScale * worldPerPixelX, worldH, 1)
+        const paddingPx = 6
+        offsetWorld = (worldH * 0.5) + paddingPx * worldPerPixelY
+      }
+      // position just above the point in screen space
+      if (self.basePosition) {
+        self.mesh.position.copy(self.basePosition).addScaledVector(upWorld, offsetWorld)
+      }
+    }
     this.scene.add(this.mesh);
   }
 
@@ -509,16 +503,17 @@ class Tooltip {
     const canvas = this.createTextCanvas(data);
     const texture = new THREE.Texture(canvas);
     texture.needsUpdate = true
-    this.mesh.material.uniforms.map.value.dispose(); // Dispose the old texture
-    this.mesh.material.uniforms.map.value = texture; // Assign the new texture
+    // Dispose previous texture
+    if (this.mesh.material.map) this.mesh.material.map.dispose();
+    this.mesh.material.map = texture;
 
-    this.mesh.geometry.dispose(); // Dispose old geometry
-    this.sizeX = canvas.width * this.scale * data.size
-    this.sizeY = canvas.height * this.scale * data.size
-    this.mesh.geometry = new THREE.PlaneGeometry(this.sizeX, this.sizeY);
-    this.mesh.geometry.translate(this.sizeX * 0.5, this.sizeY * 0.5, 0)
+    // Save raw pixel size; scaling applied per-frame from config
+    this.pixelWidthRaw = canvas.width
+    this.pixelHeightRaw = canvas.height
 
-    this.mesh.position.copy(data.rpos3d)
+    // Base position for offsetting above the point
+    this.basePosition = data.rpos3d.clone()
+    this.mesh.position.copy(this.basePosition)
     this.mesh.visible = true;
   }
 
