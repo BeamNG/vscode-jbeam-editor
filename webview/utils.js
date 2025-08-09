@@ -455,45 +455,48 @@ class Tooltip {
 
     this.mesh = new THREE.Sprite(material);
     this.mesh.visible = false;
+    // Anchor bottom-center at the sprite position so the node stays directly under the label
+    this.mesh.center.set(0.5, 0.0)
+    this.needsFirstScale = false
     // Recompute scale per render so it stays constant in screen pixels
     const self = this
-    const tmp = new THREE.Vector3()
-    const sz = new THREE.Vector2()
     this.mesh.onBeforeRender = function(renderer, scene, camera) {
-      if (!self.pixelWidthRaw || !self.pixelHeightRaw) return
-      const labelScale = (ctx && ctx.config && ctx.config.sceneView && typeof ctx.config.sceneView.nodeLabelScale === 'number')
-        ? ctx.config.sceneView.nodeLabelScale : 0.7
-      renderer.getSize(sz, false)
-      const pixelRatio = renderer.getPixelRatio ? renderer.getPixelRatio() : window.devicePixelRatio || 1
-      const vpW = sz.x * pixelRatio
-      const vpH = sz.y * pixelRatio
-      // distance in camera space
-      tmp.copy(self.mesh.position).applyMatrix4(camera.matrixWorldInverse)
-      // compute screen-up vector in world space
-      const upWorld = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion)
-      let offsetWorld = 0
-      if (camera.isPerspectiveCamera) {
-        const vFOV = (camera.fov / camera.zoom) * Math.PI / 180.0
-        const distance = Math.abs(tmp.z)
-        const worldPerPixel = 2 * Math.tan(vFOV / 2) * distance / vpH
-        const worldH = self.pixelHeightRaw * labelScale * worldPerPixel
-        self.mesh.scale.set(self.pixelWidthRaw * labelScale * worldPerPixel, worldH, 1)
-        const paddingPx = 6
-        offsetWorld = (worldH * 0.5) + paddingPx * worldPerPixel
-      } else if (camera.isOrthographicCamera) {
-        const worldPerPixelY = (camera.top - camera.bottom) / (vpH * camera.zoom)
-        const worldPerPixelX = (camera.right - camera.left) / (vpW * camera.zoom)
-        const worldH = self.pixelHeightRaw * labelScale * worldPerPixelY
-        self.mesh.scale.set(self.pixelWidthRaw * labelScale * worldPerPixelX, worldH, 1)
-        const paddingPx = 6
-        offsetWorld = (worldH * 0.5) + paddingPx * worldPerPixelY
-      }
-      // position just above the point in screen space
-      if (self.basePosition) {
-        self.mesh.position.copy(self.basePosition).addScaledVector(upWorld, offsetWorld)
-      }
+      self.applyTransform(renderer, camera)
     }
     this.scene.add(this.mesh);
+  }
+
+  applyTransform(renderer, camera) {
+    if (!this.pixelWidthRaw || !this.pixelHeightRaw || !this.basePosition) return
+    const sz = new THREE.Vector2()
+    renderer.getSize(sz, false)
+    const pixelRatio = renderer.getPixelRatio ? renderer.getPixelRatio() : window.devicePixelRatio || 1
+    const vpW = sz.x * pixelRatio
+    const vpH = sz.y * pixelRatio
+    const labelScale = (ctx && ctx.config && ctx.config.sceneView && typeof ctx.config.sceneView.nodeLabelScale === 'number')
+      ? ctx.config.sceneView.nodeLabelScale : 0.7
+    // distance in camera space
+    const tmp = new THREE.Vector3().copy(this.basePosition).applyMatrix4(camera.matrixWorldInverse)
+    let offsetCam = 0
+    if (camera.isPerspectiveCamera) {
+      const vFOV = (camera.fov / camera.zoom) * Math.PI / 180.0
+      const distance = Math.abs(tmp.z)
+      const worldPerPixel = 2 * Math.tan(vFOV / 2) * distance / vpH
+      const worldH = this.pixelHeightRaw * labelScale * worldPerPixel
+      this.mesh.scale.set(this.pixelWidthRaw * labelScale * worldPerPixel, worldH, 1)
+      offsetCam = 6 * worldPerPixel
+    } else if (camera.isOrthographicCamera) {
+      const worldPerPixelY = (camera.top - camera.bottom) / (vpH * camera.zoom)
+      const worldPerPixelX = (camera.right - camera.left) / (vpW * camera.zoom)
+      const worldH = this.pixelHeightRaw * labelScale * worldPerPixelY
+      this.mesh.scale.set(this.pixelWidthRaw * labelScale * worldPerPixelX, worldH, 1)
+      offsetCam = 6 * worldPerPixelY
+    }
+    const posCam = new THREE.Vector3().copy(this.basePosition).applyMatrix4(camera.matrixWorldInverse)
+    posCam.y += offsetCam
+    const posWorld = posCam.applyMatrix4(camera.matrixWorld)
+    this.mesh.position.copy(posWorld)
+    this.mesh.visible = true
   }
 
   updateTooltip(data) {
@@ -515,8 +518,8 @@ class Tooltip {
 
     // Base position for offsetting above the point
     this.basePosition = data.rpos3d.clone()
-    this.mesh.position.copy(this.basePosition)
-    this.mesh.visible = true;
+    // compute immediately so it appears correctly on first frame
+    this.applyTransform(renderer, this.camera)
   }
 
   createTextCanvas(data) {
