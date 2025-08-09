@@ -135,25 +135,37 @@ function onMouseMove(event) {
 
   const alphasAttribute = linesObject.geometry.getAttribute('alpha')
   const colorsAttribute = linesObject.geometry.getAttribute('color')
-
-  let maxDistance = 1 // Maximum distance to affect the alpha
+  const thresholdPx = 15
 
   for (let i = 0; i < beamCache.length; i++) {
     const beam = beamCache[i]
     if(selectedBeamIndices && selectedBeamIndices.includes(i)) continue
-    const distance = Math.min(raycaster.ray.distanceToPoint(beamCache[i].node1.pos3d), raycaster.ray.distanceToPoint(beamCache[i].node2.pos3d))
+    // project endpoints to screen space (pixels)
+    const a = beam.node1.rpos3d.clone().project(camera)
+    const b = beam.node2.rpos3d.clone().project(camera)
+    const ax = (a.x * 0.5 + 0.5) * rect.width
+    const ay = (-a.y * 0.5 + 0.5) * rect.height
+    const bx = (b.x * 0.5 + 0.5) * rect.width
+    const by = (-b.y * 0.5 + 0.5) * rect.height
+    const mx = (event.clientX - rect.left)
+    const my = (event.clientY - rect.top)
+    // distance from mouse to segment AB in pixels
+    const segLen2 = (bx-ax)*(bx-ax) + (by-ay)*(by-ay)
+    let t = 0
+    if (segLen2 > 0) t = ((mx-ax)*(bx-ax) + (my-ay)*(by-ay)) / segLen2
+    t = Math.max(0, Math.min(1, t))
+    const px = ax + t*(bx-ax)
+    const py = ay + t*(by-ay)
+    const dx = mx - px
+    const dy = my - py
+    const distPx = Math.sqrt(dx*dx + dy*dy)
 
-    // Normalize the distance based on a predefined maximum distance
-    let normalizedDistance = distance / maxDistance
-    normalizedDistance = THREE.MathUtils.clamp(normalizedDistance, 0, 1) // Ensure it's between 0 and 1
-
-    // Set alpha based on distance (closer points are less transparent)
-    alphasAttribute.setX(i*2+0, 1.0 - (normalizedDistance * 0.6))
-    alphasAttribute.setX(i*2+1, 1.0 - (normalizedDistance * 0.6))
-
-    let maxColor = beamTypesColors[beam.beamType] || beamTypesColors['|NORMAL']
-    let dist = Math.min(distance, maxDistance * 0.75)
-    let color = getColorFromDistance(dist, maxDistance, jbeamMinColor, maxColor)
+    const factor = THREE.MathUtils.clamp(1 - (distPx / thresholdPx), 0, 1)
+    const baseColor = beamTypesColors[beam.beamType] || beamTypesColors['|NORMAL']
+    const color = baseColor.clone().lerp(new THREE.Color(1,1,1), factor*0.5)
+    const alpha = 0.2 + factor*0.8
+    alphasAttribute.setX(i*2+0, alpha)
+    alphasAttribute.setX(i*2+1, alpha)
     colorsAttribute.setXYZ(i*2+0, color.r, color.g, color.b)
     colorsAttribute.setXYZ(i*2+1, color.r, color.g, color.b)
   }
