@@ -29,7 +29,7 @@ function processLogDocument(document) {
       else if(args[1] === 'I' && pareInfo) severity = vscode.DiagnosticSeverity.Information
 
 
-      const message = (args[2] ? args[2] : "") + ": " + (args[3] && args[3].length > 1) ? args[3].substring(1) : 'No message provided';
+      const message = (args[2] || "") + ": " + ((args[3] && args[3].length > 1) ? args[3].substring(1) : 'No message provided');
 
       const range = new vscode.Range(new vscode.Position(lineNo, 0), new vscode.Position(lineNo, line.length))
       const diagnostic = new vscode.Diagnostic(range, message, severity)
