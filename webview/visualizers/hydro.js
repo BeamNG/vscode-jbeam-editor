@@ -213,7 +213,7 @@ function onCursorChangeEditor(message) {
     }
   }
 
-  console.log(message.range, hydrosFound, hydroCache)
+  //console.log(message.range, hydrosFound, hydroCache)
 
   focusHydros(hydrosFound, false)
 }

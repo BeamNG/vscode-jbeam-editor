@@ -274,7 +274,7 @@ function onCursorChangeEditor(message) {
     }
   }
 
-  console.log(message.range, torhydrosFound, torhydroCache)
+  //console.log(message.range, torhydrosFound, torhydroCache)
 
   focusTorhydros(torhydrosFound, false)
 }
