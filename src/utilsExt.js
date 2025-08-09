@@ -59,7 +59,8 @@ function openFileInWorkspace(filePath, gotoRange = null) {
       //const end = new vscode.Position(gotoRange[2], gotoRange[3]);
       gotoRange = new vscode.Range(start, start) // end);
     }
-    if(!path.relative(rootPath, filePath)) {
+    const rel = path.relative(rootPath, filePath)
+    if (rel.startsWith('..') || path.isAbsolute(rel)) {
       console.error(`unable to open file ${filePath} - not part of the workspace!`)
       return
     }
