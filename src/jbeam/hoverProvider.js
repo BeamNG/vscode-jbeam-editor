@@ -212,7 +212,7 @@ function activate(context) {
   }
 
   gotoLineDisposable = vscode.commands.registerCommand('jbeam-editor.gotoLine', goToLineForHover)
-  context.subscriptions.push();
+  context.subscriptions.push(gotoLineDisposable);
 }
 
 function deactivate() {
