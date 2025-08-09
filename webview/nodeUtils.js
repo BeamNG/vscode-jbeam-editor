@@ -235,18 +235,41 @@ function updateNodeLabels() {
   // }
 
   const tooltips = [];
+  // consult beam highlight state (selected beam endpoints, hovered endpoints)
+  let selectedBeamNodeNames = new Set()
+  let hoveredBeamNodeNames = new Set()
+  try {
+    if (ctx && ctx.visualizersBeam && ctx.visualizersBeam.getBeamHighlightState) {
+      const st = ctx.visualizersBeam.getBeamHighlightState()
+      if (st) {
+        if (st.selectedNodeNames) selectedBeamNodeNames = st.selectedNodeNames
+        if (st.hoveredNodeNames) hoveredBeamNodeNames = st.hoveredNodeNames
+      }
+    }
+  } catch(e) {}
   for (let i = 0; i < pointsCache.length; i++) {
     let selected = selectedNodeIndices && selectedNodeIndices.includes(i);
+    let hovered = false; // beam hover handled elsewhere; keep for future
     let mirrored = mirroredNodeIndices.has(i);
     let error = nodesNearMirrorPlanes.has(i);
-    if (uiSettings.showNodeIDs || selected || mirrored || error) {
+    if (uiSettings.showNodeIDs || selected || mirrored || error || isBeamSelected || isBeamHovered) {
       const node = pointsCache[i];
       let text = node.name;
       let size = 1.0;
       if (selected) size = 1.75;
       else if (mirrored) size = 1.25; // Slightly different size for mirrored nodes
       else if (error) size = 1.5; // Different size for error nodes
-      tooltips.push({ rpos3d: node.rpos3d, name: text, size: size });
+      // beam-driven highlights
+      const isBeamSelected = selectedBeamNodeNames.has(node.name)
+      const isBeamHovered = hoveredBeamNodeNames.has(node.name)
+      if (isBeamSelected) size = Math.max(size, 1.5)
+      if (isBeamHovered) size = Math.max(size, 1.25)
+      // Emphasize with consistently thick, darker border
+      const borderWidth = 4
+      const borderColor = (selected || isBeamSelected) ? '#cc33cc' : (isBeamHovered ? '#dddddd' : '#000000')
+      const bgColor = error ? 'rgba(255, 160, 160, 1)' : (mirrored ? 'rgba(210, 255, 210, 1)' : 'rgba(200,200,200,1)')
+      const textColor = borderColor
+      tooltips.push({ rpos3d: node.rpos3d, name: text, size: size, bgColor, textColor, borderPx: borderWidth, borderColor });
     }
   }
   // if(tooltips.length === 0) return
@@ -255,6 +278,18 @@ function updateNodeLabels() {
     tooltipPool = new TooltipPool(scene, camera, 5);
   }
   tooltipPool.updateTooltips(tooltips);
+  // expose pointsCache globally for tooltip recolor bridge
+  window.pointsCache = pointsCache
+  if (window.updateTooltipColorsFromBeamState) window.updateTooltipColorsFromBeamState()
+}
+
+// Allow other visualizers (e.g., beams) to request a labels rebuild
+window.rebuildNodeLabelsFromBeams = function() {
+  try {
+    updateNodeLabels()
+  } catch(e) {
+    console.error('rebuildNodeLabelsFromBeams failed: ', e)
+  }
 }
 
 
@@ -350,6 +385,7 @@ function visualizeMirrorPlanes() {
 // Gizmo things ...
 
 function setupGizmoForSelectedNodes() {
+  if (!transformControl || !scene) return
   if (selectedNodeIndices && selectedNodeIndices.length > 0) {
     // If we have more than one node selected, calculate the bounding box center
     if (selectedNodeIndices.length === 1) {
@@ -389,7 +425,7 @@ function setupGizmoForSelectedNodes() {
       transformControl.attach(dummyTranformObj);
     }
   } else {
-    transformControl.detach(); // Detach when no nodes are selected
+    if (transformControl && transformControl.detach) transformControl.detach(); // Detach when no nodes are selected
   }
 }
 

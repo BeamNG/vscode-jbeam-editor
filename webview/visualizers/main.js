@@ -26,6 +26,10 @@ export function onReceiveMessage(event) {
   ctx.visualizersTorsionhydro.onReceiveMessage(event)
   ctx.visualizersHydro.onReceiveMessage(event)
   ctx.visualizersMesh.onReceiveMessage(event)
+  // sync tooltip colors after beam/node changes
+  if (event && event.data && (event.data.command === 'cursorChanged' || event.data.command === 'jbeamData')) {
+    if (window.updateTooltipColorsFromBeamState) window.updateTooltipColorsFromBeamState()
+  }
 }
 
 export function onConfigChanged() {

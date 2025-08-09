@@ -368,6 +368,7 @@ function updateProjectionPlane(scene, items, _env = {}) {
 }
 
 function moveCameraCenter(pos) {
+  if (!pos || !orbitControls || !camera) return
   const offset = new THREE.Vector3().subVectors(pos, orbitControls.target);
   const newCameraPosition = new THREE.Vector3().addVectors(camera.position, offset);
   if(!camera.isOrthographicCamera) {
@@ -463,10 +464,11 @@ class Tooltip {
     this.mesh.onBeforeRender = function(renderer, scene, camera) {
       self.applyTransform(renderer, camera)
     }
-    this.scene.add(this.mesh);
+    if (this.scene) this.scene.add(this.mesh);
   }
 
   applyTransform(renderer, camera) {
+    if (!renderer || !camera) return
     if (!this.pixelWidthRaw || !this.pixelHeightRaw || !this.basePosition) return
     const sz = new THREE.Vector2()
     renderer.getSize(sz, false)
@@ -496,6 +498,7 @@ class Tooltip {
     posCam.y += offsetCam
     const posWorld = posCam.applyMatrix4(camera.matrixWorld)
     this.mesh.position.copy(posWorld)
+    if (!this.mesh.parent && this.scene) this.scene.add(this.mesh)
     this.mesh.visible = true
   }
 
@@ -518,6 +521,9 @@ class Tooltip {
 
     // Base position for offsetting above the point
     this.basePosition = data.rpos3d.clone()
+    this.nodeName = data.name
+    // ensure mesh is attached if scene is now available
+    if (!this.mesh.parent && this.scene) this.scene.add(this.mesh)
     // compute immediately so it appears correctly on first frame
     this.applyTransform(renderer, this.camera)
   }
@@ -526,25 +532,30 @@ class Tooltip {
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
     const padding = 10; // Set the desired padding size
-    const borderWidth = 2; // Set the desired border width
+    // dynamic border to emphasize selection/hover
+    const desiredBorderPx = (data && (data.borderPx ?? data.borderWidth)) ? (data.borderPx ?? data.borderWidth) : 2; // desired on-screen px
 
     if(data) {
       context.font = this.fontStr;
+      // Calculate canvas border width so it renders desired on-screen px after label scaling
+      const labelScale = (ctx && ctx.config && ctx.config.sceneView && typeof ctx.config.sceneView.nodeLabelScale === 'number')
+        ? ctx.config.sceneView.nodeLabelScale : 0.7
+      const borderWidth = Math.max(1, Math.round(desiredBorderPx / (labelScale || 0.7)))
       // Add padding to canvas width and height to accommodate the border and padding
       canvas.width = context.measureText(data.name).width + (padding * 2) + (borderWidth * 2);
       canvas.height = this.fontSize + (padding * 2) + (borderWidth * 2);
 
-      // Fill background with a semi-transparent grey
-      context.fillStyle = 'rgba(200, 200, 200, 1)'; // The alpha should be between 0 and 1
+      // Fill background (keep subtle)
+      context.fillStyle = data.bgColor || 'rgba(200, 200, 200, 1)';
       context.fillRect(borderWidth, borderWidth, canvas.width - (borderWidth * 2), canvas.height - (borderWidth * 2));
 
       // Draw the text with the padding offset
       context.font = this.fontStr;
-      context.fillStyle = 'black';
+      context.fillStyle = data.textColor || 'black';
       context.fillText(data.name, padding + borderWidth, this.fontSize + padding - 2);
 
-      // Draw the black border
-      context.strokeStyle = 'black';
+      // Draw the emphasized border (dynamic color/width)
+      context.strokeStyle = data.borderColor || 'black';
       context.lineWidth = borderWidth;
       context.strokeRect(borderWidth / 2, borderWidth / 2, canvas.width - borderWidth, canvas.height - borderWidth);
     }
@@ -586,9 +597,47 @@ class TooltipPool {
     // Reset all tooltips
     for (let i = 0; i < this.poolSize; i++) {
       const data = (i < dataList.length) ? dataList[i] : null
+      // force rebuild of textures by toggling map if visual style differs
       this.tooltips[i].updateTooltip(data)
+    }
+    // shrink pool if needed to avoid stale tooltips
+    if (dataList.length < this.poolSize) {
+      for (let i = dataList.length; i < this.poolSize; i++) {
+        const tip = this.tooltips[i]
+        if (tip && tip.mesh && tip.mesh.parent) tip.mesh.parent.remove(tip.mesh)
+      }
+      this.tooltips.length = dataList.length
+      this.poolSize = dataList.length
     }
   }
 
+}
+
+// bridge to recolor tooltips based on beam selection/hover
+window.updateTooltipColorsFromBeamState = function() {
+  if (!tooltipPool || !window.ctx || !ctx.visualizersBeam || !ctx.visualizersBeam.getBeamHighlightState) return
+  const state = ctx.visualizersBeam.getBeamHighlightState()
+  if (!state) return
+  if (!window.pointsCache) return
+  // build name -> node map
+  const nameToNode = new Map()
+  for (let i = 0; i < window.pointsCache.length; i++) {
+    const n = window.pointsCache[i]
+    if (n && n.name) nameToNode.set(n.name, n)
+  }
+  // update only currently displayed tooltips to avoid reordering artefacts
+  for (const tip of tooltipPool.tooltips) {
+    if (!tip || !tip.nodeName) continue
+    const node = nameToNode.get(tip.nodeName)
+    if (!node) continue
+    const isSelected = state.selectedNodeNames && state.selectedNodeNames.has(node.name)
+    const isHovered = state.hoveredNodeNames && state.hoveredNodeNames.has(node.name)
+    const borderPx = 8
+    const borderColor = isSelected ? '#cc33cc' : (isHovered ? '#dddddd' : '#000000')
+    const bgColor = 'rgba(200,200,200,1)'
+    const textColor = borderColor
+    const size = isSelected ? 1.75 : 1.0
+    tip.updateTooltip({ rpos3d: node.rpos3d, name: node.name, size, bgColor, textColor, borderPx, borderColor })
+  }
 }
 
