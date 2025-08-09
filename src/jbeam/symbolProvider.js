@@ -79,9 +79,9 @@ let symbolProviderDisposable
 function activate(context) {
   symbolProviderDisposable = vscode.languages.registerDocumentSymbolProvider(
     { language: 'jbeam' },
-    new JBeamSymbolProvider(symbolProviderDisposable)
+    new JBeamSymbolProvider()
   )
-  context.subscriptions.push()
+  context.subscriptions.push(symbolProviderDisposable)
 }
 
 function deactivate() {
