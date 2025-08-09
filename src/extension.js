@@ -95,7 +95,6 @@ function deactivate() {
   jbeamSyntaxChecker.deactivate()
   jbeamSymbolProviderExt.deactivate()
   jbeamHoverProvider.deactivate()
-  dataView.deactivate()
   logProcessor.deactivate()
 }
 
