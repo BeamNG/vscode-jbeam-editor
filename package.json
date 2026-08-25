@@ -19,7 +19,7 @@
     "3D",
     "beamng"
   ],
-  "version": "0.4.3",
+  "version": "0.5.0",
   "engines": {
     "vscode": "^1.84.0"
   },
@@ -135,10 +135,10 @@
         "properties": {
           "jbeam-editor.sceneView.nodeLabelScale": {
             "type": "number",
-            "default": 0.7,
+            "default": 0.5,
             "minimum": 0.1,
             "maximum": 3,
-            "description": "Scale factor for node label size in the 3D view (1.0 = original size)",
+            "description": "Scale factor for node label size in the 3D view",
             "order": 6
           },
           "jbeam-editor.hover.enabled": {
@@ -193,8 +193,8 @@
             "type": "number",
             "default": 50,
             "minimum": 0,
-            "maximum ": 100,
-            "description": "Opacity of the 3D meshes in percent",
+            "maximum": 100,
+            "description": "Start value in percent for the transparency slider of the 3D view, which fades meshes and collision surfaces",
             "order": 5
           }
         }

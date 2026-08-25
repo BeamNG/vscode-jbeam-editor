@@ -2,12 +2,9 @@
 // it does not do any processing of the parsed data
 
 const vscode = require('vscode');
-const path = require('path')
 
 const sjsonParser = require('../json/sjsonParser');
 const tableSchema = require('../json/tableSchema');
-const archivar = require('../archivar');
-const utilsExt = require('../utilsExt');
 
 const jbeamDiagnostics = vscode.languages.createDiagnosticCollection('jbeam');
 
@@ -74,6 +71,7 @@ function validateTextDocument(document) {
   jbeamDiagnostics.set(document.uri, diagnosticsList);
 }
 
+let changeDisposable
 function subscribeToDocumentChanges(context, diagnostics) {
   // Check the document when it's first opened
   if (vscode.window.activeTextEditor) {
@@ -81,11 +79,11 @@ function subscribeToDocumentChanges(context, diagnostics) {
   }
 
   // Check the document when it's changed
-  context.subscriptions.push(
-    vscode.workspace.onDidChangeTextDocument(event => {
-      validateTextDocument(event.document);
-    })
-  );
+  if (changeDisposable) changeDisposable.dispose()
+  changeDisposable = vscode.workspace.onDidChangeTextDocument(event => {
+    validateTextDocument(event.document);
+  })
+  context.subscriptions.push(changeDisposable);
 }
 
 let completionDisposable
@@ -96,6 +94,8 @@ function activate(context) {
 function deactivate() {
   jbeamDiagnostics.clear();
   if(completionDisposable) completionDisposable.dispose()
+  if(changeDisposable) changeDisposable.dispose()
+  changeDisposable = null
 }
 
 module.exports = {

@@ -48,6 +48,7 @@
 */
 
 const utilsExt = require('../utilsExt');
+const jbeamVariables = require('./jbeamVariables');
 
 let ignoreSections = {maxIDs: true, options: true, slotType: true};
 
@@ -185,6 +186,8 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, diagnostics
         }
       }
 
+      if (newRow.disable === true || newRow.variables?.disable === true) continue
+
       if (newRow.hasOwnProperty('id') && newRow.id !== null) {
         newID = newRow.id
         //newRow.name = newRow.id // the original is to exchange with id
@@ -207,13 +210,100 @@ function processTableWithSchemaDestructive(jbeamTable, inputOptions, diagnostics
   return newList;
 }
 
-function processPart(part, diagnostics) {
+const slotHeaders = {
+  slots: ['type', 'default', 'description'],
+  slots2: ['name', 'allowTypes', 'denyTypes', 'default', 'description'],
+}
+
+function sectionHasEntries(section) {
+  return section && typeof section === 'object' && Object.keys(section).some(key => key !== '__meta')
+}
+
+function slotHeaderHint(sectionName) {
+  return `["${slotHeaders[sectionName].join('", "')}"]`
+}
+
+// the header row is consumed while the table is processed, so it has to be checked before that.
+// the game reconstructs a missing header for the legacy section, but not for slots2
+function checkSlotHeaders(part, diagnostics) {
+  for (const sectionName in slotHeaders) {
+    const section = part[sectionName]
+    if (!sectionHasEntries(section) || section.__meta?.type !== 'array') continue
+    const header = section[0]
+    if (header && typeof header === 'object' && header[0] === slotHeaders[sectionName][0]) continue
+    diagnostics.push([
+      sectionName === 'slots' ? 'warning' : 'error',
+      `The "${sectionName}" section is missing its table header. It must be ${slotHeaderHint(sectionName)}`,
+      (header?.__meta ?? section.__meta)?.range
+    ])
+  }
+}
+
+// the game upgrades "slots" to "slots2" on load and only keeps "slots2" from then on
+function checkSlots(part, diagnostics) {
+  const hasSlots = sectionHasEntries(part.slots)
+  const hasSlots2 = sectionHasEntries(part.slots2)
+  if (hasSlots && hasSlots2) {
+    diagnostics.push(['warning', 'Part has "slots" and "slots2". The game only uses "slots2" and drops "slots"', part.slots.__meta?.range])
+  }
+
+  const sectionName = hasSlots2 ? 'slots2' : (hasSlots ? 'slots' : null)
+  if (!sectionName) return
+
+  const nameKey = sectionName === 'slots2' ? 'name' : 'type'
+  const seenNames = {}
+
+  for (const rowKey in part[sectionName]) {
+    if (rowKey === '__meta') continue
+    const slot = part[sectionName][rowKey]
+    if (!slot || typeof slot !== 'object') continue
+    const range = slot.__meta?.range
+
+    const slotName = slot[nameKey]
+    if (typeof slotName !== 'string' || slotName === '') {
+      diagnostics.push(['error', `Slot is missing "${nameKey}". The section header must be ${slotHeaderHint(sectionName)}`, range])
+      continue
+    }
+    // legacy slots can rename themselves with an inline "name" option, the game prefers that name
+    const slotId = (typeof slot.name === 'string' && slot.name !== '') ? slot.name : slotName
+    if (seenNames[slotId]) {
+      diagnostics.push(['warning', `Slot "${slotId}" exists more than once in this part, so a part config fills all of them with the same part`, range])
+    }
+    seenNames[slotId] = true
+
+    if (sectionName !== 'slots2') continue
+
+    for (const key of ['allowTypes', 'denyTypes']) {
+      if (slot[key] === undefined) continue
+      if (typeof slot[key] !== 'object' || slot[key].__meta?.type !== 'array') {
+        diagnostics.push(['error', `Slot "${key}" must be a list of slot types, for example ["${slotName}"]`, range])
+      }
+    }
+    if (utilsExt.getStringList(slot.allowTypes).length === 0) {
+      diagnostics.push(['warning', `Slot "${slotName}" has no "allowTypes", so no part fits into it`, range])
+    }
+  }
+}
+
+function processPart(partName, part, diagnostics, slotVariableProvider, vehicleContextProvider) {
   if (!part || typeof part !== 'object') {
     return false
   }
+  // variables are resolved before the sections become tables, just like the game does it,
+  // so that node ids and positions built from expressions are usable everywhere
+  const slotTypes = utilsExt.getStringList(part.slotType)
+  const slotVariables = slotVariableProvider ? slotVariableProvider(slotTypes, partName) : null
+  const vehicleContext = vehicleContextProvider ? vehicleContextProvider(partName) : null
+  const variableScope = jbeamVariables.collectVariables(part, slotVariables, vehicleContext)
+  if (part.__meta) {
+    Object.defineProperty(part.__meta, 'variableScope', {value: variableScope, configurable: true})
+  }
+  jbeamVariables.applyVariables(part, variableScope, diagnostics)
+
   part.maxIDs = {};
   part.validTables = {};
   part.beams = part.beams || {};
+  checkSlotHeaders(part, diagnostics)
 
   // Walk everything and look for options
   part.options = part.options || {}
@@ -324,11 +414,13 @@ function processPart(part, diagnostics) {
       }
     }
   }
+  checkSlots(part, diagnostics)
 
   return true;
 }
 
-function processAllParts(parsedData) {
+// Providers add context from the parent slot and the running vehicle when available.
+function processAllParts(parsedData, slotVariableProvider, vehicleContextProvider) {
   let tableInterpretedData = {}
   let diagnostics = [] // contains parsing errors and warnings
 
@@ -340,7 +432,7 @@ function processAllParts(parsedData) {
     for (let partName of keys) {
       if (!parsedData.hasOwnProperty(partName)) continue;
       let part = parsedData[partName];
-      if (processPart(part, diagnostics) !== true) {
+      if (processPart(partName, part, diagnostics, slotVariableProvider, vehicleContextProvider) !== true) {
         diagnostics.push(['error', `Unable to process part '${partName}'`, part?.__meta?.range])
       }
       tableInterpretedData[partName] = part

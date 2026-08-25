@@ -37,6 +37,17 @@ function deepCloneAndRemoveKeys(obj, keysToRemove) {
   return clone;
 }
 
+// parsed jbeam lists are objects with numeric keys, this returns their string entries.
+// a single string counts as a list with one entry, like the game handles slotType
+function getStringList(val) {
+  if (typeof val === 'string') return val === '' ? [] : [val]
+  if (!val || typeof val !== 'object') return []
+  return Object.keys(val)
+    .filter(key => key !== '__meta')
+    .map(key => val[key])
+    .filter(entry => typeof entry === 'string')
+}
+
 // checks if the position is in qotes or not
 function checkQuotesWithoutNewlineInLine(text, position) {
   const lines = text.split('\n');
@@ -77,6 +88,7 @@ module.exports = {
   getNamespaceFromVirtualFilename,
   getRootpath,
   deepCloneAndRemoveKeys,
+  getStringList,
   checkQuotesWithoutNewlineInLine,
   openFileInWorkspace,
 }

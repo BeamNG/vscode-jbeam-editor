@@ -1,4 +1,7 @@
-const jbeamColor = jbeamColors.triangles['ALL']
+const sectionColors = {
+  triangles: jbeamColors.triangles['ALL'],
+  quads: jbeamColors.quads['ALL'],
+}
 
 let uri
 let isInSection = false
@@ -13,49 +16,82 @@ let triMaterial
 let triCache
 let selectedTriIndices = null
 
+function isSurfaceSection(sectionName) {
+  return sectionName === 'triangles' || sectionName === 'quads'
+}
+
+// the transparency slider sets the surface alpha. Surfaces outside the edited section only hint at their position
+function getBaseAlpha() {
+  const alpha = (uiSettings.opacity ?? 50) / 100
+  return isInSection ? alpha : alpha * 0.125
+}
+
+function addFace(triVertices, sectionName, row, node1, node2, node3) {
+  triVertices.push(node1.rpos3d.x, node1.rpos3d.y, node1.rpos3d.z);
+  triVertices.push(node2.rpos3d.x, node2.rpos3d.y, node2.rpos3d.z);
+  triVertices.push(node3.rpos3d.x, node3.rpos3d.y, node3.rpos3d.z);
+  triCache.push({row: row, color: sectionColors[sectionName], node1: node1, node2: node2, node3: node3})
+}
 
 function updateTriViz() {
   let triVertices = []
   let triIndices = []
   triCache = []
-  let triIndexCounter = 0
+  vertexAlphas = []
+  vertexColors = []
+  vertexHighlight = []
 
   for (let partName in jbeamData) {
     if (currentPartName && partName !== currentPartName) continue;
     let part = jbeamData[partName];
+    if (!part.nodes) continue;
+
     if (part.hasOwnProperty('triangles')) {
       for (let triId in part.triangles) {
         let triangle = part.triangles[triId];
-        if (part.nodes && triangle['id1:'] in part.nodes && triangle['id2:'] in part.nodes && triangle['id3:'] in part.nodes) {
-          let node1 = part.nodes[triangle['id1:']];
-          let node2 = part.nodes[triangle['id2:']];
-          let node3 = part.nodes[triangle['id3:']];
-          triVertices.push(node1.rpos3d.x, node1.rpos3d.y, node1.rpos3d.z);
-          triVertices.push(node2.rpos3d.x, node2.rpos3d.y, node2.rpos3d.z);
-          triVertices.push(node3.rpos3d.x, node3.rpos3d.y, node3.rpos3d.z);
-          triIndices.push(triIndexCounter++, triIndexCounter++, triIndexCounter++);
+        let node1 = part.nodes[triangle['id1:']];
+        let node2 = part.nodes[triangle['id2:']];
+        let node3 = part.nodes[triangle['id3:']];
+        if (!node1 || !node2 || !node3) continue;
+        addFace(triVertices, 'triangles', triangle, node1, node2, node3)
+      }
+    }
 
-          triangle.node1 = node1
-          triangle.node2 = node2
-          triangle.node3 = node3
-          triCache.push(triangle)
-        }
+    // a quad is drawn as the two triangles 1-2-3 and 1-3-4, just like the game does it
+    if (part.hasOwnProperty('quads')) {
+      for (let quadId in part.quads) {
+        let quad = part.quads[quadId];
+        let node1 = part.nodes[quad['id1:']];
+        let node2 = part.nodes[quad['id2:']];
+        let node3 = part.nodes[quad['id3:']];
+        let node4 = part.nodes[quad['id4:']];
+        if (!node1 || !node2 || !node3 || !node4) continue;
+        addFace(triVertices, 'quads', quad, node1, node2, node3)
+        addFace(triVertices, 'quads', quad, node1, node3, node4)
       }
     }
   }
 
-  for (let i = 0; i < triVertices.length; i++) {
-    vertexColors.push(jbeamColor.r, jbeamColor.g, jbeamColor.b);
-    vertexAlphas.push(isInSection ? 0.4 : 0.05)
+  const alphaNotSelected = getBaseAlpha()
+  const vertexCount = triVertices.length / 3
+  for (let i = 0; i < vertexCount; i++) {
+    const color = triCache[Math.floor(i / 3)].color
+    vertexColors.push(color.r, color.g, color.b);
+    vertexAlphas.push(alphaNotSelected)
     vertexHighlight.push(0)
+    triIndices.push(i)
   }
 
   if (triObject) {
-    if(triGeometry) triGeometry.dispose();
-    if(triMaterial) triMaterial.dispose();
+    const oldWireframe = triObject.children.find(child => child instanceof THREE.LineSegments)
+    if(oldWireframe) {
+      oldWireframe.geometry.dispose()
+      oldWireframe.material.dispose()
+    }
     scene.remove(triObject);
   }
 
+  // the material is kept, disposing it here would recompile the shader on every edit
   if(triGeometry) {
     triGeometry.dispose()
   }
@@ -82,25 +118,49 @@ function updateTriViz() {
 
         varying vec3 vColor;
         varying float vAlpha;
+        varying vec3 vNormalView;
+        varying vec3 vPositionView;
 
         void main() {
           vColor = color;
           vAlpha = alpha;
           vec3 newPosition = position + normal * highlight;
           vec4 mvPosition = modelViewMatrix * vec4(newPosition, 1.0);
+          vNormalView = normalize(normalMatrix * normal);
+          vPositionView = mvPosition.xyz;
           gl_Position = projectionMatrix * mvPosition;
         }
       `,
       fragmentShader: `
         varying vec3 vColor;
         varying float vAlpha;
+        varying vec3 vNormalView;
+        varying vec3 vPositionView;
 
         void main() {
-          gl_FragColor = vec4(vColor, vAlpha);
+          vec3 normal = normalize(vNormalView);
+          if (!gl_FrontFacing) normal = -normal;
+          vec3 viewDir = normalize(-vPositionView);
+
+          // a fixed key light plus a head light, so the angle of a surface is readable
+          float key = max(dot(normal, normalize(vec3(0.4, 0.8, 0.45))), 0.0);
+          float facing = max(dot(normal, viewDir), 0.0);
+          float light = key * 0.65 + facing * 0.35;
+          vec3 col = mix(vColor * 0.25, mix(vColor, vec3(1.0), 0.45), light);
+
+          // the back of a face is darker, so the collision side stays recognizable
+          if (!gl_FrontFacing) col *= 0.45;
+
+          // silhouettes are more opaque, which separates stacked surfaces
+          float edge = pow(1.0 - facing, 3.0);
+          float a = clamp(vAlpha * (0.85 + 2.0 * edge), 0.0, 1.0);
+
+          gl_FragColor = vec4(col, a);
         }
       `,
       transparent: true,
-      opacity: 0.5,
+      // without this only the closest surface is blended, which makes everything look like one solid shell
+      depthWrite: false,
       side: THREE.DoubleSide,
     })
   }
@@ -141,7 +201,7 @@ function focusTris(trisArrToFocus) {
   let sumZ = 0
   let tcount = 0
 
-  const alphaNotActive = isInSection ? 0.4 : 0.05
+  const alphaNotActive = getBaseAlpha()
 
   selectedTriIndices = trisArrToFocus
 
@@ -180,9 +240,9 @@ function focusTris(trisArrToFocus) {
       highlightAttribute.setX(i*3  , 0)
       highlightAttribute.setX(i*3+1, 0)
       highlightAttribute.setX(i*3+2, 0)
-      colorsAttribute.setXYZ(i*3  , jbeamColor.r, jbeamColor.g, jbeamColor.b)
-      colorsAttribute.setXYZ(i*3+1, jbeamColor.r, jbeamColor.g, jbeamColor.b)
-      colorsAttribute.setXYZ(i*3+2, jbeamColor.r, jbeamColor.g, jbeamColor.b)
+      colorsAttribute.setXYZ(i*3  , tri.color.r, tri.color.g, tri.color.b)
+      colorsAttribute.setXYZ(i*3+1, tri.color.r, tri.color.g, tri.color.b)
+      colorsAttribute.setXYZ(i*3+2, tri.color.r, tri.color.g, tri.color.b)
     }
 
     alphasAttribute.needsUpdate = true;
@@ -205,12 +265,10 @@ function onCursorChangeEditor(message) {
   if(currentPartName !== message.currentPartName || currentSectionName !== message.currentSectionName) {
     currentPartName = message.currentPartName
     currentSectionName = message.currentSectionName
-    isInSection = (currentSectionName === 'triangles')
-    updateTriViz(true)
+    isInSection = isSurfaceSection(currentSectionName)
+    updateTriViz()
   }
-  isInSection = (currentSectionName === 'triangles')
-
-
+  isInSection = isSurfaceSection(currentSectionName)
 
   let trisFound = []
   // Helper function to check if the cursor is within a given range
@@ -220,7 +278,7 @@ function onCursorChangeEditor(message) {
   };
 
   for (let i = 0; i < triCache.length; i++) {
-    if (cursorInRange(triCache[i].__meta.range)) {
+    if (cursorInRange(triCache[i].row.__meta.range)) {
       trisFound.push(i)
     }
   }
@@ -251,6 +309,11 @@ export function dispose() {
   if(triObject) scene.remove(triObject);
   if(triGeometry) triGeometry.dispose();
   if(triMaterial) triMaterial.dispose();
+}
+
+export function updateOpacity() {
+  if(!triGeometry) return
+  focusTris(selectedTriIndices || [])
 }
 
 export function onConfigChanged() {

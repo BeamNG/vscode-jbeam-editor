@@ -4,8 +4,9 @@ let daeFindfilesDone = false
 let wasLoaded = false
 let defaultMeshOpacity = 1
 let meshesHighlighted = []
-let forceLoadCommonFolders = false
 let meshesMissingCurrentRun = false
+let meshLoadKey = null
+let meshLoadId = 0
 const coordinateSystemRotation = -Math.PI / 2;
 
 // loadedMeshes is in utils
@@ -13,34 +14,53 @@ const coordinateSystemRotation = -Math.PI / 2;
 let selectedMeshIndices = null
 let loadedCommonFolders
 
-export function startLoadingMeshes() {
+export function startLoadingMeshes(forceReload = false) {
+  loadedCommonFolders = ctx?.config?.sceneView?.meshes?.loadCommonFolder ?? false
+  const loadKey = `${uri}|${loadedCommonFolders}`
+  if (!forceReload && meshLoadKey === loadKey) return
+  meshLoadKey = loadKey
+  const loadId = ++meshLoadId
+
   daeFindfilesDone = false
   meshesMissingCurrentRun = false
   daeLoadingCounter = 0
   daeLoadingCounterFull = 0
-  loadedCommonFolders = (ctx?.config?.sceneView?.meshes?.loadCommonFolder ?? false) || forceLoadCommonFolders
   if(ctx.vscode) {
     ctx.vscode.postMessage({
       command: 'loadColladaNamespaces',
       data: Object.keys(meshFolderCache),
       uri: uri,
       loadCommon: loadedCommonFolders,
+      loadId: loadId,
     });
   }
   wasLoaded = true
 }
 
 function onReceiveData(message) {
+  const previousUri = uri
   uri = message.uri
-  meshFolderCache = message.meshCache
+  if(previousUri !== uri) {
+    meshFolderCache = message.meshCache
+  } else {
+    for (const namespace in message.meshCache) {
+      if(!meshFolderCache[namespace]) meshFolderCache[namespace] = {}
+      Object.assign(meshFolderCache[namespace], message.meshCache[namespace])
+    }
+  }
   meshLoadingEnabled = message.meshLoadingEnabled
   selectedMeshIndices = null
   //console.log("meshVisuals.onReceiveData", message);
 
   // trigger loading dae
 
-  if(!wasLoaded) {
-    meshLibraryFull = [] // clear the library on file change
+  if(previousUri !== uri) {
+    meshLoadId++
+    meshLoadKey = null
+    wasLoaded = false
+    for (const mesh of loadedMeshes) scene.remove(mesh)
+    loadedMeshes = []
+    meshLibraryFull = {}
   }
 
   if(uiSettings.showMeshes) {
@@ -51,10 +71,11 @@ function onReceiveData(message) {
 
 function tryLoad3dMesh(meshName, onDone) {
   if(!meshName) return
+  const loadId = meshLoadId
 
   // check if the mesh is by chance already full loaded ...
   if(meshLibraryFull[meshName]) {
-    onDone(meshLibraryFull[meshName])
+    onDone(meshLibraryFull[meshName].clone(true))
     return
   }
 
@@ -70,6 +91,7 @@ function tryLoad3dMesh(meshName, onDone) {
   //console.log(`Loading dae ${uri} ...`)
   let cl = new ctx.colladaLoader.ColladaLoader()
   cl.load(uri, function (collada) {
+    if (loadId !== meshLoadId) return
     //console.log(`Loading dae ${uri} ... DONE`)
     daeLoadingCounterFull--
     //console.log("collada: ", collada)
@@ -90,8 +112,9 @@ function tryLoad3dMesh(meshName, onDone) {
     //  console.log('###############################################')
     //  console.log(meshLibraryFull, meshName)
     //}
-    onDone(meshLibraryFull[meshName])
+    onDone(meshLibraryFull[meshName]?.clone(true))
   }, undefined, function (error) {
+    if (loadId !== meshLoadId) return
     //console.log(`Loading dae ${uri} ... ERROR`)
     daeLoadingCounterFull--
     console.error('An error happened during loading:', error);
@@ -100,13 +123,8 @@ function tryLoad3dMesh(meshName, onDone) {
 
 function finalizeMeshes() {
 
-  if(meshesMissingCurrentRun && forceLoadCommonFolders === false && (ctx?.config?.sceneView?.meshes?.loadCommonFolder ?? false) === false) {
-    forceLoadCommonFolders = true;
-    console.log('Meshes where missing, trying to load the common folder')
-    meshLibraryFull = {}
-    meshFolderCache = {}
-    startLoadingMeshes()
-    return
+  if(meshesMissingCurrentRun && (ctx?.config?.sceneView?.meshes?.loadCommonFolder ?? false) === false) {
+    console.log('Meshes were missing; common folder loading is disabled in settings')
   }
   //console.log(">>>> finalizeMeshes <<<<")
   //console.log('Adding meshes to scene ...')
@@ -174,20 +192,19 @@ function finalizeMeshes() {
                 mesh.add(wireframe);
               }
             }
-            if(flexbody.pos) {
-              colladaNode.position.x = flexbody.pos?.x ?? 0
-              colladaNode.position.y = flexbody.pos?.z ?? 0
-              colladaNode.position.z = -flexbody.pos?.y ?? 0
-            }
-            colladaNode.rotation.x = -Math.PI / 2;
-            colladaNode.__meta = flexbody.__meta
-            colladaNode.traverse((n) => {
-              n.castShadow = true
-            })
-            colladaNode.name = 'flexbody_' + flexbody.mesh
-            scene.add(colladaNode)
-            loadedMeshes.push(colladaNode)
+            mesh.castShadow = true
           })
+          if(flexbody.pos) {
+            colladaNode.position.x = flexbody.pos?.x ?? 0
+            colladaNode.position.y = flexbody.pos?.z ?? 0
+            colladaNode.position.z = -(flexbody.pos?.y ?? 0)
+          }
+          colladaNode.rotation.x = -Math.PI / 2;
+          colladaNode.__meta = flexbody.__meta
+          colladaNode.name = 'flexbody_' + flexbody.mesh
+          colladaNode.visible = isInSection || uiSettings.showMeshes
+          scene.add(colladaNode)
+          loadedMeshes.push(colladaNode)
           //console.log(`Added Flexbody mesh to scene: ${flexbody.mesh}`)
         })
       }
@@ -201,7 +218,7 @@ function finalizeMeshes() {
 
         tryLoad3dMesh(prop.mesh, (colladaNode) => {
           if(!colladaNode) {
-            console.error(`Flexbody mesh not found: ${flexbody.mesh}`)
+            console.error(`Prop mesh not found: ${prop.mesh}`)
             return
           }
           colladaNode.traverse((mesh) => {
@@ -226,15 +243,14 @@ function finalizeMeshes() {
                 mesh.add(wireframe);
               }
             }
-            colladaNode.rotation.x = -Math.PI / 2;
-            colladaNode.__meta = prop.__meta
-            colladaNode.traverse((n) => {
-              n.castShadow = true
-            })
-            prop.name = 'prop_' + prop.mesh
-            scene.add(colladaNode)
-            loadedMeshes.push(colladaNode)
+            mesh.castShadow = true
           })
+          colladaNode.rotation.x = -Math.PI / 2;
+          colladaNode.__meta = prop.__meta
+          colladaNode.name = 'prop_' + prop.mesh
+          colladaNode.visible = isInSection || uiSettings.showMeshes
+          scene.add(colladaNode)
+          loadedMeshes.push(colladaNode)
           //console.log(`Added Flexbody mesh to scene: ${flexbody.mesh}`)
         })
       }
@@ -285,12 +301,14 @@ function applyMeshTransformations() {
   }
 }
 
-function loadMeshShallow(uri, namespace) {
+function loadMeshShallow(uri, namespace, loadId) {
+  if (loadId !== meshLoadId) return
   //console.log(">loadMeshShallow>", uri, namespace)
   daeLoadingCounter++;
   //console.log(`Load mesh shallow ${uri} ...`)
   let cl = new ctx.colladaLoader.ColladaLoader()
   cl.load(uri, function (collada) {
+    if (loadId !== meshLoadId) return
     //console.log(`Load mesh shallow ${uri} ... DONE`)
     daeLoadingCounter--
     if(collada && collada.scene) {
@@ -315,6 +333,7 @@ function loadMeshShallow(uri, namespace) {
       finalizeMeshes();
     }
   }, undefined, function (error) {
+    if (loadId !== meshLoadId) return
     //console.log(`Load mesh shallow ${uri} ... ERROR`)
     daeLoadingCounter--;
     console.error(error)
@@ -357,9 +376,8 @@ export function updateMeshViz() {
     }
   } else {
     for (let i = 0; i < loadedMeshes.length; i++) {
-      scene.remove(loadedMeshes[i])
+      loadedMeshes[i].visible = false
     }
-    loadedMeshes = []
     return
   }
   focusMeshes(meshesHighlighted, false)
@@ -399,9 +417,10 @@ export function onReceiveMessage(event) {
       onReceiveData(message);
       break;
     case 'loadDaeFinal':
-      loadMeshShallow(message.uri, message.namespace)
+      loadMeshShallow(message.uri, message.namespace, message.loadId)
       break
     case 'daeFileLoadingDone':
+      if (message.loadId !== meshLoadId) break
       daeFindfilesDone = true
       if (daeLoadingCounter == 0 && daeFindfilesDone) {
         finalizeMeshes();
@@ -415,8 +434,13 @@ export function onReceiveMessage(event) {
 }
 
 export function init() {
-  defaultMeshOpacity = (ctx?.config?.sceneView?.meshes?.opacity ?? 100) / 100
+  defaultMeshOpacity = uiSettings.opacity / 100
   window.addEventListener('message', onReceiveMessage);
+}
+
+export function updateOpacity() {
+  defaultMeshOpacity = uiSettings.opacity / 100
+  focusMeshes(selectedMeshIndices)
 }
 
 export function dispose() {
@@ -433,12 +457,10 @@ export function dispose() {
 export function onConfigChanged() {
   //console.log('mesh.onConfigChanged', ctx.config)
 
-  defaultMeshOpacity = (ctx?.config?.sceneView?.meshes?.opacity ?? 100) / 100
-
   const shoudlLoadCommonFolder = (ctx?.config?.sceneView?.meshes?.loadCommonFolder ?? false)
   if(shoudlLoadCommonFolder !== loadedCommonFolders) {
     // changed, lets reload the meshes
-    startLoadingMeshes()
+    startLoadingMeshes(true)
   }
 
   // update meshes

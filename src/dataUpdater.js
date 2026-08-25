@@ -54,13 +54,22 @@ async function updateJbeamNodeData(message, updateDataCallback) {
         continue
       }
       let nodeMetaData = metaDataStack[0]
-      if(nodeMetaData.obj[0] != node.id) {
+      // the document still holds the unresolved text of an id that was built from variables
+      const documentId = node.__meta.unresolved ? (node.__meta.unresolved['0'] ?? node.id) : node.id
+      if(nodeMetaData.obj[0] != documentId) {
         console.error("id mismatch on replace?")
         continue
       }
       let startIdx = nodeMetaData.id
       // TODO: verify the validity of the array and all!
       // startIdx + 1 = id
+
+      // a position that comes from a variable or an expression must not be overwritten with a number
+      const positionMetas = [dataBundle.metaData[startIdx + 2], dataBundle.metaData[startIdx + 3], dataBundle.metaData[startIdx + 4]]
+      if(positionMetas.some(meta => typeof meta?.value === 'string')) {
+        vscode.window.showWarningMessage(`Node ${node.id} was not moved: its position is defined by a variable or an expression`)
+        continue
+      }
 
       // Helper function to replace value in the document
       function replaceValue(meta, newValue) {

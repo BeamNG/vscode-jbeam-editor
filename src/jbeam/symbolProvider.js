@@ -4,20 +4,28 @@ const vscode = require('vscode');
 const sjsonParser = require('../json/sjsonParser');
 const tableSchema = require('../json/tableSchema');
 const utilsExt = require('../utilsExt');
+const archivar = require('../archivar');
+const simConnection = require('../simConnection');
 
 class JBeamSymbolProvider {
-  provideDocumentSymbols(document, token) {
+  async provideDocumentSymbols(document, token) {
+    if (!await archivar.ensureNamespacesForDocument(document)) return
+    if (token.isCancellationRequested) return
     const symbols = [];
 
     const contentTextUtf8 = document.getText()
 
     let dataBundle = sjsonParser.decodeWithMeta(contentTextUtf8, document.uri.fsPath)
     if(!dataBundle) {
-      console.log('unable to get data from document: ', document.uri.fsPath, text)
+      console.log('unable to get data from document: ', document.uri.fsPath)
       return
     }
 
-    let [tableInterpretedData, diagnostics] = tableSchema.processAllParts(dataBundle.data)
+    const rootPath = utilsExt.getRootpath()
+    const namespace = rootPath ? utilsExt.getNamespaceFromFilename(rootPath, document.uri.fsPath) : null
+    const getSlotVariables = (slotTypes, partName) => archivar.getSlotVariables(namespace, slotTypes, partName)
+    const getVehicleContext = partName => simConnection.getVehicleContextForPart(namespace, partName)
+    let [tableInterpretedData, diagnostics] = tableSchema.processAllParts(dataBundle.data, getSlotVariables, getVehicleContext)
 
     for (const [partName, part] of Object.entries(tableInterpretedData)) {
       if(partName === '__meta' || part?.__meta === undefined) continue

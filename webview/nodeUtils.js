@@ -252,6 +252,8 @@ function updateNodeLabels() {
     let hovered = false; // beam hover handled elsewhere; keep for future
     let mirrored = mirroredNodeIndices.has(i);
     let error = nodesNearMirrorPlanes.has(i);
+    const isBeamSelected = selectedBeamNodeNames.has(pointsCache[i].name)
+    const isBeamHovered = hoveredBeamNodeNames.has(pointsCache[i].name)
     if (uiSettings.showNodeIDs || selected || mirrored || error || isBeamSelected || isBeamHovered) {
       const node = pointsCache[i];
       let text = node.name;
@@ -260,8 +262,6 @@ function updateNodeLabels() {
       else if (mirrored) size = 1.25; // Slightly different size for mirrored nodes
       else if (error) size = 1.5; // Different size for error nodes
       // beam-driven highlights
-      const isBeamSelected = selectedBeamNodeNames.has(node.name)
-      const isBeamHovered = hoveredBeamNodeNames.has(node.name)
       if (isBeamSelected) size = Math.max(size, 1.5)
       if (isBeamHovered) size = Math.max(size, 1.25)
       // Emphasize with consistently thick, darker border

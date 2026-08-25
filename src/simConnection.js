@@ -55,6 +55,7 @@ let extensionContext
 let statusBarItem
 let connectionEnabled = false
 let reconnectTimer = null
+const vehicleContextListeners = new Set()
 
 function sendData(data) {
   if (!client) return;
@@ -79,7 +80,17 @@ function sendData(data) {
   client.write(buffer);
 }
 
-function onData(msg) {
+function notifyVehicleContext() {
+  for (const listener of vehicleContextListeners) {
+    try {
+      listener(simPlayerVehicleInfo)
+    } catch (error) {
+      console.error('Vehicle context listener failed:', error)
+    }
+  }
+}
+
+async function onData(msg) {
   const syncing = extensionContext?.globalState.get('syncing', false) ?? false
 
   if(msg.cmd == 'siminfo') {
@@ -99,18 +110,28 @@ function onData(msg) {
 
   } else if(msg.cmd == 'playerVehicleInfo') {
     simPlayerVehicleInfo = msg.data
+    notifyVehicleContext()
     console.log('Got player info: ', simPlayerVehicleInfo, syncing)
     if(syncing && simPlayerVehicleInfo && simPlayerVehicleInfo.jbeam) {
       const namespace = `/vehicles/${simPlayerVehicleInfo.jbeam}`
-      if(archivar.partData[namespace].raw) {
-        let mainPart = archivar.partData[namespace][simPlayerVehicleInfo.jbeam]
-        if(mainPart.__meta && mainPart.__meta.origin) {
-          utilsExt.openFileInWorkspace(mainPart.__meta.origin, mainPart.__meta.range)
-        }
+      if (!await archivar.ensureNamespace(namespace)) return
+      const activeDocument = vscode.window.activeTextEditor?.document
+      if (activeDocument) {
+        if (!await archivar.ensureNamespacesForDocument(activeDocument)) return
+      } else if (!await archivar.ensureNamespace('/vehicles/common')) {
+        return
+      }
+      const mainPart = archivar.partData[namespace]?.[simPlayerVehicleInfo.jbeam]?.raw
+      if(mainPart?.__meta?.origin) {
+        utilsExt.openFileInWorkspace(mainPart.__meta.origin, mainPart.__meta.range)
       }
 
       extensionContext.globalState.update('syncing', false);
     }
+    return
+  } else if(msg.cmd == 'noPlayerVehicle') {
+    simPlayerVehicleInfo = null
+    notifyVehicleContext()
     return
   }
   //console.log('TCP: Received: ', msg);
@@ -128,7 +149,8 @@ function _onRawData(data) {
     const messageIdentifier = buffer.toString('ascii', 0, 4);
     if (messageIdentifier !== 'BN01') {
       console.error('Invalid message identifier:', messageIdentifier);
-      throw new Error('Invalid message identifier');
+      buffer = Buffer.alloc(0)
+      return
     }
 
     const messageLength = buffer.readUInt32LE(4); // Correctly read length from Buffer
@@ -142,16 +164,36 @@ function _onRawData(data) {
 
     try {
       const parsedMessage = JSON.parse(message);
-      onData(parsedMessage);
+      onData(parsedMessage).catch(error => console.error('Unable to process simulation message:', error));
     } catch (e) {
       console.error('Exception while parsing JSON from simconnection: ', message, e.message);
-      throw e;
     }
   }
 }
 
 function sendPing() {
   sendData({cmd:'ping'})
+}
+
+function requestPlayerVehicleInfo() {
+  sendData({cmd:'getPlayerVehicleInfo'})
+}
+
+function getPlayerVehicleContext() {
+  return simPlayerVehicleInfo
+}
+
+function getVehicleContextForPart(namespace, partName) {
+  const context = simPlayerVehicleInfo
+  if (!context?.components || !context.activeParts?.[partName]) return null
+  const vehicleNamespace = `/vehicles/${context.jbeam}`
+  if (namespace !== vehicleNamespace && namespace !== '/vehicles/common') return null
+  return context
+}
+
+function onVehicleContextChanged(listener) {
+  vehicleContextListeners.add(listener)
+  return {dispose: () => vehicleContextListeners.delete(listener)}
 }
 
 function selectNodes(nodes) {
@@ -163,10 +205,12 @@ function connectToServer() {
     console.error('Client connection already existing')
     return;
   }
-  client = new net.Socket();
+  const socket = new net.Socket();
+  client = socket
+  buffer = Buffer.alloc(0)
 
   // Connect to the TCP server
-  client.connect(7000, '127.0.0.1', function() {
+  socket.connect(7000, '127.0.0.1', function() {
     reconnectInterval = 1000; // Reset reconnect interval on successful connection
     console.log('TCP: Connected to Server');
     sendPing()
@@ -175,29 +219,34 @@ function connectToServer() {
   });
 
   // Handle data from the server
-  client.on('data', function(dataRaw) {
+  socket.on('data', function(dataRaw) {
     _onRawData(dataRaw)
   });
 
   // Handle closing the connection
-  client.on('close', function() {
-    if(!client.refusedConnection) {
+  socket.on('close', function() {
+    if(!socket.refusedConnection) {
       console.log('TCP: Connection closed');
     }
-    attemptReconnect();
+    if (client === socket) {
+      client = null
+      buffer = Buffer.alloc(0)
+      attemptReconnect();
+    }
   })
 
   // Handle error events
-  client.on('error', function(err) {
+  socket.on('error', function(err) {
     if(err.code !== 'ECONNREFUSED') {
       console.error('TCP: Connection error: ' + err.message);
     } else {
-      client.refusedConnection = true
+      socket.refusedConnection = true
     }
   });
 }
 
 function tryToWakeUpBeamNG() {
+  if (!connectionEnabled) return
   const pipe = net.createConnection(beamngCommandPipe);
   pipe.on('connect', () => {
     pipe.write(commandschemeWakeupMessage)
@@ -210,7 +259,7 @@ function tryToWakeUpBeamNG() {
   pipe.on('error', (err) => {
     pipe.destroy()
   })
-  setTimeout(connectToServer, 500)
+  if (connectionEnabled) reconnectTimer = setTimeout(connectToServer, 500)
 }
 
 function startConnection() {
@@ -235,12 +284,15 @@ function stopConnection() {
   clearTimeout(reconnectTimer);
 
   if (client) {
-    client.destroy();
-    client = null;
+    const socket = client
+    client = null
+    buffer = Buffer.alloc(0)
+    socket.destroy();
   }
 
   siminfo = null;
   simPlayerVehicleInfo = null;
+  notifyVehicleContext()
 
   if (statusBarItem) {
     statusBarItem.text = 'BeamNG: Disconnected';
@@ -264,13 +316,16 @@ function attemptReconnect() {
   if (!connectionEnabled) return;
 
   if (client) {
-    client.destroy();
-    client = null;
-    siminfo = null;
-    simPlayerVehicleInfo = null;
-    if (statusBarItem) {
-      statusBarItem.text = 'BeamNG: Connecting...';
-    }
+    const socket = client
+    client = null
+    buffer = Buffer.alloc(0)
+    socket.destroy();
+  }
+  siminfo = null;
+  simPlayerVehicleInfo = null;
+  notifyVehicleContext()
+  if (statusBarItem) {
+    statusBarItem.text = 'BeamNG: Connecting...';
   }
 
   //console.log('attemptReconnect in ', reconnectInterval)
@@ -314,22 +369,32 @@ function activate(context) {
 
 function deactivate() {
   //console.log('simConnection deactivated ...')
+  connectionEnabled = false
   clearTimeout(reconnectTimer);
 
   if (client) {
-    client.destroy();
-    client = null;
+    const socket = client
+    client = null
+    buffer = Buffer.alloc(0)
+    socket.destroy();
   }
 
   if (statusBarItem) {
     statusBarItem.dispose();
   }
+  simPlayerVehicleInfo = null
+  notifyVehicleContext()
+  vehicleContextListeners.clear()
 }
 
 module.exports = {
   selectNodes,
   sync,
   sendPing,
+  requestPlayerVehicleInfo,
+  getPlayerVehicleContext,
+  getVehicleContextForPart,
+  onVehicleContextChanged,
   activate,
   deactivate,
   toggleConnection

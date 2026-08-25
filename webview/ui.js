@@ -11,13 +11,14 @@ let views = [
 function applySetting(settingKey) {
   switch (settingKey) {
     case 'perspectiveRender':
+      // the position is only carried over when the projection really changes, so the startup view is kept
       if (uiSettings.perspectiveRender) {
+        if (camera !== cameraPersp) cameraPersp.position.copy(orthoCamera.position);
         camera = cameraPersp;
-        cameraPersp.position.copy(orthoCamera.position);
         orbitControls.enableRotate = true;
       } else {
+        if (camera !== orthoCamera) orthoCamera.position.copy(cameraPersp.position);
         camera = orthoCamera;
-        orthoCamera.position.copy(cameraPersp.position);
         orbitControls.enableRotate = false;
       }
       orbitControls.object = camera;
@@ -38,6 +39,12 @@ function applySetting(settingKey) {
       break
     case 'showJBeamLegend':
       updateJBeamLegendVisibility(uiSettings.showJBeamLegend);
+      break
+    case 'opacity':
+      ctx.visualizersTriangle.updateOpacity()
+      ctx.visualizersMesh.updateOpacity()
+      break
+    case 'labelOpacity':
       break
   }
 
@@ -81,6 +88,23 @@ function setupToolbarSetting(settingKey) {
   });
 }
 
+// Function to create a listener for a slider setting (but do not apply the setting during initialization)
+function setupToolbarSlider(settingKey, fallbackValue) {
+  const element = document.getElementById('toolbar-' + settingKey + '-slider');
+
+  if (uiSettings[settingKey] === null || uiSettings[settingKey] === undefined) {
+    uiSettings[settingKey] = fallbackValue;
+  }
+  element.value = uiSettings[settingKey];
+  element.title = `${settingKey}: ${uiSettings[settingKey]}%`;
+
+  element.addEventListener('input', () => {
+    uiSettings[settingKey] = parseInt(element.value, 10);
+    element.title = `${settingKey}: ${uiSettings[settingKey]}%`;
+    applySetting(settingKey);
+  });
+}
+
 // Initialize toolbar buttons and UI (but do not apply settings)
 function initHTMLUI() {
   setupToolbarSetting('showNodeIDs');
@@ -90,12 +114,16 @@ function initHTMLUI() {
   setupToolbarSetting('mirrorplanes');
   setupToolbarSetting('perspectiveRender');
   setupToolbarSetting('showJBeamLegend');
+  setupToolbarSlider('opacity', ctx?.config?.sceneView?.meshes?.opacity ?? 50);
+  setupToolbarSlider('labelOpacity', 70);
 }
 
 export async function init() {
   loadUISettings();
   initHTMLUI();
   createJBeamLegendPane();
+  // the camera is created before the settings are known, so the projection needs to be applied once
+  applySetting('perspectiveRender');
 }
 
 export async function onConfigChanged() {

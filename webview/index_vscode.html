@@ -21,6 +21,14 @@
   <div class="toolbar-item toolbar-item-spacer" id="toolbar-mirrorplanes-toggle">⇄</div>
   <div class="toolbar-item toolbar-item-spacer" id="toolbar-perspectiveRender-toggle">🔲</div>
   <div class="toolbar-item toolbar-item-spacer" id="toolbar-showJBeamLegend-toggle">📜</div>
+  <div class="toolbar-slider">
+    <span class="toolbar-slider-icon">◧</span>
+    <input type="range" id="toolbar-opacity-slider" min="0" max="100" step="1">
+  </div>
+  <div class="toolbar-slider">
+    <span class="toolbar-slider-icon">Aa</span>
+    <input type="range" id="toolbar-labelOpacity-slider" min="0" max="100" step="1">
+  </div>
 </div>
 
 <div id="status-bar">
@@ -123,6 +131,28 @@ body, html, canvas {
 
 .toolbar-item-spacer {
   margin-right: 3px;
+}
+
+.toolbar-slider {
+  display: flex;
+  align-items: center;
+  padding: 3px;
+  margin-left: 3px;
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.toolbar-slider-icon {
+  color: #dddddd;
+  font-size: 15px;
+  padding: 0 5px 0 6px;
+}
+
+.toolbar-slider input[type=range] {
+  width: 70px;
+  height: 4px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: #dddddd;
 }
 
 #status-bar {

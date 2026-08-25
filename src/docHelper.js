@@ -154,6 +154,66 @@ const jbeamDocumentation = {
     "default": "",
     "documentation": "[here](https://documentation.beamng.com/modding/vehicle/sections/nodes/#args_pairedNode)"
   },
+  "slotType": {
+    "description": "The slot type of this part. It decides into which slots the part fits. Can also be a list of slot types",
+    "type": "string",
+    "default": "",
+    "documentation": "[here](https://documentation.beamng.com/modding/vehicle/sections/slots/)"
+  },
+  "slots2 > name": {
+    "description": "The name of the slot. **Need to be unique** inside the part. Part config (PC) files reference this name",
+    "type": "string",
+    "default": "",
+    "documentation": "[here](https://documentation.beamng.com/modding/vehicle/sections/slots/)"
+  },
+  "slots2 > allowTypes": {
+    "description": "List of slot types that fit into this slot. Replaces the single `type` of the old `slots` section",
+    "type": "list",
+    "default": "",
+    "documentation": "[here](https://documentation.beamng.com/modding/vehicle/sections/slots/)"
+  },
+  "slots2 > denyTypes": {
+    "description": "List of slot types that are rejected, even when `allowTypes` accepts them. Use an empty list `[]` if nothing is rejected",
+    "type": "list",
+    "default": "",
+    "documentation": "[here](https://documentation.beamng.com/modding/vehicle/sections/slots/)"
+  },
+  "slots2 > default": {
+    "description": "Name of the part that fills this slot when nothing else is chosen. Use an empty string for an empty slot",
+    "type": "string",
+    "default": "",
+    "documentation": "[here](https://documentation.beamng.com/modding/vehicle/sections/slots/)"
+  },
+  "slots2 > description": {
+    "description": "The slot name shown to the player in the vehicle config UI",
+    "type": "string",
+    "default": "",
+    "documentation": "[here](https://documentation.beamng.com/modding/vehicle/sections/slots/)"
+  },
+  "slots2 > coreSlot": {
+    "description": "If true, the player can not empty this slot in the vehicle config UI",
+    "type": "boolean",
+    "default": "false",
+    "documentation": "[here](https://documentation.beamng.com/modding/vehicle/sections/slots/)"
+  },
+  "slots > type": {
+    "description": "The slot type that fits into this slot. Legacy section, use `slots2` with `name` and `allowTypes` instead",
+    "type": "string",
+    "default": "",
+    "documentation": "[here](https://documentation.beamng.com/modding/vehicle/sections/slots/)"
+  },
+  "slots > default": {
+    "description": "Name of the part that fills this slot when nothing else is chosen. Use an empty string for an empty slot",
+    "type": "string",
+    "default": "",
+    "documentation": "[here](https://documentation.beamng.com/modding/vehicle/sections/slots/)"
+  },
+  "slots > description": {
+    "description": "The slot name shown to the player in the vehicle config UI",
+    "type": "string",
+    "default": "",
+    "documentation": "[here](https://documentation.beamng.com/modding/vehicle/sections/slots/)"
+  },
   "beams > id1": {
     "description": "Name of the first node",
     "type": "string",

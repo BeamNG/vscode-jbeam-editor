@@ -4,6 +4,8 @@ const sjsonParser = require('../json/sjsonParser');
 const tableSchema = require('../json/tableSchema');
 const utilsExt = require('../utilsExt');
 const docHelper = require('../docHelper');
+const archivar = require('../archivar');
+const simConnection = require('../simConnection');
 
 const highlightDecorationType = vscode.window.createTextEditorDecorationType({
   backgroundColor: 'rgba(255, 255, 0, 0.1)', // yellow background for highlighting
@@ -59,6 +61,13 @@ function goToLineForHover(args) {
   }
 }
 
+// table rows and inline option dicts show up as numbers in the breadcrumb,
+// while the documentation is keyed by section and argument name only
+function getSectionBreadCrumb(breadCrumb) {
+  if(!breadCrumb) return ''
+  return breadCrumb.replace(/( > \d+)+$/, '')
+}
+
 function getDocEntry(key) {
   let d = docHelper.jbeamDocumentation[key];
   if (typeof d === 'object') {
@@ -82,7 +91,9 @@ function getDocEntry(key) {
 }
 
 class JBeamHoverProvider {
-  provideHover(document, position, token) { // token = CancellationToken
+  async provideHover(document, position, token) { // token = CancellationToken
+    if (!await archivar.ensureNamespacesForDocument(document)) return
+    if (token.isCancellationRequested) return
     const contentTextUtf8 = document.getText();
     const range = document.getWordRangeAtPosition(position, /[^\",]+/)
     const word = document.getText(range);
@@ -107,7 +118,11 @@ class JBeamHoverProvider {
       }
 
       // fully unrolled data
-      let [tableInterpretedData, diagnostics] = tableSchema.processAllParts(dataBundle.data)
+      const rootPath = utilsExt.getRootpath()
+      const namespace = rootPath ? utilsExt.getNamespaceFromFilename(rootPath, document.uri.fsPath) : null
+      const getSlotVariables = (slotTypes, partName) => archivar.getSlotVariables(namespace, slotTypes, partName)
+      const getVehicleContext = partName => simConnection.getVehicleContextForPart(namespace, partName)
+      let [tableInterpretedData, diagnostics] = tableSchema.processAllParts(dataBundle.data, getSlotVariables, getVehicleContext)
 
       let foundObjCleanStructured
       let metaStructured
@@ -129,7 +144,7 @@ class JBeamHoverProvider {
         // no try to get the docs with both data being present ...
         if(metaRaw && metaRaw.length > 0) {
           const shortWord = word.slice(0, 40).trim() // because there can be a lot of garbage in there, like half the document ...
-          const finalBreadCrumb = (`${metaRaw[0].breadcrumbPlainText} > ${shortWord}`)
+          const finalBreadCrumb = (`${getSectionBreadCrumb(metaRaw[0].breadcrumbsPlainText?.raw)} > ${shortWord}`)
           docHints.push(finalBreadCrumb)
           let doc = getDocEntry(finalBreadCrumb)
           if(showDocs && doc) {

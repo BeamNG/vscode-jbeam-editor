@@ -15,16 +15,20 @@ const tableSchema = require('./json/tableSchema');
 const syntaxChecker = require('./jbeam/syntaxChecker');
 const path = require('path')
 const fs = require('fs');
-const os = require('os');
 const utilsExt = require('./utilsExt');
+const jbeamVariables = require('./json/jbeamVariables');
 
 let jbeamFileData = {} // the root that holds all data
 let partData = {}
 let rootPath
 let jbeamFileCounter = 0
 let partCounter = 0
+const loadedNamespaces = new Set()
+const loadingNamespaces = new Map()
+const failedFilesByNamespace = new Map()
+let watcher
+let archiveGeneration = 0
 
-const archivarDiagnostics = vscode.languages.createDiagnosticCollection('archivar');
 const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 
 function fileExists(filePath) {
@@ -138,74 +142,196 @@ let fileDebounceMap = new Map()
 const debounceTime = 50 // milliseconds
 
 function onFileChangedDebounced(filename) {
-  //console.log('onFileChanged', changeType, filename)
-  if(path.extname(filename) == '.jbeam') {
-    removeJbeamFileData(filename)
-    processJbeamFile(filename)
-    //console.log(`Part count diff after updating file: ${partCounter}: ${filename}`)
-    statusBar.text = `$(project) ${jbeamFileCounter} JBeam files $(repo) ${partCounter} parts`
-  }
+  if (!rootPath || path.extname(filename) !== '.jbeam') return
+  const namespace = utilsExt.getNamespaceFromFilename(rootPath, filename)
+  if (!loadedNamespaces.has(namespace)) return
+
+  removeJbeamFileData(filename)
+  processOrRemember(namespace, filename)
+  updateStatus()
 }
 
-// onFileChanged will be called many times for any file change, we need to debounce the request and only call the file change function once.
-function onFileChanged(changeType, filename) {
-  if(!rootPath || !filename) return
-  filename = path.join(rootPath, filename)
+function onFileChanged(filename) {
+  if (!rootPath || !filename) return
   if (fileDebounceMap.has(filename)) {
     clearTimeout(fileDebounceMap.get(filename))
-    //console.log('onFileChanged - BOUNCED!', changeType, filename)
   }
   fileDebounceMap.set(filename, setTimeout(() => {
-    // do not use changeType in here as we accumulate events with the bouncing!
     onFileChangedDebounced(filename)
     fileDebounceMap.delete(filename)
   }, debounceTime));
 }
 
-function loadJbeamFiles(context) {
-  statusBar.text = `Parsing jbeam files ...`
+function updateStatus(message) {
+  statusBar.text = message || `$(project) ${jbeamFileCounter} loaded JBeam files $(repo) ${partCounter} parts`
+}
+
+function processOrRemember(namespace, filename) {
+  try {
+    processJbeamFile(filename)
+    failedFilesByNamespace.get(namespace)?.delete(filename)
+  } catch (error) {
+    if (!failedFilesByNamespace.has(namespace)) failedFilesByNamespace.set(namespace, new Set())
+    failedFilesByNamespace.get(namespace).add(filename)
+    console.error(`Unable to parse ${filename}:`, error)
+  }
+}
+
+async function ensureNamespace(namespace) {
+  if (!rootPath || !namespace?.startsWith('/vehicles/')) return true
+  if (loadedNamespaces.has(namespace)) {
+    for (const filename of failedFilesByNamespace.get(namespace) || []) processOrRemember(namespace, filename)
+    return true
+  }
+  if (loadingNamespaces.has(namespace)) return loadingNamespaces.get(namespace)
+
+  const generation = archiveGeneration
+  const started = Date.now()
+  const pattern = new vscode.RelativePattern(rootPath, `${namespace.slice(1)}/**/*.jbeam`)
+  updateStatus(`$(loading~spin) Loading ${namespace} JBeam files ...`)
+
+  const loading = vscode.workspace.findFiles(pattern, null).then(files => {
+    if (generation !== archiveGeneration) return false
+    for (const file of files) processOrRemember(namespace, file.fsPath)
+    loadedNamespaces.add(namespace)
+    const elapsed = Date.now() - started
+    const failedCount = failedFilesByNamespace.get(namespace)?.size || 0
+    updateStatus()
+    statusBar.tooltip = `${namespace}: ${files.length} files parsed in ${elapsed} ms, ${failedCount} failed`
+    return true
+  }).finally(() => {
+    if (loadingNamespaces.get(namespace) === loading) loadingNamespaces.delete(namespace)
+  })
+  loadingNamespaces.set(namespace, loading)
+  return loading
+}
+
+async function ensureNamespacesForDocument(document) {
+  if (!rootPath || !document) return true
+  const generation = archiveGeneration
+  const namespaces = new Set()
+  const addDocumentNamespace = doc => {
+    const namespace = utilsExt.getNamespaceFromFilename(rootPath, doc.uri.fsPath)
+    if (namespace.startsWith('/vehicles/')) namespaces.add(namespace)
+  }
+
+  addDocumentNamespace(document)
+  for (const editor of vscode.window.visibleTextEditors) {
+    if (editor.document.languageId === 'jbeam') addDocumentNamespace(editor.document)
+  }
+  namespaces.add('/vehicles/common')
+  for (const namespace of namespaces) {
+    if (!await ensureNamespace(namespace) || generation !== archiveGeneration) return false
+  }
+  return true
+}
+
+function activate(context) {
+  archiveGeneration++
+  rootPath = utilsExt.getRootpath()
+  jbeamFileCounter = 0
+  partCounter = 0
+  updateStatus('$(project) JBeam archive loads on demand')
   statusBar.show()
 
-  rootPath = utilsExt.getRootpath()
   if (!rootPath) {
     console.error('unable to load jbeam: not in a workspace')
     statusBar.hide()
     return
   }
 
-  const vehiclesPath = vscode.Uri.file(path.join(rootPath, '/vehicles/')).fsPath
-  jbeamFileCounter = 0
-  partCounter = 0
-
-  let findFilesPromises = []
-  // Find .jbeam files
-  findFilesPromises.push(vscode.workspace.findFiles(new vscode.RelativePattern(vehiclesPath, '**/*.jbeam'), null).then(files => {
-    statusBar.text = `Parsing ${files.length} jbeam files ...`
-    for(let file of files) {
-      processJbeamFile(file.fsPath)
-    }
-  }));
-  Promise.all(findFilesPromises).then(allFilesArrays => {
-    statusBar.text = `$(project) ${jbeamFileCounter} JBeam files $(repo) ${partCounter} parts`
-
-    //for(let namespace in partData) {
-    //  console.log(` * ${namespace} - ${Object.keys(partData[namespace]).length} parts`)
-    //}
-  })
-
-  // now watch for changes (use VSCode watcher for reliability)
-  const watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(rootPath, '**/*.jbeam'))
-  watcher.onDidCreate(uri => onFileChangedDebounced(uri.fsPath))
-  watcher.onDidChange(uri => onFileChangedDebounced(uri.fsPath))
-  watcher.onDidDelete(uri => onFileChangedDebounced(uri.fsPath))
-  if (context && context.subscriptions) context.subscriptions.push(watcher)
-}
-
-function activate(context) {
-  loadJbeamFiles(context)
+  watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(rootPath, '**/*.jbeam'))
+  watcher.onDidCreate(uri => onFileChanged(uri.fsPath))
+  watcher.onDidChange(uri => onFileChanged(uri.fsPath))
+  watcher.onDidDelete(uri => onFileChanged(uri.fsPath))
+  if (context?.subscriptions) context.subscriptions.push(watcher)
 }
 
 function deactivate() {
+  archiveGeneration++
+  if (watcher) watcher.dispose()
+  watcher = null
+  for (const timer of fileDebounceMap.values()) clearTimeout(timer)
+  fileDebounceMap.clear()
+  loadedNamespaces.clear()
+  loadingNamespaces.clear()
+  failedFilesByNamespace.clear()
+  for (const key of Object.keys(jbeamFileData)) delete jbeamFileData[key]
+  for (const key of Object.keys(partData)) delete partData[key]
+  jbeamFileCounter = 0
+  partCounter = 0
+  rootPath = null
+  statusBar.hide()
+}
+
+/*
+  Slot variables are defined by the part that owns the slot, so a part that is opened on its own
+  can only get them by looking at all known parts. There can be more than one parent, a seat
+  occupant fits into every seat for example, so the parts are walked in a stable order and the
+  first slot that accepts one of the slot types wins.
+*/
+function findSlotContext(preferredNamespace, slotTypes, childPartName, visited) {
+  if (!slotTypes || slotTypes.length === 0) return null
+  const wantedTypes = new Set(slotTypes)
+  const namespaces = Object.keys(partData).sort((a, b) => {
+    if (a === preferredNamespace) return -1
+    if (b === preferredNamespace) return 1
+    if (a === '/vehicles/common') return -1
+    if (b === '/vehicles/common') return 1
+    return a.localeCompare(b)
+  })
+  let fallback = null
+
+  for (const namespace of namespaces) {
+    for (const partName of Object.keys(partData[namespace]).sort()) {
+      if (visited.has(namespace + '\0' + partName)) continue
+      const parentPart = partData[namespace][partName].interpreted
+      const slots = parentPart?.slots2 || parentPart?.slots
+      if (!slots) continue
+      for (const rowKey in slots) {
+        if (rowKey === '__meta') continue
+        const slot = slots[rowKey]
+        if (!slot) continue
+        const allowTypes = slot.allowTypes || slot.type
+        if (!utilsExt.getStringList(allowTypes).some(slotType => wantedTypes.has(slotType))) continue
+        if (utilsExt.getStringList(slot.denyTypes).some(slotType => wantedTypes.has(slotType))) continue
+        const context = {
+          namespace,
+          parentPartName: partName,
+          slotVariables: typeof slot.variables === 'object' ? slot.variables : {},
+        }
+        if (slot.default === childPartName) return context
+        if (!fallback) fallback = context
+      }
+    }
+  }
+  return fallback
+}
+
+function resolveArchivedScope(namespace, partName, visited) {
+  const key = namespace + '\0' + partName
+  if (visited.has(key)) return {}
+  visited.add(key)
+
+  const part = partData[namespace]?.[partName]?.interpreted
+  if (!part) return {}
+  const localVariables = part.__meta?.variableScope || {}
+  const slotTypes = utilsExt.getStringList(part.slotType ?? part.options?.slotType)
+  const context = findSlotContext(namespace, slotTypes, partName, visited)
+  if (!context) return localVariables
+
+  const parentVariables = resolveArchivedScope(context.namespace, context.parentPartName, visited)
+  return jbeamVariables.mergeVariableScopes(parentVariables, localVariables, context.slotVariables)
+}
+
+function getSlotVariables(preferredNamespace, slotTypes, childPartName) {
+  const visited = new Set([preferredNamespace + '\0' + childPartName])
+  const context = findSlotContext(preferredNamespace, slotTypes, childPartName, visited)
+  if (!context) return null
+  return {
+    parentVariables: resolveArchivedScope(context.namespace, context.parentPartName, visited),
+    slotVariables: context.slotVariables,
+  }
 }
 
 function findNodeByNameInAllParts(namespace, nodeName) {
@@ -234,5 +360,8 @@ module.exports = {
   activate,
   deactivate,
   partData,
+  ensureNamespace,
+  ensureNamespacesForDocument,
+  getSlotVariables,
   findNodeByNameInAllParts,
 }

@@ -43,7 +43,7 @@ function applyFadeEffectToDocument(editor, rangeToHighlight) {
 }
 
 
-function onLoadColladaNamespaces(webPanel, uri, loadedNamespaces, loadCommon) {
+function onLoadColladaNamespaces(webPanel, uri, loadedNamespaces, loadCommon, loadId) {
   // Parse the URI to get the full file system path
   let filePath = vscode.Uri.parse(uri).fsPath;
 
@@ -78,6 +78,7 @@ function onLoadColladaNamespaces(webPanel, uri, loadedNamespaces, loadCommon) {
             command: 'loadDaeFinal',
             uri: utilsExt.convertUri(vscode, webPanel, file.fsPath),
             namespace: '/vehicles/common',
+            loadId,
           })
         }
       });
@@ -95,6 +96,7 @@ function onLoadColladaNamespaces(webPanel, uri, loadedNamespaces, loadCommon) {
             command: 'loadDaeFinal',
             uri: utilsExt.convertUri(vscode, webPanel, file.fsPath),
             namespace: '/vehicles/' + vehicleSpecificPath,
+            loadId,
           })
         }
       });
@@ -105,6 +107,7 @@ function onLoadColladaNamespaces(webPanel, uri, loadedNamespaces, loadCommon) {
     if(webPanel) {
       webPanel.webview.postMessage({
         command: 'daeFileLoadingDone',
+        loadId,
       })
     }
   })
@@ -123,6 +126,10 @@ function getWebviewContent(webPanel) {
 
 function show3DSceneCommand() {
   const config = vscode.workspace.getConfiguration('jbeam-editor')
+  const localResourceRoots = [
+    extensionContext.extensionUri,
+    ...(vscode.workspace.workspaceFolders || []).map(folder => folder.uri),
+  ]
   // Create and show a new webview
   let webPanel = vscode.window.createWebviewPanel(
     'sceneView', // Identifies the type of the webview
@@ -131,13 +138,25 @@ function show3DSceneCommand() {
     {
       enableScripts: true,  // Allow scripts to run in the webview
       retainContextWhenHidden: true,  // Optionally, you can retain the state even when webview is not visible
-      //localResourceRoots: [vscode.Uri.file(path.join(context.extensionPath, 'webview'))]
+      localResourceRoots,
     }
   )
   webPanel.webview.html = getWebviewContent(webPanel);
   // Handle the webview being disposed (closed by the user)
   const panelDisposables = []
+  let parseRequestId = 0
+  let sourceEditor = vscode.window.activeTextEditor
+  panelDisposables.push(simConnection.onVehicleContextChanged(() => {
+    const editor = vscode.window.activeTextEditor || sourceEditor
+    if (webPanel?.visible && editor?.document.languageId === 'jbeam') parseAndPostData(editor)
+  }))
+  panelDisposables.push(webPanel.onDidChangeViewState(event => {
+    const editor = vscode.window.activeTextEditor || sourceEditor
+    if (event.webviewPanel.visible && editor?.document.languageId === 'jbeam') parseAndPostData(editor)
+  }))
+  simConnection.requestPlayerVehicleInfo()
   webPanel.onDidDispose(() => {
+    parseRequestId++
     // Dispose all listeners created for this panel
     for (const d of panelDisposables) try { d.dispose() } catch (_) {}
     allWebPanels = allWebPanels.filter(panel => panel !== webPanel);
@@ -186,8 +205,6 @@ function show3DSceneCommand() {
     }
   }
 
-  let openedFromTextEditor = vscode.window.activeTextEditor
-
   const onMessageDisposable = webPanel.webview.onDidReceiveMessage(
     message => {
       //console.log('ext.onDidReceiveMessage', message)
@@ -208,7 +225,7 @@ function show3DSceneCommand() {
           onResetSelection(message);
           break;
         case 'loadColladaNamespaces':
-          onLoadColladaNamespaces(webPanel, message.uri, message.data, message.loadCommon)
+          onLoadColladaNamespaces(webPanel, message.uri, message.data, message.loadCommon, message.loadId)
           break
         case 'loadDae':
           // this converts any file requests to proper URIs that can load inside the webview.
@@ -224,8 +241,8 @@ function show3DSceneCommand() {
         // sent once the 3d scene finished loading
         case 'sceneReady':
           // send over the data of the active text document
-          if (openedFromTextEditor) {
-            parseAndPostData(openedFromTextEditor);
+          if (sourceEditor) {
+            parseAndPostData(sourceEditor);
           }
           break
         case 'sendPing':
@@ -315,10 +332,19 @@ function show3DSceneCommand() {
     // }
   }
 
-  function parseAndPostData(editor, updatedOnly = false) {
+  async function parseAndPostData(editor, updatedOnly = false) {
     if(!webPanel) return
 
     const document = editor.document
+    const requestId = ++parseRequestId
+    try {
+      if (!await archivar.ensureNamespacesForDocument(document)) return
+    } catch (error) {
+      vscode.window.showErrorMessage(`Unable to load related JBeam files: ${error.message}`)
+      return
+    }
+    if(!webPanel) return
+    if (requestId !== parseRequestId) return
     const selection = editor.selection
 
     let meshLoadingEnabled = isMeshLoadingAllowed(document)
@@ -337,7 +363,9 @@ function show3DSceneCommand() {
         console.error("Could not parse SJSON!")
         return
       }
-      let [tableInterpretedData, diagnosticsTable] = tableSchema.processAllParts(dataBundle.data)
+      const getSlotVariables = (slotTypes, partName) => archivar.getSlotVariables(namespace, slotTypes, partName)
+      const getVehicleContext = partName => simConnection.getVehicleContextForPart(namespace, partName)
+      let [tableInterpretedData, diagnosticsTable] = tableSchema.processAllParts(dataBundle.data, getSlotVariables, getVehicleContext)
       dataBundle.tableInterpretedData = tableInterpretedData
       docCache[uri] = dataBundle
 
@@ -346,6 +374,7 @@ function show3DSceneCommand() {
 
       improveJbeamData(namespace, dataBundle)
 
+      if (requestId !== parseRequestId) return
       webPanel.webview.postMessage({
         command: 'jbeamData',
         data: tableInterpretedData,
@@ -359,13 +388,13 @@ function show3DSceneCommand() {
     } catch (e) {
       // If there's an error in parsing, show it to the user
       vscode.window.showErrorMessage(`Error parsing SJSON: ${e.message}`);
-      throw e
     }
   }
   // Listen for when the active editor changes
   const onActiveEditorChanged = vscode.window.onDidChangeActiveTextEditor(editor => {
     if (editor) {
       if (editor.document.languageId !== 'jbeam') return;
+      sourceEditor = editor
       parseAndPostData(editor);
     }
   })
@@ -410,17 +439,20 @@ function show3DSceneCommand() {
     if(docCache[uri]) {
       delete docCache[uri]
     }
+    if (sourceEditor?.document === document) sourceEditor = null
   })
   panelDisposables.push(onDocumentClosed)
 }
 
 let show3DSceneCommandDisposable
+let configDisposable
 function activate(context) {
   extensionContext = context
+  if (configDisposable) configDisposable.dispose()
   show3DSceneCommandDisposable = vscode.commands.registerCommand('jbeam-editor.show3DScene', show3DSceneCommand);
   extensionContext.subscriptions.push(show3DSceneCommandDisposable)
 
-  context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(event => {
+  configDisposable = vscode.workspace.onDidChangeConfiguration(event => {
     if (event.affectsConfiguration('jbeam-editor')) {
       const config = vscode.workspace.getConfiguration('jbeam-editor')
       for(let w of allWebPanels) {
@@ -431,12 +463,15 @@ function activate(context) {
         })
       }
     }
-  }))
+  })
+  context.subscriptions.push(configDisposable)
 }
 
 function deactivate() {
   // we dispose explicitly as we reload these modules on config change
   if(show3DSceneCommandDisposable) show3DSceneCommandDisposable.dispose()
+  if(configDisposable) configDisposable.dispose()
+  configDisposable = null
 }
 
 module.exports = {

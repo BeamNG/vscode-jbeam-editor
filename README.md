@@ -85,9 +85,22 @@ This is a lightweight visualizer and tool for working with the physics definitio
 
   ![](assets/partFocus.gif)
 
-* triangle visualization
+* triangle and quad visualization, with shading that shows the surface angle and the front/back side
 
   ![](assets/triDisplay.gif)
+
+* transparency slider in the 3D toolbar, which fades meshes and collision surfaces
+
+* node label opacity slider and smaller default labels
+
+* slot checks for `slots` and `slots2`: missing table header, missing `name`, `allowTypes` that is not a list,
+  slot names used more than once and parts that define both slot sections
+
+* variable evaluation for `$name`, `$=expression`, `$.name`, `$>>components.path`, and slot variables
+
+* exact `$components` values from the connected player vehicle, with current-part values as the offline fallback
+
+* lazy JBeam archive: only the current vehicle, `/vehicles/common`, and open vehicle namespaces are parsed
 
 * Settings shortcut in the top right corner:
 
@@ -108,16 +121,35 @@ This is a lightweight visualizer and tool for working with the physics definitio
 
 * Mesh functions are a bit unstable still. Especially if you change tabs, etc while it loads the data.
 
+## Unsupported jbeam features
+
+Sections with no 3D visualization, sorted by how often they are used in the stock vehicles:
+
+| section | uses | note |
+| --- | --- | --- |
+| `pressureWheels` (and `hubWheels`) | ~4500 | no wheel visualization at all, the largest gap |
+| `powertrain`, `controller`, `energyStorage` | ~4000 total | data only, a powertrain graph view is missing |
+| `props` | ~2240 | meshes are drawn, but they can not be picked in 3D |
+| `slidenodes` + `rails` | ~1475 / ~1410 | a node sliding along a rail of nodes |
+| `triggers2` | ~1045 | trigger volumes |
+| `couplerNodes` | ~840 | coupling points |
+| `glowMap` | ~820 | light glow positions |
+| `cameraExternal`, `camerasInternal`, `cameraChase` | ~910 total | camera positions |
+| `refNodes` | ~400 | reference nodes that define the vehicle axis |
+| `mirrors` | ~295 | mirror positions |
+
+Other known gaps:
+
+* the slot chain is not followed: parts are read one file at a time, so part config (PC) files can not be loaded
+* `"$+key"` and other section merge operators of the slot system are not applied
+* external `include()` expressions stay unresolved
+
 ## Wishlist
 
 * JBeam beautifier: clean up the file, format everything nicely
-* autocomplete part names in PC files
 * make grid and ground plane being as big as the vehicle at least for big vehicles
-* mesh opacity user-setable
-* implementation of props
-* picking flexbodies in 3d space
+* picking flexbodies and props in 3d space
 * working slot system: part chain loading support, part config (PC) loading
-* better support for sections: slidenodes, rails, triangles, wheels, refNodes, camera*, torsionbars
 * powertrain viz
 * trigger viz
 * variables debug UI
@@ -162,6 +194,31 @@ If all worked, it should show up like this now:
 ![](assets/fileformatHelp4.png)
 
 ## Release Notes
+
+### 0.5.0
+* Features:
+  * `slots2` support: hover documentation for all slot arguments, part name completion in PC files now
+    resolves `allowTypes` / `denyTypes` instead of comparing the slot name with the part slot type
+  * Slot checks for `slots` and `slots2`: missing table header, missing `name`, `allowTypes` that is not
+    a list, slot names used more than once and parts that define both slot sections
+  * `quads` section visualization
+  * Shaded collision surfaces: a key light shows the surface angle, back faces are darker and silhouettes
+    are more opaque, so stacked surfaces can be told apart
+  * Transparency slider in the 3D toolbar, which fades meshes and collision surfaces
+  * Safe evaluation of jbeam variables and expressions, including variables passed through `slots2`
+  * Rows with a resolved `disable: true` option are not visualized
+  * JBeam files are loaded by related namespace instead of parsing every vehicle during activation
+  * Node label opacity slider and a smaller default label scale
+  * Live processed `$components`, tuning variables, and active parts from the connected player vehicle
+* Bugfixes:
+  * The perspective button now matches the camera. Before it showed off while the view was perspective
+  * Hover documentation lookup was broken and never found an entry
+  * Part name completion in PC files never offered a part, because the part slot type is moved into
+    the part options while the tables are processed
+  * The collision surface buffers grew on every edit and the shader was recompiled on every edit
+  * Mesh loading no longer repeatedly scans every common DAE or mixes callbacks after file switches
+  * Game DAE files are included in the webview resource roots
+  * Connected vehicle context uses serialized TCP writes and safe reconnect handling
 
 ### 0.4.3
 * Bugfixes:

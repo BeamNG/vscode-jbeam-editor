@@ -8,10 +8,37 @@ const utilsExt = require('../utilsExt');
 
 const partconfigDiagnostics = vscode.languages.createDiagnosticCollection('partconfig');
 
+// a slot is defined in its parent part, so all known parts need to be searched to find out which
+// part types fit into a slot name. With legacy slots the slot name is the slot type itself
+function getSlotTypesForName(namespaces, slotName) {
+  let allowTypes = new Set()
+  let denyTypes = new Set()
+  let slotFound = false
+  for(let namespace of namespaces) {
+    const parts = archivar.partData[namespace]
+    if(!parts) continue
+    for(let partName in parts) {
+      const slots = parts[partName].interpreted?.slots2
+      if(!slots) continue
+      for(let rowKey in slots) {
+        if(rowKey === '__meta') continue
+        const slot = slots[rowKey]
+        if(!slot || slot.name !== slotName) continue
+        slotFound = true
+        for(let slotType of utilsExt.getStringList(slot.allowTypes)) allowTypes.add(slotType)
+        for(let slotType of utilsExt.getStringList(slot.denyTypes)) denyTypes.add(slotType)
+      }
+    }
+  }
+  if(!slotFound) allowTypes.add(slotName)
+  return [allowTypes, denyTypes]
+}
+
 function getPartnamesForNamespaces(namespaces, slotName, callback) {
   let partNameUnique = {}
   let list = []
   const rootpath = utilsExt.getRootpath()
+  const [allowTypes, denyTypes] = getSlotTypesForName(namespaces, slotName)
   for(let namespace of namespaces) {
     if(!archivar.partData[namespace]) {
       console.error(`Namepspace not found: ${namespace}`)
@@ -20,7 +47,10 @@ function getPartnamesForNamespaces(namespaces, slotName, callback) {
 
     for(let partName in archivar.partData[namespace]) {
       const part = archivar.partData[namespace][partName].raw
-      if(part.slotType !== slotName) continue
+      // a single slotType ends up in the part options while the tables are processed, a list of them stays in place
+      const partSlotTypes = utilsExt.getStringList(part.slotType ?? part.options?.slotType)
+      if(!partSlotTypes.some(slotType => allowTypes.has(slotType))) continue
+      if(partSlotTypes.some(slotType => denyTypes.has(slotType))) continue
       let relPath
       if(rootpath) {
         relPath = path.relative(rootpath, part.__meta.origin)
@@ -70,7 +100,9 @@ function debugHighlight(document, range, type) {
 
 class PartConfigCompletionProvider {
   // see https://code.visualstudio.com/api/references/vscode-api#CompletionItemProvider.provideCompletionItems
-  provideCompletionItems(document, position, token, context) {
+  async provideCompletionItems(document, position, token, context) {
+    if (!await archivar.ensureNamespacesForDocument(document)) return
+    if (token.isCancellationRequested) return
     //console.log("provideCompletionItems", document, position, token, context)
 
     const text = document.getText()

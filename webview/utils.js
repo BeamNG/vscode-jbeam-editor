@@ -50,6 +50,9 @@ const jbeamColors = {
   triangles: {
     ['ALL']: new THREE.Color(0, 0, 0.65),
   },
+  quads: {
+    ['ALL']: new THREE.Color(0, 0.4, 0.55),
+  },
   hydros: {
     ['ALL']: new THREE.Color(0/255, 100/255, 255/255),
   },
@@ -452,6 +455,7 @@ class Tooltip {
       map: texture,
       transparent: true,
       depthTest: false,
+      opacity: (uiSettings.labelOpacity ?? 70) / 100,
     });
 
     this.mesh = new THREE.Sprite(material);
@@ -470,13 +474,14 @@ class Tooltip {
   applyTransform(renderer, camera) {
     if (!renderer || !camera) return
     if (!this.pixelWidthRaw || !this.pixelHeightRaw || !this.basePosition) return
+    this.mesh.material.opacity = (uiSettings.labelOpacity ?? 70) / 100
     const sz = new THREE.Vector2()
     renderer.getSize(sz, false)
     const pixelRatio = renderer.getPixelRatio ? renderer.getPixelRatio() : window.devicePixelRatio || 1
     const vpW = sz.x * pixelRatio
     const vpH = sz.y * pixelRatio
     const labelScale = (ctx && ctx.config && ctx.config.sceneView && typeof ctx.config.sceneView.nodeLabelScale === 'number')
-      ? ctx.config.sceneView.nodeLabelScale : 0.7
+      ? ctx.config.sceneView.nodeLabelScale : 0.5
     // distance in camera space
     const tmp = new THREE.Vector3().copy(this.basePosition).applyMatrix4(camera.matrixWorldInverse)
     let offsetCam = 0
@@ -539,8 +544,8 @@ class Tooltip {
       context.font = this.fontStr;
       // Calculate canvas border width so it renders desired on-screen px after label scaling
       const labelScale = (ctx && ctx.config && ctx.config.sceneView && typeof ctx.config.sceneView.nodeLabelScale === 'number')
-        ? ctx.config.sceneView.nodeLabelScale : 0.7
-      const borderWidth = Math.max(1, Math.round(desiredBorderPx / (labelScale || 0.7)))
+        ? ctx.config.sceneView.nodeLabelScale : 0.5
+      const borderWidth = Math.max(1, Math.round(desiredBorderPx / (labelScale || 0.5)))
       // Add padding to canvas width and height to accommodate the border and padding
       canvas.width = context.measureText(data.name).width + (padding * 2) + (borderWidth * 2);
       canvas.height = this.fontSize + (padding * 2) + (borderWidth * 2);

@@ -1,7 +1,7 @@
 const localstorageKey = 'BeamNGVScodeJbeamViewerUISettings'
 
 let uiSettings = {
-  perspectiveRender: false,
+  perspectiveRender: true,
   showNodeIDs: true,
   showMeshes: true,
   centerViewOnSelectedJBeam: true,
@@ -9,6 +9,8 @@ let uiSettings = {
   mirrorplanes: true,
   statusBarSettings: {},
   showJBeamLegend: false,
+  opacity: null, // surface transparency in percent, seeded from the mesh opacity setting on first start
+  labelOpacity: null,
 }
 
 function loadUISettings() {
